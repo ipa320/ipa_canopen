@@ -1,0 +1,27 @@
+<package>
+  <description brief="ipa_canopen_ros">
+
+     ipa_canopen_ros
+
+  </description>
+  <author>tys</author>
+  <license>MIT</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ipa_canopen_ros</url>
+  <depend package="std_msgs"/>
+  <!-- <depend package="control_msgs"/> -->
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="brics_actuator"/>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="cob_srvs"/> 
+  <rosdep name="lboost_system"/>  
+  <rosdep name="lboost_filesystem"/>  
+  <rosdep name="lpthread"/>
+  <rosdep name="lcanopen"/>
+  <rosdep name="lpcan"/>  
+
+
+</package>
+
+
