@@ -13,7 +13,7 @@
   <depend package="libpcan"/>
 
   <export>
-    <cpp cflags="-I${prefix}/driver" lflags="-Wl,-rpath,${prefix}/common/lib -L${prefix}/common/lib -lcanopen"/>
+    <cpp cflags="-I${prefix}/driver" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcanopen"/>
   </export>
 
 </package>

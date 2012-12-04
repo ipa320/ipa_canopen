@@ -1,11 +1,20 @@
-cmake_minimum_required (VERSION 2.6) 
-project (canopen2) 
-list( APPEND CMAKE_CXX_FLAGS "-std=c++0x" ) # ${CMAKE_CXX_FLAGS}" ) # -g -ftest-coverage -fprofile-arcs")
-# -fPIC
-# Recurse into the "Hello" and "Demo" subdirectories. This does not actually 
-# cause another cmake executable to run. The same process will walk through 
-# the project's entire directory structure. 
-include_directories ("${PROJECT_SOURCE_DIR}/driver")
-#link_directories (/usr/lib)
-add_subdirectory (driver) 
-add_subdirectory (tools)
+cmake_minimum_required(VERSION 2.8)
+
+SET(MOLE 13)
+
+execute_process(
+#	COMMAND if [ -f ROSBUILD_FOR_CANOPEN ]; then exit 1; fi
+#	COMMAND if [ -f ROSBUILD_FOR_CANOPEN ]; then exit 1; fi
+	COMMAND ls 7
+	OUTPUT_VARIABLE MOLE
+)
+
+IF(${MOLE} EQUAL 7)
+  MESSAGE("Building canopen for ROS.")
+  include(CMakeLists_ROS.txt)
+  execute_process(COMMAND rm 7)
+  
+ELSE()
+  include(CMakeLists_Core.txt)
+  MESSAGE("Building canopen core.")
+ENDIF(${MOLE} EQUAL 7)

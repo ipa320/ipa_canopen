@@ -1,7 +1,7 @@
 <stack>
   <description brief="ipa_canopen">ipa_canopen</description>
   <author>Maintained by Tobias Sing</author>
-  <license>MIT</license>  
+  <license>LGPL</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ipa_canopen</url>
   <depend stack="cob_common" /> <!-- brics_actuator, cob_srvs -->
