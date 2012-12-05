@@ -1,0 +1,19 @@
+<package>
+  <description brief="ipa_canopen_core">
+
+     ipa_canopen_core
+
+  </description>
+  <author>Tobias Sing</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ipa_canopen_core</url>
+
+  <depend package="roscpp"/>
+  <depend package="libpcan"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/driver" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcanopen"/>
+  </export>
+
+</package>
