@@ -9,10 +9,10 @@ Currently, the library has only been tested with the PCAN-USB CAN interface for 
   \item Download and unpack the driver: \url{http://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-7.5.tar.gz}.
   \item \texttt{cd peak-linux-driver-x.y}
   \item \texttt{make clean}
-  \item Use the chardev driver: \texttt{make NET=NO}
+  \item Use the chardev driver: \texttt{make NET=NO}\\
+    {\bf Note: The option \texttt{NET=no} is crucial!}
   \item \texttt{sudo make install}
   \item \texttt{/sbin/modprobe pcan}
-
 
   \item Test that the driver is working:
     \begin{itemize}
@@ -26,7 +26,7 @@ Currently, the library has only been tested with the PCAN-USB CAN interface for 
 *n -type- ndev --base-- irq --btr- --read-- --write- --irqs-- -errors- status
 32    usb -NA- ffffffff 255 0x001c 0000cc3f 0000edd1 00063ce1 00000005 0x0014
 \end{verbatim}}
-\item \texttt{./receivetest -f=/dev/pcan32} Turning the CAN device power on and off should trigger some CAN messages which should be shown on screen.
+\item \texttt{./receivetest -f=/dev/pcan32} Turning the CAN device power on and off should trigger some CAN messages which should be shown on screen. {\bf If you do not receive messages using this test, you still have issues with the device driver which need to be solved before proceeding further.}
     \end{itemize}
   \end{itemize}
 
