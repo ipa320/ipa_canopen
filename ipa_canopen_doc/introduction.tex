@@ -1,0 +1,89 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{CANopen: A short introduction}
+
+In this section, we only briefly summarize the standard so that the rest of the manual can be understood more easily.
+
+CANopen is a standard with two purposes:
+\begin{itemize}
+\item A high-level communication protocol. It specifies the format and mode of messages exchanged, but not the lower levels of physical transport. Most frequently, the physical transport is via the CAN field bus, although any other mean of transportation (e.g. EtherCAT) could also be used to implement the CANopen communication protocol.
+\item Several manufacturer-independent device profiles, e.g. for motors or sensors. This allows for example to use the same set of commands to communicate with motors from different manufacturers.
+\end{itemize}
+
+\subsection{CANopen functions: The object dictionary (indices.csv)}
+\label{sec:objectdictionary}
+
+ALL CANopen functions are entries in the {\em object dictionary}. These entries are identified by a 16-bit {\em index} and an 8-bit {\em subindex}. In the IPA CANopen library, the objects in the object dictionary are collected in a single space-delimited file \texttt{indices.csv} in the \texttt{driver} directory (it gets copied into \texttt{\textasciitilde/.canopen} by \texttt{sudo make install}. Each line in the file represents one object from the standard. Currently, only a minimal set of the standard is collected in this file. Here is an excerpt:
+
+\begin{verbatim}
+controlword 0x6040 0x0 2 rw
+statusword 0x6041 0x0 2 ro
+modes_of_operation 0x6060 0x0 1 wo
+modes_of_operation_display 0x6061 0x0 1 ro
+torque_actual_value 0x6077 0x0 2 rw
+position_actual_value 0x6064 0x0 4 rw
+\end{verbatim}
+
+Each entry has five columns:
+\begin{itemize}
+\item {\em Alias}: how the object is called in the standard
+\item {\em Index}: The 16-bit main address (index) which identifies the object in the standard and in actual CANopen messages.
+\item {\em Subindex}: The 8-bit subindex which is used to access specific subfunctions for some objects.
+\item {\em Length}: The length in bytes (1-4) for the data part of an object. For ``read-only'' (``ro'' in column 5) objects this is the length of data returned in a reply from the device, whereas for ``read-write'' objects (``rw'' in column 5) it is the length of data that must be submitted when a message of that particular index/subindex type is sent to a device.
+\item {\em Mode}: Some objects are read-only (e.g. statusword), whereas others are read-write (e.g. controlword). This is specified in column 5 for each object.
+\end{itemize}
+
+To make available additional standard functionality within the API, you can simply add lines to the \texttt{indices.csv} file (cf. Chapter \ref{chap:extending}).
+
+\subsection{CANopen constants (constants.csv)}
+\label{sec:constants}
+
+For many entries of the object dictionary, the CANopen standard defines constants with a specific functionality. For example, several bits in the data part of the {\em controlword} are used to trigger specific state machine transitions in motor (402 standard) devices. These constants are all collected in the file \texttt{constants.csv}, for example:
+\begin{verbatim}
+controlword disable_voltage 0xFFFF 0x1
+controlword sm_shutdown 0xFFFF 0x6
+controlword sm_switch_on 0xFFFF 0x7
+controlword sm_enable_operation 0xFFFF 0xF
+\end{verbatim}
+{\bf WARNING!!!! The value of a constant (last column) will always be interpreted in hexadecimal notation!!!}
+
+Each entry in this file has four columns:
+\begin{itemize}
+\item {\em Alias of object}: This is the name of the object for which the constant is defined.
+\item {\em Alias of constants}: This is the name of the constant in the standard.
+\item {\em Bit-mask}: Bits that are not set must also be evaluated. For that reason, data must be masked accordingly for evaluation.
+\item {\em Value}: The value that defines the constants (relative to the bit mask).
+\end{itemize}
+
+\subsection{CANopen message types}
+
+In this library, all communcation is by objects of the class \texttt{canopen::Message} (\texttt{canopenmsg.h}).
+
+The CANopen messages types relevant when using this library are:
+\begin{itemize}
+\item {\em NMT messages}: {em NMT} stands for {\em Network Management protocol}. NMT messages are sent out to the devices in order to invoke state transitions in the device-internal communication (301 standard) state machines. NMT messages, as implemented currently, apply simultaneously to all devices on a bus. All devices can be set to {\em operational} state (according to 301 state machine) using the function \texttt{canopen::initNMT} (\texttt{canopen\_highlevel.h}). Individual NMT commands can be sent using the function \texttt{canopen::sendNMT} (\texttt{canopenmsg.h}), e.g. \texttt{sendNMT(``stop\_remote\_node'')}. The string argument is any constant alias defined in the file \texttt{constants.csv} (c.f. \ref{sec:constants}, additional constants defined in the standard can be added by the user if necessary).
+\item {\em SDO messages}: {\em SDO} stands for {\em Service Data Object} protocol. Each SDO message is one object from the object dictionary (cf. \ref{objectdictionary}). SDOs are used to set and read values from devices. Typically, SDO communication is used for device initialization and setting specific communication or operation-mode parameters. Actual motion commands (e.g. positions, velocities) are usually not sent by SDOs, but rather by PDOs (cf. below). This is because SDO communication is always confirmed by the device, i.e. the device always send a reply back in response to an SDO message it receives from the master. For the high-frequency communication when sending motion commands this would be too much overhead. {\bf In this library, SDO calls can be performed as function calls and the return value of these calls is the SDO reply received from the device}. This is implemented in the following way: whenever an SDO is sent out, it gets stored into the hash-table \texttt{canopen::pendinSDOreplies}. Once a reply has been received from the device, the function call returns with the reply as return value. SDOs can be sent using the \texttt{sendSDO()} function (\texttt{canopenmsg.h}), e.g.
+\begin{verbatim}
+sendSDO(deviceID, "controlword", "sm_shutdown");
+Message* reply = sendSDO(deviceID, "statusword");
+\end{verbatim}
+In \texttt{canopen\_highlevel.h}, higher-level functionality that consists of sequences of SDO calls is collected. For example, the function \texttt{canopen::homing()} puts a device into homing mode, the starts homing, then blocks while the drive is moving, and finally checks whether the drive reports itself as references, returning the result ina boolean value. All these commands and checks are performed by SDO communication.
+\item {\em PDO messages}: {\em PDO} stands for {\em Process Data Object}. Unlike SDO messages, PDO messages are unconfirmed (i.e. one-way) communication. PDOs sent from the devices to the master are referred to as tPDOs (transmit-PDOs), whereas PDOs sent from the master to the devices are referred to as rPDOs (receive-PDOs). PDOs are crucial for controlling devices and therefore are described below in more detail (cf. Section \ref{sef:PDOs}).
+\item {\em SYNC messages}: SYNC messages are used to coordinate the processing of rPDOs and transfer of tPDOs by the devices. They ensure that different devices on the same bus perform the operations in a synchronized way. Among several forms of PDO communication allowed by the standard, here only the SYNC-synchronized form is implemented so far. The SYNC message can be sent by \texttt{canopen::sendSync()} (\texttt{canopen\_highlevel.h}). When using a {\em master} thread to coordinate the sending and receiving of messages, the master automatically takes care of things such as sending SYNC messages at the right times.
+\end{itemize}
+
+\subsection{Controlling device motion with PDOs (Process Data Objects) - (PDOs.csv)}
+
+The data transmitted in a PDO consists of a collection of objects from the object dictionary. A device usually has some default PDOs, but a user can also specify custom PDOs.
+In this API, PDOs can be easily specified in the file \texttt{PDOs.csv}. Each row defines on PDO. First, the alias of a PDO is defined, e.g. \texttt{schunk\_default\_tPDO}. Then, the ID (``cobID'') which identifies the message on the CAN bus is specified (e.g. 0x200). Then a sequence of aliases defined in the object dictionary are given, e.g. \texttt{statusword torque\_actual\_value position\_actual\_value}. Together, the transmitted data has to be 8 bytes (the lengths can be seen from the \texttt{length} column in {\em indices.csv}). 
+
+The specification of PDOs in the file PDOs only makes it possible within the API to easily generate and parse such messages. New user-defined PDOs also need to be declared to the devices using the function \texttt{canopen::definePDO} (not implemented yet). 
+
+Example definitions from \texttt{PDOs.csv}:
+{\scriptsize
+\begin{verbatim}
+schunk_default_rPDO 0x200 controlword notused16 interpolation_data_record:ip_data_position
+schunk_default_tPDO 0x180 statusword torque_actual_value position_actual_value
+schunk_debug_rPDO 0x480 notused64
+\end{verbatim}}
