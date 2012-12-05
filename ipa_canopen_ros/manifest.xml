@@ -4,8 +4,8 @@
      ipa_canopen_ros
 
   </description>
-  <author>tys</author>
-  <license>MIT</license>
+  <author>Tobias Sing</author>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ipa_canopen_ros</url>
   <depend package="std_msgs"/>
@@ -14,14 +14,9 @@
   <depend package="brics_actuator"/>
   <depend package="rospy"/>
   <depend package="roscpp"/>
+  <depend package="libpcan"/>
   <depend package="cob_srvs"/> 
-  <rosdep name="lboost_system"/>  
-  <rosdep name="lboost_filesystem"/>  
-  <rosdep name="lpthread"/>
-  <rosdep name="lcanopen"/>
-  <rosdep name="lpcan"/>  
-
+  <depend package="sensor_msgs"/> 
+  <depend package="ipa_canopen_core"/>
 
 </package>
-
-
