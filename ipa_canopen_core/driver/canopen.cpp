@@ -54,7 +54,6 @@ namespace canopen {
 
   void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
     // canopen::devices must be set up before this function is called
-
     CAN_Close(h);
 
     syncMsg.ID = 0x80;
@@ -66,8 +65,6 @@ namespace canopen {
     nodeguardMsg.MSGTYPE = 0x01; // remote frame
     nodeguardMsg.LEN = 0;
 
-    // if (atFirstInit) {
-    
     if (!canopen::openConnection(deviceFile)) {
       std::cout << "Cannot open CAN device; aborting." << std::endl;
       exit(EXIT_FAILURE);
