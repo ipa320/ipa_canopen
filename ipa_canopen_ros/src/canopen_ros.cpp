@@ -33,44 +33,52 @@ std::string deviceFile;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req,
 		 cob_srvs::Trigger::Response &res, std::string chainName) {
-  // canopen::chainMap[chainName]->CANopenInit();
-  std::cout << "init service called" << std::endl;
   canopen::init(deviceFile, canopen::syncInterval);
-  // if (canopen::atFirstInit) {
-    for (auto device : canopen::devices)
-      canopen::sendSDO(device.second.CANid_, canopen::modes_of_operation,
-		       canopen::modes_of_operation_interpolated_position_mode);
-    // canopen::initDeviceManagerThread(canopen::deviceManager);
-    // }
+  for (auto device : canopen::devices)
+    canopen::sendSDO(device.second.CANid_, canopen::modes_of_operation,
+		     canopen::modes_of_operation_interpolated_position_mode);
   res.success.data = true;
   res.error_message.data = "";
-  std::cout << "init service ended" << std::endl;
   return true;
 }
+
+bool CANopenRecover(cob_srvs::Trigger::Request &req,
+		    cob_srvs::Trigger::Response &res, std::string chainName) {
+  canopen::init(deviceFile, canopen::syncInterval);
+  for (auto device : canopen::devices)
+    canopen::sendSDO(device.second.CANid_, canopen::modes_of_operation,
+		     canopen::modes_of_operation_interpolated_position_mode);
+  res.success.data = true;
+  res.error_message.data = "";
+  return true;
+}
+
 
 bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req,
 			      cob_srvs::SetOperationMode::Response &res, std::string chainName) {
   res.success.data = true;  // for now this service is just a dummy, not used elsewhere
-  // res.error_message.data = "";
   return true;
 }
 
 void setVel(const brics_actuator::JointVelocities &msg, std::string chainName) {
-  std::cout << "setVel callback!" << std::endl;
   if (!canopen::atFirstInit) {
     std::vector<double> velocities;
-    for (auto it : msg.velocities) {
-      std::cout << it.value << "  ";
+    for (auto it : msg.velocities)
       velocities.push_back( it.value); 
-    }
-    std::cout << std::endl;
     canopen::deviceGroups[chainName].setVel(velocities); 
   }
 }
 
 void readParamsFromParameterServer(ros::NodeHandle n) {
   XmlRpc::XmlRpcValue busParams;
-  n.getParam("/CANopen/buses", busParams);
+
+  if (!n.hasParam("devices") || !n.hasParam("chains")) {
+    ROS_ERROR("Missing parameters on parameter server; shutting down node.");
+    ROS_ERROR("Please consult the user manual for necessary parameter settings.");
+    n.shutdown();
+  }
+
+  n.getParam("devices", busParams);
   for (int i=0; i<busParams.size(); i++) {
     BusParams busParam;
     auto name = static_cast<std::string>(busParams[i]["name"]);
@@ -79,31 +87,47 @@ void readParamsFromParameterServer(ros::NodeHandle n) {
     buses[name] = busParam;
   }
   
-  XmlRpc::XmlRpcValue deviceParams;
-  n.getParam("/CANopen/devices", deviceParams);
-  for (int i=0; i<deviceParams.size(); i++) {
-    auto name = static_cast<std::string>(deviceParams[i]["name"]);
-    auto group = static_cast<std::string>(deviceParams[i]["group"]);
-    auto CANid = static_cast<int>(deviceParams[i]["id"]);
-    auto bus = static_cast<std::string>(deviceParams[i]["bus"]);
-    canopen::devices[ CANid ] = canopen::Device(CANid, name, group, bus);
-  }
+  XmlRpc::XmlRpcValue chainNames_XMLRPC;
+  n.getParam("chains", chainNames_XMLRPC);
+  std::vector<std::string> chainNames;
+  for (int i=0; i<chainNames_XMLRPC.size(); i++) 
+    chainNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
 
-  for (auto it : canopen::devices) {
-    if (canopen::deviceGroups.find(it.second.group_) == canopen::deviceGroups.end())
-      canopen::deviceGroups[it.second.group_] = canopen::DeviceGroup({it.first}, {it.second.name_});
-    else {
-      canopen::deviceGroups[it.second.group_].CANids_.push_back(it.first);
-      canopen::deviceGroups[it.second.group_].names_.push_back(it.second.name_);
-    }
+  for (auto chainName : chainNames) {
+    XmlRpc::XmlRpcValue jointNames_XMLRPC;
+    n.getParam("/" + chainName + "/joint_names", jointNames_XMLRPC);
+    std::vector<std::string> jointNames;
+    for (int i=0; i<jointNames_XMLRPC.size(); i++)
+      jointNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
+
+    XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
+    n.getParam("/" + chainName + "/module_ids", moduleIDs_XMLRPC);
+    std::vector<uint8_t> moduleIDs;
+    for (int i=0; i<moduleIDs_XMLRPC.size(); i++)
+      moduleIDs.push_back(static_cast<int>(moduleIDs_XMLRPC[i]));
+
+    XmlRpc::XmlRpcValue devices_XMLRPC;
+    n.getParam("/" + chainName + "/devices", devices_XMLRPC);
+    std::vector<std::string> devices;
+    for (int i=0; i<devices_XMLRPC.size(); i++)
+      devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
+
+    for (int i=0; i<jointNames.size(); i++)
+      canopen::devices[ moduleIDs[i] ] = 
+	canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
+
+    canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
   }
 }
 
 
 int main(int argc, char **argv)
 {
+  // todo: allow identical module IDs of modules when they are on different CAN buses
+
   ros::init(argc, argv, "canopen_ros");
-  ros::NodeHandle n("~");
+  ros::NodeHandle n; // ("~");
+  
   readParamsFromParameterServer(n);
 
   std::cout << buses.begin()->second.syncInterval << std::endl;
@@ -112,7 +136,7 @@ int main(int argc, char **argv)
   deviceFile = buses.begin()->first;
   std::cout << deviceFile << std::endl;
   // ^ todo: this only works with a single CAN bus; add support for more buses!
-  
+
   // add custom PDOs:
   canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
   for (auto it : canopen::devices) {
@@ -120,17 +144,11 @@ int main(int argc, char **argv)
       [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
   }
 
-  /*
-  uint8_t CANid = 0xC;
-  canopen::devices[ CANid ] = canopen::Device(CANid);
-  canopen::incomingPDOHandlers[ 0x180 + 0xC ] = 
-    [](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( 0xC, m ); };
-  canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
-  canopen::deviceGroups[ "tray" ] = canopen::DeviceGroup({CANid}); */
-
   // set up services, subscribers, and publishers for each of the chains:
   std::vector<TriggerType> initCallbacks;
   std::vector<ros::ServiceServer> initServices;
+  std::vector<TriggerType> recoverCallbacks;
+  std::vector<ros::ServiceServer> recoverServices;
   std::vector<SetOperationModeCallbackType> setOperationModeCallbacks;
   std::vector<ros::ServiceServer> setOperationModeServices;
 
@@ -147,6 +165,9 @@ int main(int argc, char **argv)
     initCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
     initServices.push_back
       (n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
+    recoverCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
+    recoverServices.push_back
+      (n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
     setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
     setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 
@@ -154,7 +175,6 @@ int main(int argc, char **argv)
     jointVelocitiesSubscribers.push_back
       (n.subscribe<brics_actuator::JointVelocities>
        ("/" + it.first + "/command_vel", 100, jointVelocitiesCallbacks.back())  );
-    // todo: remove global namespace; ticket
 
     currentOperationModePublishers[it.first] =
       n.advertise<std_msgs::String>
@@ -174,27 +194,14 @@ int main(int argc, char **argv)
 
   while (ros::ok()) {
     
+    // iterate over all chains, get current pos and vel and publish as topics:
     for (auto dg : (canopen::deviceGroups)) { 
-      // iterate over all chains, get current pos and vel and publish as topics:
-
       sensor_msgs::JointState js;  
-      // std::vector<std::string> ss = {"tray_1_joint"};
-      // std::vector<std::string> ss = {"tray_1_joint", "tray_2_joint", "tray_3_joint"};
-      // std::vector<std::string> ss = {"arm_1_joint", "arm_2_joint", "arm_3_joint",
-      // "arm_4_joint", "arm_5_joint", "arm_6_joint"};
-      /* std::cout << "Names: ";
-      for (auto it1 : dg.second.names_)
-	std::cout << it1 << "  ";
-	std::cout << std::endl; */
       js.name = dg.second.names_;
       js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
       js.position = dg.second.getActualPos();
       js.velocity = dg.second.getActualVel(); 
-      js.effort = std::vector<double>(dg.second.names_.size(), 0.0); // {0}; // todo {0,0,0,0,0,0};
-      /* std::cout << "Efforts: ";
-      for (auto it1 : js.effort)
-	std::cout << it1 << "  ";
-	std::cout << std::endl; */
+      js.effort = std::vector<double>(dg.second.names_.size(), 0.0); 
       jointStatesPublisher.publish(js);
 
       pr2_controllers_msgs::JointTrajectoryControllerState jtcs; 

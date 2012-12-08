@@ -115,8 +115,11 @@ namespace canopen {
       return desiredVel;
     }
     inline void setVel(std::vector<double> velocities) {
-      for (int i=0; i<velocities.size(); i++)
+      for (int i=0; i<velocities.size(); i++) {
 	devices[CANids_[i]].desiredVel_ = velocities[i];
+	std::cout << "setVel CANID " << (int) CANids_[i] 
+		  << " name: " << names_[i] << " vel: " << velocities[i] << std::endl;
+      }
     }
 
     std::vector<uint8_t> CANids_;
