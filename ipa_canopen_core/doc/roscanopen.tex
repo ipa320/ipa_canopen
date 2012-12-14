@@ -1,0 +1,106 @@
+\chapter{CANopen communication in ROS}
+\label{chap:roscanopen}
+
+In this chapter, we will show how to use the ipa\_canopen\_ros library for communicating with CANopen devices.
+
+\section{The tutorial examples}
+
+We have prepared a number of examples that cover the configuration steps which are necessary in order to use the library. These examples can be run via the launch file in their respective directory.
+As explained in Section \ref{chap:installation:ipa_canopen_ros}, the examples can be installed as follows:
+
+\begin{itemize}
+\item \texttt{git clone \url{git://github.com/ipa320/ipa_canopen_tutorials.git}}
+\item \texttt{rosmake ipa\_canopen\_tutorials}
+\end{itemize}
+
+At the moment, there are $2 \times 2$ examples in the tutorials. The variations in these examples are:
+\begin{itemize}
+\item 1 CAN device vs. 3 CAN devices
+\item Direct sending of velocity commands to the ipa\_canopen\_ros node vs. using a trajectory controller to drive the device(s) to a desired position.
+\end{itemize}
+
+These examples should help you configuring the node for your own setup.
+
+\section{Getting started with ipa\_canopen\_ros}
+
+Before looking into the details, let's first try if everything works.
+
+\begin{itemize}
+\item \texttt{roscd ipa\_canopen\_tutorials/examples/1dof\_simple/config}
+\item Edit the file \texttt{1dof\_module.yaml} so that it contains a valid CAN id for your hardware (in decimal notation), and the correct device file (e.g. /dev/pcan32).
+\item In the same directory, edit the file \texttt{CANopen.yaml}, so that it contains the correct device file and the correct baudrate (e.g. 500K) to which the bus has been configured.
+\item \texttt{roslaunch 1dof\_simple.launch}
+\item That's all! Now, after the ROS nodes have been launched, you should see your device moving slowly back and forth. If that's the case, your setup has been successful.
+\end{itemize}
+
+\section{The canopen\_ros node}
+
+In this section we will describe the \texttt {canopen\_ros} node and the required ROS parameter settings, services, subscribers, and publishers. The node can be run by \texttt{rosrun ipa\_canopen\_ros canopen\_ros}, but will usually be launched from a launch file.
+
+To see tested configuration examples, please refer to the \texttt{config} and \texttt{urdf} subdirectories of the examples in the \texttt{ipa\_canopen\_tutorials} package, and to their corresponding launch files.
+
+\subsection{Parameters}
+
+In this section, we describe the necessary parameter settings. 
+\begin{itemize}
+\item In the namespace in which the \texttt{canopen\_ros} node is launched, the following parameters need to exist on the ROS parameter server:
+  \begin{itemize}
+  \item {\bf \texttt{devices}}: A list of CAN device files (\texttt{name}), its corresponding baud rates (\texttt{baudrate}), and SYNC intervals in msec (\texttt{sync\_interval}). Example:
+\begin{verbatim}
+rosparam get /canopen/devices 
+- {baudrate: 500K, name: /dev/pcan32, sync_interval: 10}
+- {baudrate: 1M, name: /dev/pcan33, sync_interval: 5}
+\end{verbatim}
+\item {\bf \texttt{chains}}: A list of chain names (chain = group of devices). Each chain name must correspond to a namespace on the parameter server. Example:
+\begin{verbatim}
+rosparam get /chains
+[arm1_controller, arm2_controller, tray_controller]
+\end{verbatim}
+  \end{itemize}
+\item For each of the chain names listed in parameter \texttt{chains} (cf. above), a namespace of that name must exist with the following parameters:
+  \begin{itemize}
+  \item {\bf \texttt{joint\_names}}: A list of names/aliases for each joint in your chain.
+  \item {\bf \texttt{module\_ids}}: A list of corresponding CAN IDs (in decimal notation).
+  \item {\bf \texttt{devices}}: A list of corresponding CAN device files (e.g. /dev/pcan32). The modules in a chain can be on different CAN buses.
+  \end{itemize}
+
+\end{itemize}
+
+\subsection{Joint limits (urdf)}
+
+{\bf Note: Work in progress; joint limits and calibration are not yet processed and respected!}
+
+The ros\_canopen node requires at least a rudimentary robot (urdf) model, from which it reads some information regarding the joints (cf. \url{http://www.ros.org/wiki/urdf/XML/joint}) from the \texttt{<joint>} tags. The parameters currently considered are:
+\begin{itemize}
+\item {\bf \texttt{<limit>}} element {\bf (mandatory)}: \texttt{velocity}, \texttt{lower}, \texttt{upper}
+\item {\bf \texttt{<calibration>}} element (optional)
+\end{itemize}
+
+You can find example {\em xacro} files in the \texttt{urdf} subdirectories in the examples of \texttt{ipa\_canopen\_tutorials}.
+
+\subsection{Services, Subscribers, and Publishers}
+
+For each chain namespace listed in the \texttt{chains} parameter, the \texttt{ros\_canopen} node subscribes to a required topic, publishes on a number of topics, and exposes the following services:
+
+\subsubsection{Services}
+
+\begin{itemize}
+\item {\bf init}: Service datatype \texttt{cob\_srvs/Trigger} (\url{http://ros.org/doc/api/cob_srvs/html/srv/Trigger.html}). This opens the CAN bus connection(s) for the devices in the chain, if not already open, and puts the devices in operational mode.
+\item {\bf recover}. Service datatype \texttt{cob\_srvs/Trigger} (\url{http://ros.org/doc/api/cob_srvs/html/srv/Trigger.html}). If devices are in an emergency state, this will recover them to operational mode.
+\item {\bf set\_operation\_mode}. Service datatype \texttt{cob\_srvs/SetOperationMode} (\url{http://ros.org/doc/api/cob_srvs/html/srv/SetOperationMode.html}): not used at the moment.
+\end{itemize}
+
+\subsubsection{Subscribers}
+
+\begin{itemize}
+\item {\bf command\_vel}: Message datatype \texttt{brics\_actuator/JointVelocities} (\url{http://www.ros.org/doc/api/brics_actuator/html/msg/JointVelocities.html}). Essentially a vector of desired velocities for each module in a chain.
+\end{itemize}
+
+\subsubsection{Publishers}
+
+\begin{itemize}
+\item {\bf state}: Message datatype: \texttt{pr2\_controllers\_msgs/JointTrajectoryControllerState} (\url{http://www.ros.org/doc/api/pr2_controllers_msgs/html/msg/JointTrajectoryControllerState.html}). Vectors of desired and actual positions and velocities of all devices in a chain.
+\item {\bf /joint\_states}: Message datatype \texttt{sensor\_msgs/JointState} (\url{http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html}). Publisher in the global namespace, taken up e.g. by the \texttt{robot\_state\_publisher} (\url{http://www.ros.org/wiki/robot_state_publisher}).
+\end{itemize}
+
+
