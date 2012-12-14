@@ -103,4 +103,23 @@ For each chain namespace listed in the \texttt{chains} parameter, the \texttt{ro
 \item {\bf /joint\_states}: Message datatype \texttt{sensor\_msgs/JointState} (\url{http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html}). Publisher in the global namespace, taken up e.g. by the \texttt{robot\_state\_publisher} (\url{http://www.ros.org/wiki/robot_state_publisher}).
 \end{itemize}
 
+\section{Driving the Schunk LWA 4.6 (Powerball) arm}
 
+The Schunk LWA 4.6 (Powerball) robotic arm can be driven by CANopen commands. You can get the necessary configuration files by cloning the following two repositories:
+\begin{itemize}
+\item \texttt{git clone git@github.com:ipa320/schunk\_robots.git}
+\item \texttt{git clone git@github.com:ipa320/schunk\_modular\_robotics.git}
+\end{itemize}
+
+To launch the CANopen driver, together with a trajectory controller:\\
+\texttt{roslaunch schunk\_bringup powerball\_solo.launch}
+
+To launch the Powerball arm in Gazebo simulation:\\
+\texttt{roslaunch schunk\_bringup\_sim powerball.launch}
+
+This will allow you to control the arm by via JointTrajectoryFollowActions. To test this, you can move to a small number of example configurations from a graphical command GUI:\\
+\texttt{roslaunch schunk\_bringup dashboard\_powerball.launch}
+
+\subsection{Inverse kinematics}
+
+{\bf Work in progress}
