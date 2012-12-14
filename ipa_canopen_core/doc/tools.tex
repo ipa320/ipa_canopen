@@ -1,0 +1,36 @@
+\chapter{Command-line tools}
+\label{chap:tools}
+
+The IPA Canopen library comes with two command-line tools for interacting with devices: {\em move\_device} can be used to easily move a single device. {\em homing} tells the device to adjust its zero reference point to the current position.
+
+Many devices do not have an absolute encoder. When disconnected from power, they rely on memory to store the current position of the device. Occasionally, these devices may become {\em dereferenced}, i.e. have a misadjusted zero position. In this case, manually moving the device to the true zero position using {\em move\_device}, followed by a call to {\em homing} will readjust the device to the correct zero reference point.
+
+Below, we will briefly describe both tools. When called without arguments, they will show their arguments along with a usage example.
+
+\section{The {\em homing} tool}
+
+This tool takes two arguments:
+
+\begin{itemize}
+\item The name of the CAN device file, e.g. /dev/pcan32
+\item The CAN device ID of the module to be homed, in decimal notation
+\end{itemize}
+
+When successfully evoking this command, you will usually either hear a clicking sound or see the device moving a bit.
+
+\section{The {\em move\_device} tool}
+
+This tool takes five arguments:
+
+\begin{itemize}
+\item The name of the CAN device file, e.g. /dev/pcan32
+\item The CAN device ID of the module to be homed, in decimal notation
+\item The duration between two CANopen SYNC commands in milliseconds (if you do not know what this means, just use e.g. 10)
+\item The target velocity of the device in rad/sec
+\item The linear acceleration towards target velocity in rad/sec$^2$. Enter $0$ to immediately request target velocity.
+\end{itemize}
+
+When first moving your device, it is recommended to start with low target velocities. Also note that some devices may enter an error or emergency state if the requested acceleration towards target velocity is too high.
+
+
+

@@ -1,10 +1,28 @@
 \chapter{Installation}
 \label{chap:installation}
 
+At the moment, the first thing you have to do (if not done already) is to manually install the CAN device driver, as described in Section \ref{chap:installation:devicedriver}.
+
+For the installation of the IPA CANopen library, there are two options:
+\begin{itemize}
+\item For usage from within ROS (Section \ref{chap:installation:ipa_canopen_ros})
+\item For using the C++ library without ROS (Section \ref{chap:installation:ipa_canopen_core})
+\end{itemize}
+
+\section{Prerequisites}
+
+You will need the following free tools, which are available for all operating systems:
+\begin{itemize}
+\item {\em CMake} (to manage the build process). It is pre-installed on many *nix operating systems. Otherwise, you need to install it first, e.g. in Ubuntu:
+\texttt{sudo apt-get install cmake}
+\item {\em git} (to download the sources from github). In Ubuntu, it can be installed with: \texttt{sudo apt-get install git}
+\item A C++ compiler with good support for the C++11 standard, e.g. {\em gcc} version 2.6 or higher (default in Ubuntu versions 11.04 or higher).
+\end{itemize}
+
 \section{CAN device driver}
 \label{chap:installation:devicedriver}
 
-Currently, the library has only been tested with the PCAN-USB CAN interface for USB from Peak System.It has been tested with version 7.5. The Linux user manual is available at: \url{http://www.peak-system.com/fileadmin/media/linux/files/PCAN%20Driver%20for%20Linux_eng_7.1.pdf}. Briefly, to install the drivers under Linux, proceed as follows:
+Currently, the library has only been tested with the PCAN-USB CAN interface for USB from Peak System. It has been tested with version 7.5. The Linux user manual for the Peak interface is available at: \url{http://www.peak-system.com/fileadmin/media/linux/files/PCAN%20Driver%20for%20Linux_eng_7.1.pdf}. Briefly, to install the drivers under Linux, proceed as follows:
   \begin{itemize}
   \item Download and unpack the driver: \url{http://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-7.5.tar.gz}.
   \item \texttt{cd peak-linux-driver-x.y}
@@ -17,7 +35,7 @@ Currently, the library has only been tested with the PCAN-USB CAN interface for 
   \item Test that the driver is working:
     \begin{itemize}
     \item \texttt{cat /proc/pcan} should look like this, especially \texttt{ndev} should be \texttt{NA}:
-{\scriptsize
+      {\scriptsize
 \begin{verbatim}
 *------------- PEAK-System CAN interfaces (www.peak-system.com) -------------
 *-------------------------- Release_20120319_n (7.5.0) ----------------------
@@ -26,27 +44,42 @@ Currently, the library has only been tested with the PCAN-USB CAN interface for 
 *n -type- ndev --base-- irq --btr- --read-- --write- --irqs-- -errors- status
 32    usb -NA- ffffffff 255 0x001c 0000cc3f 0000edd1 00063ce1 00000005 0x0014
 \end{verbatim}}
-\item \texttt{./receivetest -f=/dev/pcan32} Turning the CAN device power on and off should trigger some CAN messages which should be shown on screen. {\bf If you do not receive messages using this test, you still have issues with the device driver which need to be solved before proceeding further.}
+\item \texttt{./receivetest -f=/dev/pcan32} Turning the CAN device power on and off should trigger some CAN messages which should be shown on screen.
+\item {\bf Note: If you do not receive messages using this test, you still have issues with the device driver which need to be solved before proceeding further.}
     \end{itemize}
   \end{itemize}
 
- \section{ROS-indendent CANopen library}
-\label{chap:installation:canopen}
+  \section{IPA CANopen ROS package}
+\label{chap:installation:ipa_canopen_ros}
 
-\subsection{Prerequisites}
-
-You will need the following free tools, which are available for all operating systems:
-\begin{itemize}
-\item {\em CMake} (to manage the build process). It is pre-installed on many *nix operating systems. Otherwise, you need to install it first, e.g. in Ubuntu:
-\texttt{sudo apt-get install cmake}
-\item {\em git} (to download the sources from github). In Ubuntu, it can be installed with: \texttt{sudo apt-get install git}
-\item A C++ compiler with good support for the C++11 standard, e.g. {\em gcc} version 2.6 or higher (default in Ubuntu versions 11.04 or higher).
+  \begin{itemize}
+  \item \texttt{git clone \url{git://github.com/ipa320/ipa_canopen.git}}
+  \item \texttt{rosmake ros\_canopen} 
+  \item Test if the installation was successful:
+    \begin{itemize}
+    \item In one terminal: \texttt{roscore}
+    \item In another terminal: \texttt{rosrun ipa\_canopen\_ros canopen\_ros}. This should give the following error message:
+      {\scriptsize
+\begin{verbatim}Missing parameters on parameter server; shutting down node.\end{verbatim}}
 \end{itemize}
+\item Optionally, you can also install the tutorial examples:
+\begin{itemize}
+\item \texttt{git clone \url{git://github.com/ipa320/ipa_canopen_tutorials.git}}
+\item \texttt{rosmake ipa\_canopen\_tutorials}
+\end{itemize}
+
+\end{itemize}
+
+
+ \section{ROS-indendent CANopen library}
+\label{chap:installation:ipa_canopen_core}
+
+If you just want to use the C++ library independently from ROS, follow the steps described below:
 
 \subsection{Installation}
 
 \begin{itemize}
-\item Go to a directory in which you want to create the {\em canopen} source directory.
+\item Go to a directory in which you want to create the source directory.
 \item \texttt{git clone \url{git://github.com/ipa320/ipa_canopen.git}}
 \item \texttt{cd ipa\_canopen/ipa\_canopen\_core}
 \item Create a build directory and enter it: \texttt{mkdir build \&\& cd build}
@@ -63,30 +96,11 @@ You will need the following free tools, which are available for all operating sy
 \item This should give the output:
 {\scriptsize
 \begin{verbatim}
-Arguments:
-(1) device file
-(2) CAN deviceID
-Example: ./homing /dev/pcan32 12
+      Arguments:
+      (1) device file
+      (2) CAN deviceID
+      Example: ./homing /dev/pcan32 12
 \end{verbatim}}
 \end{itemize}
 \end{itemize}
-
-\section{IPA CANopen ROS package}
-
-Currently, this requires that you first perform the two installation steps (PCAN driver, ROS-independent CANopen library) above manually. Then:
-
-\begin{itemize}
-\item \texttt{git clone \url{git://github.com/ipa-tys/ros_canopen.git}}
-\item \texttt{rosmake ros\_canopen}. Make sure dependencies are installed (e.g. package cob\_srvs from stack cob\_common).
-\item Test if the installation was successful:
-\begin{itemize}
-\item In one terminal: \texttt{roscore}
-\item In another terminal: \texttt{rosrun ros\_canopen ros\_canopenmasternode}. This should give the output:
- {\scriptsize
-\begin{verbatim}File not found. Please provide a description file as command line argument\end{verbatim}}
-\end{itemize}
-
-
-\end{itemize}
-
 
