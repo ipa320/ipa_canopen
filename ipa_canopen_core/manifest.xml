@@ -1,7 +1,8 @@
 <package>
   <description brief="ipa_canopen_core">
 
-     ipa_canopen_core
+     ROS-independent CANopen C++ library. 
+     User manual: https://github.com/ipa320/ipa_canopen/blob/master/ipa_canopen_core/doc/usermanual.pdf?raw=true
 
   </description>
   <author>Tobias Sing</author>
