@@ -52,7 +52,7 @@ namespace canopen {
   public:
     Device() {};
   Device(uint8_t CANid) : CANid_(CANid), desiredVel_(0), actualVel_(0),
-      actualPos_(0), desiredPos_(0), initialized(false), NMTState_("initialisation"), motorState_("not initialized") {};		// Changed code
+      actualPos_(0), desiredPos_(0), initialized(false), motorState_("not initialized") {};
   Device(uint8_t CANid, std::string name, std::string group, std::string bus) : 
     CANid_(CANid), name_(name), group_(group), deviceFile_(bus), 
       desiredVel_(0), actualVel_(0),
@@ -131,11 +131,11 @@ namespace canopen {
   extern std::map<std::string, DeviceGroup> deviceGroups;
   // ^ DeviceGroup name (e.g. "tray", "arm1", etc.) -> DeviceGroup object
 
-  // ----------------- Constants: -------------
+  // ----------------- Constants: --------------
   
   const uint8_t NMT_start_remote_node = 0x01;								// Changed code
   const uint8_t NMT_stop_remote_node = 0x02;  								// Changed code
-  const uint8_t NMT_enter_pre_operational = 0x80;							// Changed code
+  const uint8_t NMT_enter_pre-operational = 0x80;							// Changed code
   const uint8_t NMT_reset_node = 0x81;									// Changed code
   const uint8_t NMT_reset_communication = 0x82;								// Changed code
 
@@ -173,7 +173,6 @@ namespace canopen {
   void defaultListener();
   void initDeviceManagerThread(std::function<void ()> const& deviceManager);
   void deviceManager();
-  void setMNTState(uint16_t CANid, std::string targetState);						// Changed code
   void setMotorState(uint16_t CANid, std::string targetState);
 
   void sendSDO(uint8_t CANid, SDOkey sdo);

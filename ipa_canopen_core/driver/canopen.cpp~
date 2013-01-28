@@ -165,7 +165,7 @@ namespace canopen {
 	setNMTState(device.second.CANid_, "reset_node");
 	setNMTState(device.second.CANid_, "pre_operational");
       }
-      while (devices[device.second.CANid_].NMTState_ != "operational")
+      while (devices[device.second.CANid_].NMTState_ != "operational"){
         setNMTState(device.second.CANid_, "operational");
 
       setMotorState(device.second.CANid_, "operation_enable");
