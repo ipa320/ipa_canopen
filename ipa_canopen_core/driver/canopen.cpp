@@ -232,6 +232,7 @@ namespace canopen {
   // ----------------- Functions to handle incoming data: --------------
 
   void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]) {
+    // get current NMT state from device with specific CANid
     if (data[0] == 0x00){					// Bootup message
       devices[CANid].NMTState_ = "pre_operational";
     }
