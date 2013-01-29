@@ -163,10 +163,14 @@ namespace canopen {
       // NMT & motor state machine:
       while (devices[device.second.CANid_].NMTState_ != "pre_operational"){
 	setNMTState(device.second.CANid_, "reset_node");
+	canopen::sendNodeguard(device.second.CANid_);
 	setNMTState(device.second.CANid_, "pre_operational");
       }
-      while (devices[device.second.CANid_].NMTState_ != "operational")
+      while (devices[device.second.CANid_].NMTState_ != "operational"){
         setNMTState(device.second.CANid_, "operational");
+        canopen::sendNodeguard(device.second.CANid_);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
 
       setMotorState(device.second.CANid_, "operation_enable");
       /* canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_shutdown);

@@ -197,7 +197,7 @@ namespace canopen {
   inline void sendSync() {
     CAN_Write(h, &syncMsg);
   }
-  inline void sendNMT(uint8_t command, uint8_t CANid) {
+  inline void sendNMT(uint8_t CANid, uint8_t command) {
     NMTmsg.DATA[1] = command;
     NMTmsg.DATA[0] = CANid;
     CAN_Write(h, &NMTmsg);
