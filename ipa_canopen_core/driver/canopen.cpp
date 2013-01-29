@@ -2,7 +2,9 @@
 
 namespace canopen {
 
-  // ----------------- Variable definitions: --------------
+  /***************************************************************/
+  //		Variable definitions
+  /***************************************************************/
 
   std::chrono::milliseconds syncInterval;
   HANDLE h;
@@ -20,7 +22,9 @@ namespace canopen {
   TPCANMsg nodeguardMsg;
   bool atFirstInit = true;
 
-  // ----------------- Function definitions: --------------
+  /***************************************************************/
+  //		Function definitions
+  /***************************************************************/
 
   bool openConnection(std::string devName) {
     h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
@@ -31,16 +35,8 @@ namespace canopen {
 
   void setNMTState(uint16_t CANid, std::string targetState){
     if (devices[CANid].NMTState_ == "initialisation"){
-      if (targetState == "reset_application"){
-	std::cout << "Switching NMTState from INITIALISATION to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_node);
-      }
-      else if (targetState == "reset_communication"){
-	std::cout << "Switching NMTState from INITIALISATION to RESET_COMMUNICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_communication);
-      }
-      else if (targetState == "pre_operational"){
-	std::cout << "Switching NMTState from INITIALISATION to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
+      if (targetState == "pre_operational"){
+	std::cout << "Switching NMTState to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
       }
       else if (targetState == "stopped"){
 	std::cout << "Invalid NMTState transition. Resetting the device with CAN_ID = " << CANid << std::endl;
@@ -51,62 +47,29 @@ namespace canopen {
 	canopen::sendNMT(CANid, canopen::NMT_reset_node);
       }
     }
-    else if (devices[CANid].NMTState_ == "pre_operational"){
-      if (targetState == "reset_application"){
-	std::cout << "Switching NMTState from PRE_OPERATIONAL to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_node);
-      }
-      else if (targetState == "reset_communication"){
-	std::cout << "Switching NMTState from PRE_OPERATIONAL to RESET_COMMUNICATION at device with CAN_ID = "<< CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_communication);
-      }
-      else if (targetState == "stopped"){
-	std::cout << "Switching NMTState from PRE_OPERATIONAL to STOPPED at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_stop_remote_node);
-      }
-      else if (targetState == "operational"){
-	std::cout << "Switching NMTState from PRE_OPERATIONAL to OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_start_remote_node);
-      }
+    else if (targetState == "reset_application"){
+      std::cout << "Switching NMTState to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
+      canopen::sendNMT(CANid, canopen::NMT_reset_node);
     }
-    else if (devices[CANid].NMTState_ == "stopped") {
-      if (targetState == "reset_application"){
-	std::cout << "Switching NMTState from STOPPED to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_node);
-      }
-      else if (targetState == "reset_communication"){
-	std::cout << "Switching NMTState from STOPPED to RESET_COMMUNICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_communication);
-      }
-      else if (targetState == "pre_operational"){
-	std::cout << "Switching NMTState from STOPPED to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_enter_pre_operational);
-      }
-      else if (targetState == "operational"){
-	std::cout << "Switching NMTState from STOPPED to OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_start_remote_node);
-	devices[CANid].NMTState_ = "operational";
-      }
+
+    else if (targetState == "reset_communication"){
+      std::cout << "Switching NMTState to RESET_COMMUNICATION at device with CAN_ID = " << CANid << std::endl;
+      canopen::sendNMT(CANid, canopen::NMT_reset_communication);
     }
-    else if (devices[CANid].NMTState_ == "operational") {
-      if (targetState == "reset_application"){
-	std::cout << "Switching NMTState from OPERATIONAL to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_node);
-      }
-      else if (targetState == "reset_communication"){
-	std::cout << "Switching NMTState from OPERATIONAL to RESET_COMMUNICATION at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_reset_communication);
-      }
-      else if (targetState == "pre_operational"){
-	std::cout << "Switching NMTState from OPERATIONAL to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_enter_pre_operational);
-      }
-      else if (targetState == "stopped"){
-	std::cout << "Switching NMTState from OPERATIONAL to STOPPED at device with CAN_ID = " << CANid << std::endl;
-	canopen::sendNMT(CANid, canopen::NMT_stop_remote_node);
-      }
+    else if (targetState == "pre_operational"){
+      std::cout << "Switching NMTState to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
+      canopen::sendNMT(CANid, canopen::NMT_enter_pre_operational);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    else if (targetState == "operational"){
+      std::cout << "Switching NMTState to OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
+      canopen::sendNMT(CANid, canopen::NMT_start_remote_node);
+    }
+    else if (targetState == "stopped"){
+      std::cout << "Switching NMTState to STOPPED at device with CAN_ID = " << CANid << std::endl;
+      canopen::sendNMT(CANid, canopen::NMT_stop_remote_node);
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   void setMotorState(uint16_t CANid, std::string targetState) { // todo: not finished
@@ -132,56 +95,7 @@ namespace canopen {
     }
   }
 
-  void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
-    // canopen::devices must be set up before this function is called
-    CAN_Close(h);
-
-    syncMsg.ID = 0x80;
-    syncMsg.MSGTYPE = 0x00;
-    syncMsg.LEN = 0x00;
-    NMTmsg.ID = 0;
-    NMTmsg.MSGTYPE = 0x00;
-    NMTmsg.LEN = 2;
-    nodeguardMsg.MSGTYPE = 0x01; // remote frame
-    nodeguardMsg.LEN = 0;
-
-    if (!canopen::openConnection(deviceFile)) {
-      std::cout << "Cannot open CAN device; aborting." << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    if (atFirstInit)
-      canopen::initListenerThread(canopen::defaultListener);
-      // atFirstInit = false;
-    // }
-
-    for (auto device : devices) {
-      sendSDO(device.second.CANid_, ip_time_units, (uint8_t) syncInterval.count() );
-      sendSDO(device.second.CANid_, ip_time_index, ip_time_index_milliseconds);
-      sendSDO(device.second.CANid_, sync_timeout_factor, sync_timeout_factor_disable_timeout);
-
-      // NMT & motor state machine:
-      while (devices[device.second.CANid_].NMTState_ != "pre_operational"){
-	setNMTState(device.second.CANid_, "reset_node");
-	canopen::sendNodeguard(device.second.CANid_);
-	setNMTState(device.second.CANid_, "pre_operational");
-      }
-      while (devices[device.second.CANid_].NMTState_ != "operational"){
-        setNMTState(device.second.CANid_, "operational");
-        canopen::sendNodeguard(device.second.CANid_);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      }
-
-      setMotorState(device.second.CANid_, "operation_enable");
-      /* canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_shutdown);
-      canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_switch_on);
-      canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_enable_operation); */
-    }
-    
-    if (atFirstInit)
-      atFirstInit = false;
-  }
-
+  // function for listener thread
   void defaultListener(){
     while (true) {
       TPCANRdMsg m;
@@ -200,22 +114,34 @@ namespace canopen {
 	  incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
         }
       } 
-      else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){
+      else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){ // incoming Nodeguard
 	incomingNodeguardHandler(m.Msg.ID - 0x700, m.Msg.DATA);
       }
     }
   }
 
+  // initialize listener thread
   void initListenerThread(std::function<void ()> const& listener) {
     std::thread listener_thread(listener);
     listener_thread.detach();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
-  void initDeviceManagerThread(std::function<void ()> const& deviceManager) {
-    std::thread device_manager_thread(deviceManager);
-    device_manager_thread.detach();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // funtion for nodeguard thread
+  void nodeGuard(){
+    while (true){
+      for (auto CANid : canopen::DeviceGroup().CANids_){
+        auto tic = std::chrono::high_resolution_clock::now();
+        canopen::sendNodeguard(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(basic_guard_time));
+      }
+    }
+  }
+
+  // initialize nodeguard thread
+  void initNodeguardThread(std::function<void ()> const& nodeguard){
+    std::thread nodeguard_thread(nodeguard);
+    nodeguard_thread.detach();
   }
 
   void deviceManager() {
@@ -233,7 +159,69 @@ namespace canopen {
     }
   }
 
-  // ----------------- Functions to handle incoming data: --------------
+  void initDeviceManagerThread(std::function<void ()> const& deviceManager) {
+    std::thread device_manager_thread(deviceManager);
+    device_manager_thread.detach();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
+    // canopen::devices must be set up before this function is called
+    CAN_Close(h);
+
+    syncMsg.ID = 0x80;
+    syncMsg.MSGTYPE = 0x00;
+    syncMsg.LEN = 0x00;
+    NMTmsg.ID = 0;
+    NMTmsg.MSGTYPE = 0x00;
+    NMTmsg.LEN = 2;
+    nodeguardMsg.MSGTYPE = 0x01; // remote frame
+    nodeguardMsg.LEN = 0;
+
+    if (!canopen::openConnection(deviceFile)) {
+      std::cout << "Cannot open CAN device; aborting." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    // initialize alle special threads. currently: listenerthread and nodeguardthread
+    if (atFirstInit){
+      canopen::initListenerThread(canopen::defaultListener);
+      canopen::initNodeguardThread(canopen::nodeGuard);
+      // atFirstInit = false;
+    }
+
+    for (auto device : devices) {
+      sendSDO(device.second.CANid_, ip_time_units, (uint8_t) syncInterval.count() );
+      sendSDO(device.second.CANid_, ip_time_index, ip_time_index_milliseconds);
+      sendSDO(device.second.CANid_, sync_timeout_factor, sync_timeout_factor_disable_timeout);
+      sendSDO(device.second.CANid_, life_time_factor, life_time_factor_value);							// preferences for nodeguarding: life_time = guard_time * 2 * number of devices
+      sendSDO(device.second.CANid_, guard_time, guard_time_value);								//				 guard_time = 250ms
+
+      // NMT & motor state machine:
+      while (devices[device.second.CANid_].NMTState_ != "pre_operational"){
+	//setNMTState(device.second.CANid_, "reset_node");
+	//canopen::sendNodeguard(device.second.CANid_);
+	setNMTState(device.second.CANid_, "pre_operational");
+      }
+      //while (devices[device.second.CANid_].NMTState_ != "operational"){							// first enable nodeguard monitoring
+        setNMTState(device.second.CANid_, "operational");
+        //canopen::sendNodeguard(device.second.CANid_);										// first enable nodeguard monitoring
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));								// first enable nodeguard monitoring
+      //}
+
+      setMotorState(device.second.CANid_, "operation_enable");
+      /* canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_shutdown);
+      canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_switch_on);
+      canopen::sendSDO(device.second.CANid_, canopen::controlword, canopen::controlword_enable_operation); */
+    }
+    
+    if (atFirstInit)
+      atFirstInit = false;
+  }
+
+  /***************************************************************/
+  //		Functions to handle incoming data
+  /***************************************************************/
 
   void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]) {
     // get current NMT state from device with specific CANid
@@ -305,7 +293,9 @@ namespace canopen {
     devices[ CANid ].timeStamp_usec_ = std::chrono::microseconds(m.wUsec);
   }
   
-  // ----------------- Functions for sending out data: --------------
+  /***************************************************************/
+  //		Functions for sending out data
+  /***************************************************************/
 
   void sendSDO(uint8_t CANid, SDOkey sdo) {
     // for SDO read commands, e.g. statusword

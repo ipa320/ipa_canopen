@@ -165,12 +165,20 @@ namespace canopen {
   const uint16_t controlword_fault_reset_0 = 0x00;
   const uint16_t controlword_fault_reset_1 = 0x80;
 
+  const uint16_t basic_guard_time = 500;								// guard time for a single device in ms
+  const SDOkey guard_time(0x100C,0x0);
+  const uint16_t guard_time_value = basic_guard_time * devices.size();
+  const SDOkey life_time_factor(0x100D,0x0);
+  const uint8_t life_time_factor_value = devices.size() * 2;
+
   // ----------------- CAN communication functions: --------------
 
   bool openConnection(std::string devName);
   void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
   void initListenerThread(std::function<void ()> const& listener);
   void defaultListener();
+  void initNodeguardThread(std::function<void ()> const& nodeguard);
+  void nodeGuard();
   void initDeviceManagerThread(std::function<void ()> const& deviceManager);
   void deviceManager();
   void setMNTState(uint16_t CANid, std::string targetState);						// Changed code
