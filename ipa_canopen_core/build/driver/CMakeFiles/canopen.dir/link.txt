@@ -1,0 +1,2 @@
+/usr/bin/ar cr libcanopen.a  CMakeFiles/canopen.dir/canopen.cpp.o
+/usr/bin/ranlib libcanopen.a

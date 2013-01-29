@@ -309,91 +309,121 @@ namespace canopen {
 
   void sendSDO(uint8_t CANid, SDOkey sdo) {
     // for SDO read commands, e.g. statusword
-    TPCANMsg msg;
-    msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-    msg.MSGTYPE = 0x00; // standard message
-    msg.LEN = 4;
-    msg.DATA[0] = 0x40;
-    msg.DATA[1] = (sdo.index & 0xFF);
-    msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
-    msg.DATA[3] = sdo.subindex;
-    CAN_Write(h, &msg);
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.MSGTYPE = 0x00; // standard message
+      msg.LEN = 4;
+      msg.DATA[0] = 0x40;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
+      msg.DATA[3] = sdo.subindex;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
+    }
   }
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
     TPCANMsg msg;
-    msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-    msg.LEN = 8;
-    msg.DATA[0] = 0x23;
-    msg.DATA[1] = (sdo.index & 0xFF);
-    msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
-    msg.DATA[3] = sdo.subindex;
-    msg.DATA[4] = value & 0xFF;
-    msg.DATA[5] = (value >> 8) & 0xFF;
-    msg.DATA[6] = (value >> 16) & 0xFF;
-    msg.DATA[7] = (value >> 24) & 0xFF;
-    CAN_Write(h, &msg);
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 8;
+      msg.DATA[0] = 0x23;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      msg.DATA[6] = (value >> 16) & 0xFF;
+      msg.DATA[7] = (value >> 24) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
+    }
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
     TPCANMsg msg;
-    msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-    msg.LEN = 8;
-    msg.DATA[0] = 0x23;
-    msg.DATA[1] = (sdo.index & 0xFF);
-    msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-    msg.DATA[3] = sdo.subindex;
-    msg.DATA[4] = value & 0xFF;
-    msg.DATA[5] = (value >> 8) & 0xFF;
-    msg.DATA[6] = (value >> 16) & 0xFF;
-    msg.DATA[7] = (value >> 24) & 0xFF;
-    CAN_Write(h, &msg);
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 8;
+      msg.DATA[0] = 0x23;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      msg.DATA[6] = (value >> 16) & 0xFF;
+      msg.DATA[7] = (value >> 24) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
+    }
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value) {
-    TPCANMsg msg;
-    msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-    msg.LEN = 5;
-    msg.DATA[0] = 0x2F;
-    msg.DATA[1] = (sdo.index & 0xFF);
-    msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-    msg.DATA[3] = sdo.subindex;
-    msg.DATA[4] = value & 0xFF;
-    CAN_Write(h, &msg);
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 5;
+      msg.DATA[0] = 0x2F;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
+    }
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value) {
-    TPCANMsg msg;
-    msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-    msg.LEN = 6;
-    msg.DATA[0] = 0x2B;
-    msg.DATA[1] = (sdo.index & 0xFF);
-    msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-    msg.DATA[3] = sdo.subindex;
-    msg.DATA[4] = value & 0xFF;
-    msg.DATA[5] = (value >> 8) & 0xFF;
-    CAN_Write(h, &msg);
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 6;
+      msg.DATA[0] = 0x2B;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
+    }
   } 
 
   std::function< void (uint16_t CANid, double positionValue) > sendPos;
 
   void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue) {
-    static const uint16_t myControlword = 
-      controlword_enable_operation | controlword_enable_ip_mode;
-    TPCANMsg msg;
-    msg.ID = 0x200 + CANid;
-    msg.MSGTYPE = 0x00;
-    msg.LEN = 8;
-    msg.DATA[0] = myControlword & 0xFF;
-    msg.DATA[1] = (myControlword >> 8) & 0xFF; // todo: & not needed (?)
-    msg.DATA[2] = 0;
-    msg.DATA[3] = 0;
-    int32_t mdegPos = rad2mdeg(positionValue);
-    msg.DATA[4] = mdegPos & 0xFF;
-    msg.DATA[5] = (mdegPos >> 8) & 0xFF;
-    msg.DATA[6] = (mdegPos >> 16) & 0xFF;
-    msg.DATA[7] = (mdegPos >> 24) & 0xFF;
-    CAN_Write(h, &msg);
+    if (devices[CANid].NMTState_ == "operational"){
+      static const uint16_t myControlword = 
+        controlword_enable_operation | controlword_enable_ip_mode;
+      TPCANMsg msg;
+      msg.ID = 0x200 + CANid;
+      msg.MSGTYPE = 0x00;
+      msg.LEN = 8;
+      msg.DATA[0] = myControlword & 0xFF;
+      msg.DATA[1] = (myControlword >> 8) & 0xFF; // todo: & not needed (?)
+      msg.DATA[2] = 0;
+      msg.DATA[3] = 0;
+      int32_t mdegPos = rad2mdeg(positionValue);
+      msg.DATA[4] = mdegPos & 0xFF;
+      msg.DATA[5] = (mdegPos >> 8) & 0xFF;
+      msg.DATA[6] = (mdegPos >> 16) & 0xFF;
+      msg.DATA[7] = (mdegPos >> 24) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: PDOs can only be send in mode OPERATIONAL" << std::endl;
+    }
   }
 
 }
