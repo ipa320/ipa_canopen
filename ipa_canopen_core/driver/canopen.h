@@ -133,11 +133,11 @@ namespace canopen {
 
   // ----------------- Constants: -------------
   
-  const uint8_t NMT_start_remote_node = 0x01;								// Changed code
-  const uint8_t NMT_stop_remote_node = 0x02;  								// Changed code
-  const uint8_t NMT_enter_pre_operational = 0x80;							// Changed code
-  const uint8_t NMT_reset_node = 0x81;									// Changed code
-  const uint8_t NMT_reset_communication = 0x82;								// Changed code
+  const uint8_t NMT_start_remote_node = 0x01;								
+  const uint8_t NMT_stop_remote_node = 0x02;  								
+  const uint8_t NMT_enter_pre_operational = 0x80;							
+  const uint8_t NMT_reset_node = 0x81;									
+  const uint8_t NMT_reset_communication = 0x82;								
 
   const SDOkey statusword(0x6041, 0x0);
   const SDOkey controlword(0x6040, 0x0);
@@ -181,7 +181,7 @@ namespace canopen {
   void nodeGuard();
   void initDeviceManagerThread(std::function<void ()> const& deviceManager);
   void deviceManager();
-  void setMNTState(uint16_t CANid, std::string targetState);						// Changed code
+  void setMNTState(uint16_t CANid, std::string targetState);						
   void setMotorState(uint16_t CANid, std::string targetState);
 
   void sendSDO(uint8_t CANid, SDOkey sdo);
