@@ -19,34 +19,11 @@
 
 namespace canopen {
 
-  extern std::chrono::milliseconds syncInterval; 
-  extern bool atFirstInit;
-  // ^ true only at first call of the init() function, to prevent 
-  // from launching the listener thread twice
-  extern HANDLE h; // PCAN device handle
+  /***************************************************************/
+  //		Definitions
+  /***************************************************************/
 
-  // ---------------- incoming message handlers: ----------------
-
-  struct SDOkey {
-    uint16_t index;
-    uint8_t subindex;
-    inline SDOkey(TPCANRdMsg m) : index((m.Msg.DATA[2] << 8) + m.Msg.DATA[1]),
-				  subindex(m.Msg.DATA[3]) {}
-    inline SDOkey(uint16_t i, uint8_t s) : index(i), subindex(s) {};
-  };
-  inline bool operator<(const SDOkey &a, const SDOkey&b) {
-    return a.index < b.index || (a.index == b.index && a.subindex < b.subindex); }
-
-  extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> >
-    incomingDataHandlers;
-  extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> >
-    incomingPDOHandlers;
-
-  void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]);
-  void statusword_incoming(uint8_t CANid, BYTE data[8]);
-  void modes_of_operation_display_incoming(uint8_t CANid, BYTE data[8]);
-
-  // ----------------- CAN device representations: --------------
+  extern std::chrono::milliseconds syncInterval;
 
   class Device {
   public:
@@ -131,13 +108,67 @@ namespace canopen {
   extern std::map<std::string, DeviceGroup> deviceGroups;
   // ^ DeviceGroup name (e.g. "tray", "arm1", etc.) -> DeviceGroup object
 
-  // ----------------- Constants: -------------
-  
+  inline int32_t rad2mdeg(double phi) {
+    return static_cast<int32_t>( round( phi/(2*M_PI)*360000.0 ) ); }
+  inline double mdeg2rad(int32_t alpha) {
+    return static_cast<double>( static_cast<double>(alpha)/360000.0*2*M_PI ); }
+
+  /***************************************************************/
+  //		State machines
+  /***************************************************************/
+
+  void setMNTState(uint16_t CANid, std::string targetState);						
+  void setMotorState(uint16_t CANid, std::string targetState);
+
+  /***************************************************************/
+  //		Init sequence
+  /***************************************************************/
+
+  extern bool atFirstInit;
+  // ^ true only at first call of the init() function, to prevent 
+  // from launching the listener thread twice
+  extern HANDLE h; // PCAN device handl
+
+  bool openConnection(std::string devName);
+  void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+
+  /***************************************************************/
+  //		Thread initialization
+  /***************************************************************/
+
+  void initListenerThread(std::function<void ()> const& listener);
+  void initNodeguardThread(std::function<void ()> const& nodeguard);
+  void initDeviceManagerThread(std::function<void ()> const& deviceManager);
+
+  /***************************************************************/
+  //		NMT Protocol
+  /***************************************************************/
+
   const uint8_t NMT_start_remote_node = 0x01;								
   const uint8_t NMT_stop_remote_node = 0x02;  								
   const uint8_t NMT_enter_pre_operational = 0x80;							
   const uint8_t NMT_reset_node = 0x81;									
-  const uint8_t NMT_reset_communication = 0x82;								
+  const uint8_t NMT_reset_communication = 0x82;	
+
+  extern TPCANMsg NMTmsg;
+
+  inline void sendNMT(uint8_t CANid, uint8_t command) {
+    NMTmsg.DATA[1] = command;
+    NMTmsg.DATA[0] = CANid;
+    CAN_Write(h, &NMTmsg);
+  }
+
+  /***************************************************************/
+  //		SDO Protocol
+  /***************************************************************/
+
+  struct SDOkey {
+    uint16_t index;
+    uint8_t subindex;
+    inline SDOkey(TPCANRdMsg m) : index((m.Msg.DATA[2] << 8) + m.Msg.DATA[1]),
+				  subindex(m.Msg.DATA[3]) {}
+    inline SDOkey(uint16_t i, uint8_t s) : index(i), subindex(s) {};
+  };
 
   const SDOkey statusword(0x6041, 0x0);
   const SDOkey controlword(0x6040, 0x0);
@@ -165,24 +196,14 @@ namespace canopen {
   const uint16_t controlword_fault_reset_0 = 0x00;
   const uint16_t controlword_fault_reset_1 = 0x80;
 
-  const uint16_t basic_guard_time = 500;								// guard time for a single device in ms
-  const SDOkey guard_time(0x100C,0x0);
-  const uint16_t guard_time_value = basic_guard_time * devices.size();
-  const SDOkey life_time_factor(0x100D,0x0);
-  const uint8_t life_time_factor_value = devices.size() * 2;
+  inline bool operator<(const SDOkey &a, const SDOkey&b) {
+    return a.index < b.index || (a.index == b.index && a.subindex < b.subindex); }
 
-  // ----------------- CAN communication functions: --------------
+  extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> >
+    incomingDataHandlers;
 
-  bool openConnection(std::string devName);
-  void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
-  void initListenerThread(std::function<void ()> const& listener);
-  void defaultListener();
-  void initNodeguardThread(std::function<void ()> const& nodeguard);
-  void nodeGuard();
-  void initDeviceManagerThread(std::function<void ()> const& deviceManager);
-  void deviceManager();
-  void setMNTState(uint16_t CANid, std::string targetState);						
-  void setMotorState(uint16_t CANid, std::string targetState);
+  void statusword_incoming(uint8_t CANid, BYTE data[8]);
+  void modes_of_operation_display_incoming(uint8_t CANid, BYTE data[8]);
 
   void sendSDO(uint8_t CANid, SDOkey sdo);
   void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value);
@@ -190,37 +211,51 @@ namespace canopen {
   void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value);
   void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value);
 
-  extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+  /***************************************************************/
+  //		PDO Protocol
+  /***************************************************************/
 
-  // ----------------- manufacturer-specific PDOs: --------------
+  extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> >
+    incomingPDOHandlers;
+
+  void deviceManager();		// responsible for automatically sending PDOs
+
+  extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
 
   void schunkDefaultPDO_incoming(uint8_t CANid, const TPCANRdMsg m);
   void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
 
-  // ----------------- prep-prepared CAN messages: --------------
-
   extern TPCANMsg syncMsg;
-  extern TPCANMsg NMTmsg;
-  extern TPCANMsg nodeguardMsg;
   inline void sendSync() {
     CAN_Write(h, &syncMsg);
   }
-  inline void sendNMT(uint8_t CANid, uint8_t command) {
-    NMTmsg.DATA[1] = command;
-    NMTmsg.DATA[0] = CANid;
-    CAN_Write(h, &NMTmsg);
-  }
+
+  /***************************************************************/
+  //		Nodeguard Protocol
+  /***************************************************************/
+
+  const uint16_t basic_guard_time = 500;								// guard time for a single device in ms
+  const SDOkey guard_time(0x100C,0x0);
+  const uint16_t guard_time_value = basic_guard_time * devices.size();
+  const SDOkey life_time_factor(0x100D,0x0);
+  const uint8_t life_time_factor_value = devices.size() * 2;
+
+  void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]);
+
+  void nodeGuard();
+
+  extern TPCANMsg nodeguardMsg;
+
   inline void sendNodeguard(uint8_t CANid) {
     nodeguardMsg.ID = 0x700 + CANid;
     CAN_Write(h, &nodeguardMsg);
   }
 
-  // ----------------- type conversions: --------------
+  /***************************************************************/
+  //		Receive Data
+  /***************************************************************/
 
-  inline int32_t rad2mdeg(double phi) {
-    return static_cast<int32_t>( round( phi/(2*M_PI)*360000.0 ) ); }
-  inline double mdeg2rad(int32_t alpha) {
-    return static_cast<double>( static_cast<double>(alpha)/360000.0*2*M_PI ); }
+  void defaultListener();
 
 }
 

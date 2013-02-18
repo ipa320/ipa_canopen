@@ -3,7 +3,7 @@
 namespace canopen {
 
   /***************************************************************/
-  //		Variable definitions
+  //		Definitions
   /***************************************************************/
 
   std::chrono::milliseconds syncInterval;
@@ -11,28 +11,11 @@ namespace canopen {
   std::map<uint8_t, Device> devices;
   std::map<std::string, DeviceGroup> deviceGroups;
 
-  std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers
-  { { statusword, statusword_incoming },
-      { modes_of_operation_display, modes_of_operation_display_incoming }  };
-
-  std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
-
-  TPCANMsg NMTmsg;
-  TPCANMsg syncMsg;
-  TPCANMsg nodeguardMsg;
-  bool atFirstInit = true;
-
   /***************************************************************/
-  //		Function definitions
+  //		State machines
   /***************************************************************/
 
-  bool openConnection(std::string devName) {
-    h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
-    if (!h) return false;
-    errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
-    return true;
-  }
-
+  // NMT State Machine
   void setNMTState(uint16_t CANid, std::string targetState){
     if (devices[CANid].NMTState_ == "initialisation"){
       if (targetState == "pre_operational"){
@@ -72,6 +55,7 @@ namespace canopen {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
+  // Motor State Machine
   void setMotorState(uint16_t CANid, std::string targetState) { // todo: not finished
     // if (devices[CANid].motorState_ == "fault")
     while (devices[CANid].motorState_ != targetState) {
@@ -95,74 +79,17 @@ namespace canopen {
     }
   }
 
-  // function for listener thread
-  void defaultListener(){
-    while (true) {
-      TPCANRdMsg m;
-      if ((errno = LINUX_CAN_Read(h, &m))) {
-	perror("LINUX_CAN_Read() error");
-      }
+  /***************************************************************/
+  //		Init sequence
+  /***************************************************************/
 
-      if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4ff) { // incoming PDO 
-	if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()){
-	  incomingPDOHandlers[m.Msg.ID](m);
-        }
-      }
-      else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5ff) { // incoming SDO 
-	SDOkey sdoKey(m);
-	if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end()){
-	  incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
-        }
-      } 
-      else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){ // incoming Nodeguard
-	incomingNodeguardHandler(m.Msg.ID - 0x700, m.Msg.DATA);
-      }
-    }
-  }
+  bool atFirstInit = true;
 
-  // initialize listener thread
-  void initListenerThread(std::function<void ()> const& listener) {
-    std::thread listener_thread(listener);
-    listener_thread.detach();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-
-  // funtion for nodeguard thread
-  void nodeGuard(){
-    while (true){
-      for (auto CANid : canopen::DeviceGroup().CANids_){
-        auto tic = std::chrono::high_resolution_clock::now();
-        canopen::sendNodeguard(CANid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(basic_guard_time));
-      }
-    }
-  }
-
-  // initialize nodeguard thread
-  void initNodeguardThread(std::function<void ()> const& nodeguard){
-    std::thread nodeguard_thread(nodeguard);
-    nodeguard_thread.detach();
-  }
-
-  void deviceManager() {
-    // todo: init, recover... (e.g. when to start/stop sending SYNCs)
-    while (true) {
-      auto tic = std::chrono::high_resolution_clock::now();
-      for (auto device : devices) {
-	if (device.second.initialized) {
-	  devices[device.first].updateDesiredPos();
-	  sendPos(device.second.CANid_, device.second.desiredPos_);
-	}
-      }
-      sendSync();
-      std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));
-    }
-  }
-
-  void initDeviceManagerThread(std::function<void ()> const& deviceManager) {
-    std::thread device_manager_thread(deviceManager);
-    device_manager_thread.detach();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  bool openConnection(std::string devName) {
+    h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
+    if (!h) return false;
+    errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+    return true;
   }
 
   void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
@@ -197,12 +124,10 @@ namespace canopen {
       sendSDO(device.second.CANid_, life_time_factor, life_time_factor_value);							// preferences for nodeguarding: life_time = guard_time * 2 * number of devices
       sendSDO(device.second.CANid_, guard_time, guard_time_value);								//				 guard_time = 250ms
 
-      // NMT & motor state machine:
       while (devices[device.second.CANid_].NMTState_ != "pre_operational"){
-	//setNMTState(device.second.CANid_, "reset_node");
-	//canopen::sendNodeguard(device.second.CANid_);
 	setNMTState(device.second.CANid_, "pre_operational");
       }
+
       //while (devices[device.second.CANid_].NMTState_ != "operational"){							// first enable nodeguard monitoring
         setNMTState(device.second.CANid_, "operational");
         //canopen::sendNodeguard(device.second.CANid_);										// first enable nodeguard monitoring
@@ -220,22 +145,134 @@ namespace canopen {
   }
 
   /***************************************************************/
-  //		Functions to handle incoming data
+  //		Thread initialization
   /***************************************************************/
 
-  void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]) {
-    // get current NMT state from device with specific CANid
-    if (data[0] == 0x00){					// Bootup message
-      devices[CANid].NMTState_ = "pre_operational";
+  // initialize listener thread
+  void initListenerThread(std::function<void ()> const& listener) {
+    std::thread listener_thread(listener);
+    listener_thread.detach();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // initialize nodeguard thread
+  void initNodeguardThread(std::function<void ()> const& nodeguard){
+    std::thread nodeguard_thread(nodeguard);
+    nodeguard_thread.detach();
+  }
+
+  // initialize devicemanager thread
+  void initDeviceManagerThread(std::function<void ()> const& deviceManager) {
+    std::thread device_manager_thread(deviceManager);
+    device_manager_thread.detach();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  /***************************************************************/
+  //		NMT Protocol
+  /***************************************************************/
+
+  TPCANMsg NMTmsg;
+
+  /***************************************************************/
+  //		SDO Protocol
+  /***************************************************************/
+
+
+  std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers
+  { { statusword, statusword_incoming },
+      { modes_of_operation_display, modes_of_operation_display_incoming }  };
+
+  void sendSDO(uint8_t CANid, SDOkey sdo) {
+    // for SDO read commands, e.g. statusword
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.MSGTYPE = 0x00; // standard message
+      msg.LEN = 4;
+      msg.DATA[0] = 0x40;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
+      msg.DATA[3] = sdo.subindex;
+      CAN_Write(h, &msg);
     }
-    else if (data[0] == 0x04 | data[0] == 0x84){		// Device in state stopped
-      devices[CANid].NMTState_ = "stopped";
+    else{
+      std::cout << "ERROR: Cannot send SDOs while device is in mode STOPPED" << std::endl;
     }
-    else if (data[0] == 0x05 | data[0] == 0x85){		// Device in state operational
-      devices[CANid].NMTState_ = "operational";
+  }
+
+  void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+    TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 8;
+      msg.DATA[0] = 0x23;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      msg.DATA[6] = (value >> 16) & 0xFF;
+      msg.DATA[7] = (value >> 24) & 0xFF;
+      CAN_Write(h, &msg);
     }
-    else if (data[0] == 0x7F | data[0] == 0xFF){		// Device in state pre-operational
-      devices[CANid].NMTState_ = "pre_operational";
+    else{
+      std::cout << "ERROR: Cannot send SDOs while device is in mode STOPPED" << std::endl;
+    }
+  } 
+
+  void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+    TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 8;
+      msg.DATA[0] = 0x23;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      msg.DATA[6] = (value >> 16) & 0xFF;
+      msg.DATA[7] = (value >> 24) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs while device is in mode STOPPED" << std::endl;
+    }
+  } 
+
+  void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 5;
+      msg.DATA[0] = 0x2F;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs while device is in mode STOPPED" << std::endl;
+    }
+  } 
+
+  void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value) {
+    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
+      TPCANMsg msg;
+      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
+      msg.LEN = 6;
+      msg.DATA[0] = 0x2B;
+      msg.DATA[1] = (sdo.index & 0xFF);
+      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
+      msg.DATA[3] = sdo.subindex;
+      msg.DATA[4] = value & 0xFF;
+      msg.DATA[5] = (value >> 8) & 0xFF;
+      CAN_Write(h, &msg);
+    }
+    else{
+      std::cout << "ERROR: Cannot send SDOs while device is in mode STOPPED" << std::endl;
     }
   }
 
@@ -270,125 +307,13 @@ namespace canopen {
     // update variables of the corresponding device object
   }
 
-  void schunkDefaultPDO_incoming(uint8_t CANid, const TPCANRdMsg m) {
-    double newPos = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + 
-			     (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24) );
-
-    if (devices[CANid].timeStamp_msec_ != std::chrono::milliseconds(0) ||  // already 1 msg received
-	devices[CANid].timeStamp_usec_ != std::chrono::microseconds(0)) {
-      auto deltaTime_msec = std::chrono::milliseconds(m.dwTime) - devices[CANid].timeStamp_msec_;
-      auto deltaTime_usec = std::chrono::microseconds(m.wUsec) - devices[CANid].timeStamp_usec_;
-      double deltaTime_double = static_cast<double>
-	(deltaTime_msec.count()*1000 + deltaTime_usec.count()) * 0.000001;
-      devices[ CANid ].actualVel_ = (newPos - devices[CANid].actualPos_) / deltaTime_double;
-
-      if (! devices[CANid].initialized) {
-	devices[ CANid ].desiredPos_ = devices[ CANid ].actualPos_;
-	devices[ CANid ].initialized = true;
-      }
-    }
-     
-    devices[ CANid ].actualPos_ = newPos;
-    devices[ CANid ].timeStamp_msec_ = std::chrono::milliseconds(m.dwTime);
-    devices[ CANid ].timeStamp_usec_ = std::chrono::microseconds(m.wUsec);
-  }
-  
   /***************************************************************/
-  //		Functions for sending out data
+  //		PDO Protocol
   /***************************************************************/
 
-  void sendSDO(uint8_t CANid, SDOkey sdo) {
-    // for SDO read commands, e.g. statusword
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      TPCANMsg msg;
-      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-      msg.MSGTYPE = 0x00; // standard message
-      msg.LEN = 4;
-      msg.DATA[0] = 0x40;
-      msg.DATA[1] = (sdo.index & 0xFF);
-      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
-      msg.DATA[3] = sdo.subindex;
-      CAN_Write(h, &msg);
-    }
-    else{
-      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
-    }
-  }
+  TPCANMsg syncMsg;
 
-  void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-    TPCANMsg msg;
-      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-      msg.LEN = 8;
-      msg.DATA[0] = 0x23;
-      msg.DATA[1] = (sdo.index & 0xFF);
-      msg.DATA[2] = (sdo.index >> 8) & 0xFF; 
-      msg.DATA[3] = sdo.subindex;
-      msg.DATA[4] = value & 0xFF;
-      msg.DATA[5] = (value >> 8) & 0xFF;
-      msg.DATA[6] = (value >> 16) & 0xFF;
-      msg.DATA[7] = (value >> 24) & 0xFF;
-      CAN_Write(h, &msg);
-    }
-    else{
-      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
-    }
-  } 
-
-  void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-    TPCANMsg msg;
-      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-      msg.LEN = 8;
-      msg.DATA[0] = 0x23;
-      msg.DATA[1] = (sdo.index & 0xFF);
-      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-      msg.DATA[3] = sdo.subindex;
-      msg.DATA[4] = value & 0xFF;
-      msg.DATA[5] = (value >> 8) & 0xFF;
-      msg.DATA[6] = (value >> 16) & 0xFF;
-      msg.DATA[7] = (value >> 24) & 0xFF;
-      CAN_Write(h, &msg);
-    }
-    else{
-      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
-    }
-  } 
-
-  void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      TPCANMsg msg;
-      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-      msg.LEN = 5;
-      msg.DATA[0] = 0x2F;
-      msg.DATA[1] = (sdo.index & 0xFF);
-      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-      msg.DATA[3] = sdo.subindex;
-      msg.DATA[4] = value & 0xFF;
-      CAN_Write(h, &msg);
-    }
-    else{
-      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
-    }
-  } 
-
-  void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      TPCANMsg msg;
-      msg.ID = CANid + 0x600; // 0x600 = SDO identifier
-      msg.LEN = 6;
-      msg.DATA[0] = 0x2B;
-      msg.DATA[1] = (sdo.index & 0xFF);
-      msg.DATA[2] = (sdo.index >> 8) & 0xFF; // todo: & 0xFF not needed, I think
-      msg.DATA[3] = sdo.subindex;
-      msg.DATA[4] = value & 0xFF;
-      msg.DATA[5] = (value >> 8) & 0xFF;
-      CAN_Write(h, &msg);
-    }
-    else{
-      std::cout << "ERROR: Cannot send SDOs in mode STOPPED" << std::endl;
-    }
-  } 
+  std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
 
   std::function< void (uint16_t CANid, double positionValue) > sendPos;
 
@@ -412,7 +337,108 @@ namespace canopen {
       CAN_Write(h, &msg);
     }
     else{
-      std::cout << "ERROR: PDOs can only be send in mode OPERATIONAL" << std::endl;
+      std::cout << "ERROR: PDOs can only be send while device is in mode OPERATIONAL" << std::endl;
+    }
+  }
+
+  void schunkDefaultPDO_incoming(uint8_t CANid, const TPCANRdMsg m) {
+    double newPos = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + 
+			     (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24) );
+
+    if (devices[CANid].timeStamp_msec_ != std::chrono::milliseconds(0) ||  // already 1 msg received
+	devices[CANid].timeStamp_usec_ != std::chrono::microseconds(0)) {
+      auto deltaTime_msec = std::chrono::milliseconds(m.dwTime) - devices[CANid].timeStamp_msec_;
+      auto deltaTime_usec = std::chrono::microseconds(m.wUsec) - devices[CANid].timeStamp_usec_;
+      double deltaTime_double = static_cast<double>
+	(deltaTime_msec.count()*1000 + deltaTime_usec.count()) * 0.000001;
+      devices[ CANid ].actualVel_ = (newPos - devices[CANid].actualPos_) / deltaTime_double;
+
+      if (! devices[CANid].initialized) {
+	devices[ CANid ].desiredPos_ = devices[ CANid ].actualPos_;
+	devices[ CANid ].initialized = true;
+      }
+    }
+     
+    devices[ CANid ].actualPos_ = newPos;
+    devices[ CANid ].timeStamp_msec_ = std::chrono::milliseconds(m.dwTime);
+    devices[ CANid ].timeStamp_usec_ = std::chrono::microseconds(m.wUsec);
+  }
+
+  // funtciont for devicemanager thread to automatically send PDOs
+  void deviceManager() {
+    // todo: init, recover... (e.g. when to start/stop sending SYNCs)
+    while (true) {
+      auto tic = std::chrono::high_resolution_clock::now();
+      for (auto device : devices) {
+	if (device.second.initialized) {
+	  devices[device.first].updateDesiredPos();
+	  sendPos(device.second.CANid_, device.second.desiredPos_);
+	}
+      }
+      sendSync();
+      std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));
+    }
+  }
+
+  /***************************************************************/
+  //		Nodeguard Protocol
+  /***************************************************************/
+
+  TPCANMsg nodeguardMsg;
+
+  void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]) {
+    // get current NMT state from device with specific CANid
+    if (data[0] == 0x00){					// Bootup message
+      devices[CANid].NMTState_ = "pre_operational";
+    }
+    else if (data[0] == 0x04 | data[0] == 0x84){		// Device in state stopped
+      devices[CANid].NMTState_ = "stopped";
+    }
+    else if (data[0] == 0x05 | data[0] == 0x85){		// Device in state operational
+      devices[CANid].NMTState_ = "operational";
+    }
+    else if (data[0] == 0x7F | data[0] == 0xFF){		// Device in state pre-operational
+      devices[CANid].NMTState_ = "pre_operational";
+    }
+  }
+
+  // funtion for nodeguard thread to update NMT State
+  void nodeGuard(){
+    while (true){
+      for (auto CANid : canopen::DeviceGroup().CANids_){
+        auto tic = std::chrono::high_resolution_clock::now();
+        canopen::sendNodeguard(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(basic_guard_time));
+      }
+    }
+  }
+
+  /***************************************************************/
+  //		Receive Data
+  /***************************************************************/
+
+  // function for listener thread to analyze incoming data
+  void defaultListener(){
+    while (true) {
+      TPCANRdMsg m;
+      if ((errno = LINUX_CAN_Read(h, &m))) {
+	perror("LINUX_CAN_Read() error");
+      }
+
+      if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4ff) { // incoming PDO 
+	if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()){
+	  incomingPDOHandlers[m.Msg.ID](m);
+        }
+      }
+      else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5ff) { // incoming SDO 
+	SDOkey sdoKey(m);
+	if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end()){
+	  incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
+        }
+      } 
+      else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){ // incoming Nodeguard
+	incomingNodeguardHandler(m.Msg.ID - 0x700, m.Msg.DATA);
+      }
     }
   }
 
