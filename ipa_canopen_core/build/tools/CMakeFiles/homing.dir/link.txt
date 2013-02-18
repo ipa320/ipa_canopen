@@ -1,1 +1,0 @@
-/usr/bin/c++   -std=c++0x    CMakeFiles/homing.dir/homing.cpp.o  -o homing -rdynamic -lpthread ../driver/libcanopen.a -lpcan 
