@@ -29,7 +29,7 @@ namespace canopen {
   public:
     Device() {};
   Device(uint8_t CANid) : CANid_(CANid), desiredVel_(0), actualVel_(0),
-      actualPos_(0), desiredPos_(0), initialized(false), NMTState_("initialisation"), motorState_("not initialized") {};		// Changed code
+      actualPos_(0), desiredPos_(0), initialized(false), NMTState_("initialisation"), motorState_("NOT_READY_TO SWITCH_ON") {};
   Device(uint8_t CANid, std::string name, std::string group, std::string bus) : 
     CANid_(CANid), name_(name), group_(group), deviceFile_(bus), 
       desiredVel_(0), actualVel_(0),
