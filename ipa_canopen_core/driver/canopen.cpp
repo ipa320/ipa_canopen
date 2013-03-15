@@ -88,13 +88,14 @@ namespace canopen {
   bool openConnection(std::string devName) {
     h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
     if (!h) return false;
-    errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+    //errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+    errno = CAN_Init(h,CAN_BAUD_500K, CAN_INIT_TYPE_EX);
     return true;
   }
 
   void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
     // canopen::devices must be set up before this function is called
-    //CAN_Close(h);
+    CAN_Close(h);
 
     syncMsg.ID = 0x80;
     syncMsg.MSGTYPE = 0x00;
@@ -156,14 +157,14 @@ namespace canopen {
   void initListenerThread(std::function<void ()> const& listener) {
     std::thread listener_thread(listener);
     listener_thread.detach();
-    std::cout << "Listener thread initalized" << std::endl;
+    std::cout << "Listener thread initialized" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   // initialize nodeguard thread for sending nodeguard messages to each device 
   void initNodeguardThread(std::function<void ()> const& nodeguard){
     std::thread nodeguard_thread(nodeguard);
-    std::cout << "Nodeguard thread initalized" << std::endl;
+    std::cout << "Nodeguard thread initialized" << std::endl;
     nodeguard_thread.detach();
   }
 
