@@ -17,38 +17,38 @@ namespace canopen {
 
   // NMT State Machine
   void setNMTState(uint16_t CANid, std::string targetState){
-    if (devices[CANid].NMTState_ == "initialisation"){
-      if (targetState == "pre_operational"){
+    if (devices[CANid].NMTState_ == "INITIALISATION"){
+      if (targetState == "PRE_OPERATIONAL"){
 	std::cout << "Switching NMTState to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
       }
-      else if (targetState == "stopped"){
+      else if (targetState == "STOPPED"){
 	std::cout << "Invalid NMTState transition. Resetting the device with CAN_ID = " << CANid << std::endl;
 	canopen::sendNMT(CANid, canopen::NMT_reset_node);
       }
-      else if (targetState == "operational"){
+      else if (targetState == "OPERATIONAL"){
 	std::cout << "Invalid NMTState transition. Resetting the device with CAN_ID = " << CANid << std::endl;
 	canopen::sendNMT(CANid, canopen::NMT_reset_node);
       }
     }
-    else if (targetState == "reset_application"){
+    else if (targetState == "RESET_APPLICATION"){
       std::cout << "Switching NMTState to RESET_APPLICATION at device with CAN_ID = " << CANid << std::endl;
       canopen::sendNMT(CANid, canopen::NMT_reset_node);
     }
 
-    else if (targetState == "reset_communication"){
+    else if (targetState == "RESET_COMMUNICATION"){
       std::cout << "Switching NMTState to RESET_COMMUNICATION at device with CAN_ID = " << CANid << std::endl;
       canopen::sendNMT(CANid, canopen::NMT_reset_communication);
     }
-    else if (targetState == "pre_operational"){
+    else if (targetState == "PRE_OPERATIONAL"){
       std::cout << "Switching NMTState to PRE_OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
       canopen::sendNMT(CANid, canopen::NMT_enter_pre_operational);
     }
 
-    else if (targetState == "operational"){
+    else if (targetState == "OPERATIONAL"){
       std::cout << "Switching NMTState to OPERATIONAL at device with CAN_ID = " << CANid << std::endl;
       canopen::sendNMT(CANid, canopen::NMT_start_remote_node);
     }
-    else if (targetState == "stopped"){
+    else if (targetState == "STOPPED"){
       std::cout << "Switching NMTState to STOPPED at device with CAN_ID = " << CANid << std::endl;
       canopen::sendNMT(CANid, canopen::NMT_stop_remote_node);
     }
@@ -60,19 +60,19 @@ namespace canopen {
     // if (devices[CANid].motorState_ == "fault")
     while (devices[CANid].motorState_ != targetState) {
       canopen::sendSDO(CANid, canopen::statusword);
-      if (devices[CANid].motorState_ == "fault") {
+      if (devices[CANid].motorState_ == "FAULT") {
 	canopen::sendSDO(CANid, canopen::controlword, canopen::controlword_fault_reset_0);
 	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	canopen::sendSDO(CANid, canopen::controlword, canopen::controlword_fault_reset_1);
 	std::this_thread::sleep_for(std::chrono::milliseconds(200));
       }
-      if (devices[CANid].motorState_ == "switch_on_disabled") {
+      if (devices[CANid].motorState_ == "SWITCH_ON_DISABLED") {
 	canopen::sendSDO(CANid, canopen::controlword, canopen::controlword_shutdown);
       }
-      if (devices[CANid].motorState_ == "ready_to_switch_on") {
+      if (devices[CANid].motorState_ == "READY_TO_SWITCH_ON") {
 	canopen::sendSDO(CANid, canopen::controlword, canopen::controlword_switch_on);
       }
-      if (devices[CANid].motorState_ == "switched_on") {
+      if (devices[CANid].motorState_ == "SWITCHED_ON") {
 	canopen::sendSDO(CANid, canopen::controlword, canopen::controlword_enable_operation);
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -121,12 +121,12 @@ namespace canopen {
       uint16_t CANid = (uint16_t)device.second.CANid_;
 
       // Running NMT State machine
-      setNMTState(CANid, "reset_application");
-      std::cout << "Initial NMT-state of device with CAN ID = " << CANid << " is: " << devices[CANid].NMTState_ << std::endl;
-      while (devices[CANid].NMTState_ != "pre_operational"){
-	setNMTState(CANid, "pre_operational");
+      setNMTState(CANid, "RESET_APPLICATION");
+      std::cout << "Initial NMT-state of device with CAN ID = " << CANid << " : " << devices[CANid].NMTState_ << std::endl;
+      while (devices[CANid].NMTState_ != "PRE_OPERATIONAL"){
+	setNMTState(CANid, "PRE_OPERATIONAL");
       }	
-      setNMTState(CANid, "operational");
+      setNMTState(CANid, "OPERATIONAL");
 
       // Setting sync_interval, ip_mode etc.
       //sendSDO(CANid, ip_time_units, (uint8_t) syncInterval.count() );
@@ -136,7 +136,7 @@ namespace canopen {
       //sendSDO(CANid, guard_time, guard_time_value);									//				 guard_time = 250ms
 
       // Running motor State machine
-      std::cout << "Initial Motor-state of device with CAN ID: " << CANid << " is " << devices[CANid].motorState_ << std::endl;
+      std::cout << "Initial Motor-state of device with CAN ID: " << CANid << " : " << devices[CANid].motorState_ << std::endl;
       while (devices[CANid].motorState_ != "SWITCH_ON_DISABLED" & devices[CANid].motorState_ != "FAULT"){
         canopen::sendSDO(CANid, canopen::statusword);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -193,8 +193,8 @@ namespace canopen {
 
   void sendSDO(uint8_t CANid, SDOkey sdo) {
     // for SDO read commands, e.g. statusword
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      std::cout << "Sending SDO to device with CAN ID: " << CANid << " and SDOkey: " << sdo.index << std::endl;
+    if (devices[CANid].NMTState_ == "PRE_OPERATIONAL" | devices[CANid].NMTState_ == "OPERATIONAL"){
+      std::cout << "Sending SDO to device with CAN ID: " << (uint16_t)CANid << " and SDOkey: " << sdo.index << std::endl;
       TPCANMsg msg;
       msg.ID = CANid + 0x600; // 0x600 = SDO identifier
       msg.MSGTYPE = 0x00; // standard message
@@ -211,8 +211,8 @@ namespace canopen {
   }
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      std::cout << "Sending SDO to device with CAN ID: " << CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
+    if (devices[CANid].NMTState_ == "PRE_OPERATIONAL" | devices[CANid].NMTState_ == "OPERATIONAL"){
+      std::cout << "Sending SDO to device with CAN ID: " << (uint16_t)CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
       TPCANMsg msg;
       msg.ID = CANid + 0x600; // 0x600 = SDO identifier
       msg.LEN = 8;
@@ -232,8 +232,8 @@ namespace canopen {
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      std::cout << "Sending SDO to device with CAN ID: " << CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
+    if (devices[CANid].NMTState_ == "PRE_OPERATIONAL" | devices[CANid].NMTState_ == "OPERATIONAL"){
+      std::cout << "Sending SDO to device with CAN ID: " << (uint16_t)CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
       TPCANMsg msg;
       msg.ID = CANid + 0x600; // 0x600 = SDO identifier
       msg.LEN = 8;
@@ -253,8 +253,8 @@ namespace canopen {
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      std::cout << "Sending SDO to device with CAN ID: " << CANid << " and SDOkey: " << sdo.index << " and payload: " << (uint16_t)value << std::endl;
+    if (devices[CANid].NMTState_ == "PRE_OPERATIONAL" | devices[CANid].NMTState_ == "OPERATIONAL"){
+      std::cout << "Sending SDO to device with CAN ID: " << (uint16_t)CANid << " and SDOkey: " << sdo.index << " and payload: " << (uint16_t)value << std::endl;
       TPCANMsg msg;
       msg.ID = CANid + 0x600; // 0x600 = SDO identifier
       msg.LEN = 5;
@@ -271,8 +271,8 @@ namespace canopen {
   } 
 
   void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value) {
-    if (devices[CANid].NMTState_ == "pre_operational" | devices[CANid].NMTState_ == "operational"){
-      std::cout << "Sending SDO to device with CAN ID: " << CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
+    if (devices[CANid].NMTState_ == "PRE_OPERATIONAL" | devices[CANid].NMTState_ == "OPERATIONAL"){
+      std::cout << "Sending SDO to device with CAN ID: " << (uint16_t)CANid << " and SDOkey: " << sdo.index << " and payload: " << value << std::endl;
       TPCANMsg msg;
       msg.ID = CANid + 0x600; // 0x600 = SDO identifier
       msg.LEN = 6;
@@ -383,7 +383,7 @@ namespace canopen {
   std::function< void (uint16_t CANid, double positionValue) > sendPos;
 
   void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue) {
-    if (devices[CANid].NMTState_ == "operational"){
+    if (devices[CANid].NMTState_ == "OPERATIONAL"){
       static const uint16_t myControlword = 
         controlword_enable_operation | controlword_enable_ip_mode;
       TPCANMsg msg;
@@ -451,20 +451,25 @@ namespace canopen {
 
   TPCANMsg nodeguardMsg;
 
-  void incomingNodeguardHandler(uint8_t CANid, BYTE data[8]) {
+  void incomingNodeguardHandler(uint8_t CANid_, BYTE data[8]) {
     // get current NMT state from device with specific CANid
+    uint16_t CANid = (uint16_t)CANid_;
     if (data[0] == 0x00){					// Bootup message
-      devices[CANid].NMTState_ = "pre_operational";
-      std::cout << "Received bootup message from device with CAN ID: " << CANid << std::endl;
+      devices[CANid].NMTState_ = "PRE_OPERATIONAL";
+      std::cout << "Received bootup message from device with CAN-ID: " << CANid << std::endl;
+      std::cout << "Device with CAN-ID " << CANid << " is now in state PRE_OPERATIONAL";
     }
     else if (data[0] == 0x04 | data[0] == 0x84){		// Device in state stopped
-      devices[CANid].NMTState_ = "stopped";
+      devices[CANid].NMTState_ = "STOPPED";
+      std::cout << "Device with CAN-ID " << CANid << " is now in state STOPPED";
     }
     else if (data[0] == 0x05 | data[0] == 0x85){		// Device in state operational
-      devices[CANid].NMTState_ = "operational";
+      devices[CANid].NMTState_ = "OPERATIONAL";
+      std::cout << "Device with CAN-ID " << CANid << " is now in state OPERATIONAL";
     }
     else if (data[0] == 0x7F | data[0] == 0xFF){		// Device in state pre-operational
-      devices[CANid].NMTState_ = "pre_operational";
+      devices[CANid].NMTState_ = "PRE_OPERATIONAL";
+      std::cout << "Device with CAN-ID " << CANid << " is now in state PRE_OPERATIONAL";
     }
   }
 
@@ -497,7 +502,7 @@ namespace canopen {
         }
       }
       else if (m.Msg.ID == 0x48C){
-        std::cout << "Message with ID = 0x48C received" << std::endl;
+        std::cout << "Dummy message with ID = 0x48C received" << std::endl;
       }
       else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5ff) { // incoming SDO 
 	SDOkey sdoKey(m);
