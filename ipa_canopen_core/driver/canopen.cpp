@@ -88,14 +88,14 @@ namespace canopen {
   bool openConnection(std::string devName) {
     h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
     if (!h) return false;
-    //errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
-    errno = CAN_Init(h,CAN_BAUD_500K, CAN_INIT_TYPE_EX);
+    errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+    //errno = CAN_Init(h,CAN_BAUD_500K, CAN_INIT_TYPE_EX);
     return true;
   }
 
   void init(std::string deviceFile, std::chrono::milliseconds syncInterval) {
     // canopen::devices must be set up before this function is called
-    CAN_Close(h);
+    //CAN_Close(h);
 
     syncMsg.ID = 0x80;
     syncMsg.MSGTYPE = 0x00;
