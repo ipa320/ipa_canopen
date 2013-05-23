@@ -1,1 +1,0 @@
-/usr/bin/c++   -std=c++0x    CMakeFiles/move_device.dir/move_device.cpp.o  -o move_device -rdynamic -lpthread ../driver/libcanopen.a -lpcan 
