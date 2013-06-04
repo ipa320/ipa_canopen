@@ -215,10 +215,6 @@ namespace canopen{
 					devices[device.first].updateDesiredPos();
 					sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
 				}
-				else {
-					device.second.setInitialized(true);
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
 			}
 			canopen::sendSync();
 			std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));

@@ -110,6 +110,7 @@ void readParamsFromParameterServer(ros::NodeHandle n) {
 			canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
 
 		canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
+
 	}
 }
 
@@ -174,6 +175,10 @@ int main(int argc, char **argv)
 
 	canopen::initDeviceManagerThread(canopen::deviceManager);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	for (auto device : canopen::devices) {
+		device.second.setInitialized(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
 	//canopen::devices[CANid].setInitialized(true);
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

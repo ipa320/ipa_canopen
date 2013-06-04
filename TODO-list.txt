@@ -1,2 +1,0 @@
-- set monitoring time for request by the master
-- 

@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
 
 	canopen::initDeviceManagerThread(canopen::deviceManager);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//canopen::devices[CANid].setInitialized(true);
-	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	canopen::devices[CANid].setInitialized(true);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	//std::cout << "sending Statusword request" << std::endl;
 	//canopen::sendSDO(CANid, canopen::STATUSWORD);
