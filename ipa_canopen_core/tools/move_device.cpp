@@ -42,26 +42,27 @@ int main(int argc, char *argv[]) {
 	canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
 
 	canopen::init(deviceFile, canopen::syncInterval);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-  	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+  	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	canopen::initDeviceManagerThread(canopen::deviceManager);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	canopen::devices[CANid].setInitialized(true);
+	//canopen::devices[CANid].setInitialized(true);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	std::cout << "sending Statusword request" << std::endl;
-	canopen::sendSDO(CANid, canopen::STATUSWORD);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//std::cout << "sending Statusword request" << std::endl;
+	//canopen::sendSDO(CANid, canopen::STATUSWORD);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	std::cout << "\t\t\t\tNMTState: " << canopen::devices[CANid].getNMTState() << std::endl;
+	/*std::cout << "\t\t\t\tNMTState: " << canopen::devices[CANid].getNMTState() << std::endl;
 	std::cout << "\t\t\t\tMotorState: " << canopen::devices[CANid].getMotorState() << std::endl;
 	std::cout << "\t\t\t\tCANid: " << (uint16_t)canopen::devices[CANid].getCANid() << std::endl;
 	std::cout << "\t\t\t\tActualPos: " << canopen::devices[CANid].getActualPos() << std::endl;
 	std::cout << "\t\t\t\tDesiredPos: " << canopen::devices[CANid].getDesiredPos() << std::endl;
 	std::cout << "\t\t\t\tActualVel: " << canopen::devices[CANid].getActualVel() << std::endl;
-	std::cout << "\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;
+	std::cout << "\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;*/
 
 	// rest of the code is for moving the device:
 	if (accel != 0) {  // accel of 0 means "move at target vel immediately"
@@ -83,18 +84,18 @@ int main(int argc, char *argv[]) {
 	// constant velocity when target vel has been reached:
 	std::cout << "Target velocity reached!" << std::endl;
 
-	canopen::devices[ CANid ].setDesiredVel(targetVel);
+	/*canopen::devices[ CANid ].setDesiredVel(targetVel);
 	std::cout << "\t\t\t\t\t\tNMTState: " << canopen::devices[CANid].getNMTState() << std::endl;
 	std::cout << "\t\t\t\t\t\tMotorState: " << canopen::devices[CANid].getMotorState() << std::endl;
 	std::cout << "\t\t\t\t\t\tCANid: " << (uint16_t)canopen::devices[CANid].getCANid() << std::endl;
 	std::cout << "\t\t\t\t\t\tActualPos: " << canopen::devices[CANid].getActualPos() << std::endl;
 	std::cout << "\t\t\t\t\t\tDesiredPos: " << canopen::devices[CANid].getDesiredPos() << std::endl;
 	std::cout << "\t\t\t\t\t\tActualVel: " << canopen::devices[CANid].getActualVel() << std::endl;
-	std::cout << "\t\t\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;
+	std::cout << "\t\t\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;*/
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	std::cout << "sending Statusword request" << std::endl;
-	canopen::sendSDO(CANid, canopen::STATUSWORD);
+	//std::cout << "sending Statusword request" << std::endl;
+	//canopen::sendSDO(CANid, canopen::STATUSWORD);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	while (true) {

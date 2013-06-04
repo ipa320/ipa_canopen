@@ -147,7 +147,7 @@ CMAKE_SKIP_RPATH:BOOL=NO
 CMAKE_STRIP:FILEPATH=/usr/bin/strip
 
 //No help, variable specified on the command line.
-CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=/opt/ros/fuerte/share/ros/core/rosbuild/rostoolchain.cmake
+CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=/opt/ros/groovy/share/ros/core/rosbuild/rostoolchain.cmake
 
 //If true, cmake will use relative paths in makefiles and projects.
 CMAKE_USE_RELATIVE_PATHS:BOOL=OFF
@@ -340,7 +340,7 @@ CMAKE_USE_RELATIVE_PATHS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding Java
-FIND_PACKAGE_MESSAGE_DETAILS_Java:INTERNAL=[/usr/bin/java][/usr/bin/jar][/usr/bin/javac][/usr/bin/javah][/usr/bin/javadoc][v1.6.0.24()]
+FIND_PACKAGE_MESSAGE_DETAILS_Java:INTERNAL=[/usr/bin/java][/usr/bin/jar][/usr/bin/javac][/usr/bin/javah][/usr/bin/javadoc][v1.6.0.27()]
 //Details about finding PythonInterp
 FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/usr/bin/python][v2.7.3()]
 //ADVANCED property for variable: Java_JAR_EXECUTABLE
@@ -356,7 +356,7 @@ Java_JAVA_EXECUTABLE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: PYTHON_EXECUTABLE
 PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
 _rosbuild_EXPORTS:INTERNAL=
-_rosbuild_cached_flag_time:INTERNAL=1358859602.45
+_rosbuild_cached_flag_time:INTERNAL=1370334616.15
 _roslang_LANGS:INTERNAL=roscpp;rosjava_jni;rospy;roslisp
 _rospack_deps_manifests_invoke_result:INTERNAL=/opt/ros/fuerte/share/std_msgs/manifest.xml;/opt/ros/fuerte/share/actionlib_msgs/manifest.xml;/opt/ros/fuerte/share/trajectory_msgs/manifest.xml;/opt/ros/fuerte/share/geometry_msgs/manifest.xml;/opt/ros/fuerte/stacks/pr2_controllers/pr2_controllers_msgs/manifest.xml;/opt/ros/fuerte/share/roslib/manifest.xml;/opt/ros/fuerte/stacks/cob_common/brics_actuator/manifest.xml;/opt/ros/fuerte/share/roslang/manifest.xml;/opt/ros/fuerte/share/rospy/manifest.xml;/opt/ros/fuerte/share/roscpp/manifest.xml;/opt/ros/fuerte/stacks/cob_extern/libpcan/manifest.xml;/opt/ros/fuerte/stacks/cob_common/cob_srvs/manifest.xml;/opt/ros/fuerte/share/sensor_msgs/manifest.xml;/home/uhr-eh/git/care-o-bot/ipa_canopen/ipa_canopen_core/manifest.xml
 _rospack_msgsrv_gen_invoke_result:INTERNAL=/opt/ros/fuerte/stacks/pr2_controllers/pr2_controllers_msgs/msg_gen/generated;/opt/ros/fuerte/stacks/pr2_controllers/pr2_controllers_msgs/srv_gen/generated;/opt/ros/fuerte/stacks/cob_common/brics_actuator/msg_gen/generated;/opt/ros/fuerte/stacks/cob_common/cob_srvs/srv_gen/generated

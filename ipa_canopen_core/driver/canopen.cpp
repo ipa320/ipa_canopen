@@ -48,26 +48,27 @@ namespace canopen{
 		}
 
 		for (auto device : devices){
-
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, canopen::IP_TIME_INDEX_MILLISECONDS);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			if (atFirstInit){
-				canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
-				std::cout << "Heartbeat protocol started" << std::endl;
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
 				canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
+				std::cout << "Heartbeat protocol started" << std::endl;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 			
 			canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		if (atFirstInit)
 			atFirstInit = false;
@@ -123,11 +124,15 @@ namespace canopen{
 		TPCANMsg msg;
 		msg.ID = CANid + 0x600;
 		msg.MSGTYPE = 0x00;
-		msg.LEN = 4;
+		msg.LEN = 8;
 		msg.DATA[0] = 0x40;
 		msg.DATA[1] = sdo.index & 0xFF;
 		msg.DATA[2] = (sdo.index >> 8) & 0xFF;
 		msg.DATA[3] = sdo.subindex;
+		msg.DATA[4] = 0x00;
+		msg.DATA[5] = 0x00;
+		msg.DATA[6] = 0x00;
+		msg.DATA[7] = 0x00;
 		CAN_Write(h, &msg);
 	}
 
@@ -164,25 +169,30 @@ namespace canopen{
 	void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value){
 		TPCANMsg msg;
 		msg.ID = CANid + 0x600;
-		msg.LEN = 5;
+		msg.LEN = 8;
 		msg.DATA[0] = 0x2F;
 		msg.DATA[1] = sdo.index & 0xFF;
 		msg.DATA[2] = (sdo.index >> 8) & 0xFF;
 		msg.DATA[3] = sdo.subindex;
 		msg.DATA[4] = value & 0xFF;
+		msg.DATA[5] = 0x00;
+		msg.DATA[6] = 0x00;
+		msg.DATA[7] = 0x00;
 		CAN_Write(h, &msg);
 	}
 
 	void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value){
 		TPCANMsg msg;
 		msg.ID = CANid + 0x600;
-		msg.LEN = 6;
+		msg.LEN = 8;
 		msg.DATA[0] = 0x2B;
 		msg.DATA[1] = sdo.index & 0xFF;
 		msg.DATA[2] = (sdo.index >> 8) & 0xFF;
 		msg.DATA[3] = sdo.subindex;
 		msg.DATA[4] = value & 0xFF;
 		msg.DATA[5] = (value >> 8) & 0xFF;
+		msg.DATA[6] = 0x00;
+		msg.DATA[7] = 0x00;
 		CAN_Write(h, &msg);
 	}
 
@@ -205,6 +215,10 @@ namespace canopen{
 					devices[device.first].updateDesiredPos();
 					sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
 				}
+				else {
+					device.second.setInitialized(true);
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
 			}
 			canopen::sendSync();
 			std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));
@@ -215,7 +229,7 @@ namespace canopen{
 
 	void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue) {
 		static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
-		std::cout << myControlword << std::endl;
+		//std::cout << myControlword << std::endl;
 		TPCANMsg msg;
 		msg.ID = 0x200 + CANid;
 		msg.MSGTYPE = 0x00;
@@ -229,8 +243,8 @@ namespace canopen{
 		msg.DATA[5] = (mdegPos >> 8) & 0xFF;
 		msg.DATA[6] = (mdegPos >> 16) & 0xFF;
 		msg.DATA[7] = (mdegPos >> 24) & 0xFF;
-		std::cout << positionValue << std::endl;
-		std::cout << std::hex << "sending pdo:\t" << (uint16_t)msg.ID << "\t" << (uint16_t)msg.DATA[0] << " " << (uint16_t)msg.DATA[1] << " " << (uint16_t)msg.DATA[2] << " " << (uint16_t)msg.DATA[3] << " " << (uint16_t)msg.DATA[4] << " " << (uint16_t)msg.DATA[5] << " " << (uint16_t)msg.DATA[6] << " " << (uint16_t)msg.DATA[7] << " " << std::endl;
+		//std::cout << positionValue << std::endl;
+		//std::cout << std::hex << "sending pdo:\t" << (uint16_t)msg.ID << "\t" << (uint16_t)msg.DATA[0] << " " << (uint16_t)msg.DATA[1] << " " << (uint16_t)msg.DATA[2] << " " << (uint16_t)msg.DATA[3] << " " << (uint16_t)msg.DATA[4] << " " << (uint16_t)msg.DATA[5] << " " << (uint16_t)msg.DATA[6] << " " << (uint16_t)msg.DATA[7] << " " << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -273,17 +287,17 @@ namespace canopen{
 
 			// incoming SYNC
 			else if (m.Msg.ID == 0x080){
-				std::cout << std::hex << "SYNC received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+				//std::cout << std::hex << "SYNC received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
 			}
 		
 			// incoming EMCY
 			else if (m.Msg.ID >= 0x081 && m.Msg.ID <= 0x0FF){
-				std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " << m.Msg.DATA[7] << std::endl;
+				//std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " << m.Msg.DATA[7] << std::endl;
 			}
 
 			// incoming TIME
 			else if (m.Msg.ID == 0x100){
-				std::cout << std::hex << "TIME received:  " << (uint16_t)m.Msg.ID << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " << m.Msg.DATA[7] << std::endl;
+				//std::cout << std::hex << "TIME received:  " << (uint16_t)m.Msg.ID << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " << m.Msg.DATA[7] << std::endl;
 			}
 
 			// incoming PD0
@@ -295,7 +309,7 @@ namespace canopen{
 
 			// incoming SD0
 			else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
-				std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+				//std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
 				SDOkey sdoKey(m);
 				if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end())
 					incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
@@ -305,10 +319,10 @@ namespace canopen{
 			else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){
 				uint16_t CANid = m.Msg.ID - 0x700;
 				if (m.Msg.DATA[0] == 0x00){
-					std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;	
+					//std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;	
 				}
 				else{
-					std::cout << "NMT error control received:  " << (uint16_t)(m.Msg.ID - 0x700) << "  " << (uint16_t)m.Msg.DATA[0] << std::endl;
+					//std::cout << "NMT error control received:  " << (uint16_t)(m.Msg.ID - 0x700) << "  " << (uint16_t)m.Msg.DATA[0] << std::endl;
 				}
 			}
 			else{
@@ -321,8 +335,8 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 
 		uint16_t mydata = data[4] + (data[5] << 8);
 		uint16_t received_state = mydata & 0x006F;
-		/*uint16_t voltage_enabled = (mydata & 0x0010)>>4;
-		uint16_t warning = (mydata & 0x0080)>>7;
+		uint16_t voltage_enabled = (mydata & 0x0010)>>4;
+		/*uint16_t warning = (mydata & 0x0080)>>7;
 		uint16_t drive_is_moving = (mydata & 0x0100)>>8;
 		uint16_t remote = (mydata & 0x0200)>>9;
 		uint16_t target_reached = (mydata & 0x0400)>>10;
