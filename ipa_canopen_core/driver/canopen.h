@@ -29,9 +29,9 @@ namespace canopen{
 
 		private:
 
+			uint8_t CANid_;
 			std::string NMTState_;
 			std::string motorState_;
-			uint8_t CANid_;
 			std::string deviceFile_;
 			std::string name_;
 			std::string group_;
@@ -142,6 +142,7 @@ namespace canopen{
 
 			void setInitialized(bool initialized){
 				initialized_ = initialized;
+				//std::cout << initialized_ << std::endl;
 			}
 
 			void updateDesiredPos(){

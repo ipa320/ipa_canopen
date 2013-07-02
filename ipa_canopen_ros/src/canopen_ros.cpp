@@ -27,11 +27,28 @@ std::map<std::string, BusParams> buses;
 std::string deviceFile;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
+	//canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
+	//for (auto it : canopen::devices) {
+	//	std::cout << "Schleife 1" << std::endl;
+	//	canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
+	//}
+	//canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
+
 	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
- 	for (auto device : canopen::devices)
-  		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+ 	for (auto device : canopen::devices){
+  		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+	canopen::initDeviceManagerThread(canopen::deviceManager);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+	for (auto device : canopen::devices) {
+		device.second.setInitialized(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
 	res.success.data = true;
 	res.error_message.data = "";
 	return true;
@@ -59,7 +76,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName) {
 		std::vector<double> velocities;
 		for (auto it : msg.velocities)
 			velocities.push_back( it.value); 
-		canopen::deviceGroups[chainName].setVel(velocities); 
+		canopen::deviceGroups[chainName].setVel(velocities);
   	}
 }
 
@@ -92,7 +109,7 @@ void readParamsFromParameterServer(ros::NodeHandle n) {
 		n.getParam("/" + chainName + "/joint_names", jointNames_XMLRPC);
 		std::vector<std::string> jointNames;
 		for (int i=0; i<jointNames_XMLRPC.size(); i++)
-			jointNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
+			jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
 		XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
 		n.getParam("/" + chainName + "/module_ids", moduleIDs_XMLRPC);
@@ -173,12 +190,12 @@ int main(int argc, char **argv)
 	std::cout << "Loop rate: " << lr << std::endl;
 	ros::Rate loop_rate(lr); 
 
-	canopen::initDeviceManagerThread(canopen::deviceManager);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	for (auto device : canopen::devices) {
-		device.second.setInitialized(true);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
+	//canopen::initDeviceManagerThread(canopen::deviceManager);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//for (auto device : canopen::devices) {
+	//	device.second.setInitialized(true);
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//}
 	//canopen::devices[CANid].setInitialized(true);
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

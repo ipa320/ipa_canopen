@@ -42,33 +42,68 @@ namespace canopen{
 			std::cout << "Cannot open CAN device; aborting." << std::endl;
 			exit(EXIT_FAILURE);
 		}
+		else{
+			std::cout << "Connection to CAN bus established" << std::endl;
+		}
 
-		if (atFirstInit){
-			canopen::initListenerThread(canopen::defaultListener);
+		//if (atFirstInit){
+		canopen::initListenerThread(canopen::defaultListener);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//}
+
+		for (auto device : devices){
+			std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl; 
 		}
 
 		for (auto device : devices){
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			if (atFirstInit){
-				canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+			canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-				canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
-				std::cout << "Heartbeat protocol started" << std::endl;
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			}
-			
 			canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+
+		
+			//canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
+			//std::cout << "Heartbeat protocol for device with CAN-ID " << (uint16_t)device.second.getCANid() << " started" << std::endl;
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		//std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+		for (auto device : devices){
+			//std::cout << "Schleife 2" << std::endl;
+			//std::cout << (uint16_t)device.second.getCANid() << std::endl;
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//if (atFirstInit){
+				//canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
+				//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			//canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
+			//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+			//canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
+			//std::cout << "Heartbeat protocol started" << std::endl;
+			//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			//}
+			
+			//canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
+
+			//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			//sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+			//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			//sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+			//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			//sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+			//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		}
 		if (atFirstInit)
 			atFirstInit = false;
@@ -133,6 +168,7 @@ namespace canopen{
 		msg.DATA[5] = 0x00;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
+		std::cout << "SDO sent" << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -148,6 +184,7 @@ namespace canopen{
 		msg.DATA[5] = (value >> 8) & 0xFF;
 		msg.DATA[6] = (value >> 16) & 0xFF;
 		msg.DATA[7] = (value >> 24) & 0xFF;
+		std::cout << "SDO sent" << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -163,6 +200,7 @@ namespace canopen{
 		msg.DATA[5] = (value >> 8) & 0xFF;
 		msg.DATA[6] = (value >> 16) & 0xFF;
 		msg.DATA[7] = (value >> 24) & 0xFF;
+		std::cout << "SDO sent" << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -178,6 +216,7 @@ namespace canopen{
 		msg.DATA[5] = 0x00;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
+		std::cout << "SDO sent" << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -193,6 +232,7 @@ namespace canopen{
 		msg.DATA[5] = (value >> 8) & 0xFF;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
+		std::cout << std::hex << "Sending SDO    " << msg.ID << "    " << (uint16_t)msg.DATA[0] << "  " << (uint16_t)msg.DATA[1] << "  " << (uint16_t)msg.DATA[2] << "  " << (uint16_t)msg.DATA[3] << "  " << (uint16_t)msg.DATA[4] << "  " << (uint16_t)msg.DATA[5] << "  " << (uint16_t)msg.DATA[6] << "  " << (uint16_t)msg.DATA[7] << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -210,7 +250,7 @@ namespace canopen{
 		// todo: init, recover... (e.g. when to start/stop sending SYNCs)
 		while (true) {
 			auto tic = std::chrono::high_resolution_clock::now();
-			for (auto device : devices) {
+			for (auto device : canopen::devices) {
 				if (device.second.getInitialized()) {
 					devices[device.first].updateDesiredPos();
 					sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
@@ -255,8 +295,9 @@ namespace canopen{
 			devices[CANid].setActualVel(result);
       			if (! devices[CANid].getInitialized()) {
 				devices[CANid].setDesiredPos(newPos);
-				//devices[CANid].setInitialized(true);
+				devices[CANid].setInitialized(true);
 			}
+			//std::cout << "actualPos: " << devices[CANid].getActualPos() << "  desiredPos: " << devices[CANid].getDesiredPos() << std::endl;
 		}
 
      
@@ -298,14 +339,14 @@ namespace canopen{
 
 			// incoming PD0
 			else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-				//std::cout << std::hex << "PDO receivec:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << (uint16_t)m.Msg.DATA[1] << (uint16_t)m.Msg.DATA[2] << (uint16_t)m.Msg.DATA[3] << (uint16_t)m.Msg.DATA[4] << (uint16_t)m.Msg.DATA[5] << (uint16_t)m.Msg.DATA[6] <<  (uint16_t)m.Msg.DATA[7] ;
+				//std::cout << std::hex << "PDO receivec:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
 				if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()) 
 					incomingPDOHandlers[m.Msg.ID](m); 
 			}
 
 			// incoming SD0
 			else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
-				//std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+				std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
 				SDOkey sdoKey(m);
 				if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end())
 					incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
@@ -315,14 +356,14 @@ namespace canopen{
 			else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){
 				uint16_t CANid = m.Msg.ID - 0x700;
 				if (m.Msg.DATA[0] == 0x00){
-					//std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;	
+					std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;	
 				}
 				else{
-					//std::cout << "NMT error control received:  " << (uint16_t)(m.Msg.ID - 0x700) << "  " << (uint16_t)m.Msg.DATA[0] << std::endl;
+					std::cout << "NMT error control received:  " << (uint16_t)(m.Msg.ID - 0x700) << "  " << (uint16_t)m.Msg.DATA[0] << std::endl;
 				}
 			}
 			else{
-				std::cout << "Received unknown message" << std::endl;
+				 //std::cout << "Received unknown message" << std::endl;
 			}
 		}
 	}
