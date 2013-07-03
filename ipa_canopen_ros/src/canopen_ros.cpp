@@ -27,26 +27,19 @@ std::map<std::string, BusParams> buses;
 std::string deviceFile;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
-	//canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
-	//for (auto it : canopen::devices) {
-	//	std::cout << "Schleife 1" << std::endl;
-	//	canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
-	//}
-	//canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
 
 	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
  	for (auto device : canopen::devices){
   		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
 	canopen::initDeviceManagerThread(canopen::deviceManager);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	for (auto device : canopen::devices) {
 		device.second.setInitialized(true);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	res.success.data = true;
@@ -189,15 +182,6 @@ int main(int argc, char **argv)
 	double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();
 	std::cout << "Loop rate: " << lr << std::endl;
 	ros::Rate loop_rate(lr); 
-
-	//canopen::initDeviceManagerThread(canopen::deviceManager);
-	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//for (auto device : canopen::devices) {
-	//	device.second.setInitialized(true);
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//}
-	//canopen::devices[CANid].setInitialized(true);
-	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	while (ros::ok()) {
     

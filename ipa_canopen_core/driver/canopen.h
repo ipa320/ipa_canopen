@@ -142,21 +142,10 @@ namespace canopen{
 
 			void setInitialized(bool initialized){
 				initialized_ = initialized;
-				//std::cout << initialized_ << std::endl;
 			}
 
 			void updateDesiredPos(){
-				//std::cout << "actualPos = " << actualPos_ << std::endl;
-				//std::cout << "desiredPos = " << desiredPos_ << std::endl;
-				//std::cout << "actualVel = " << actualVel_ << std::endl;
-				//std::cout << "desiredVel = " << desiredVel_ << std::endl;
-				//std::cout << "syncInterval = " << syncInterval.count() << std::endl;
 				desiredPos_ += desiredVel_ * (syncInterval.count() / 1000.0);
-				//std::cout << "actualPos = " << actualPos_ << std::endl;
-				//std::cout << "desiredPos = " << desiredPos_ << std::endl;
-				//std::cout << "actualVel = " << actualVel_ << std::endl;
-				//std::cout << "desiredVel = " << desiredVel_ << std::endl;
-				//std::cout << "syncInterval = " << syncInterval.count() << std::endl;
 			}
 
 			void setTimeStamp_msec(std::chrono::milliseconds timeStamp){
@@ -298,7 +287,7 @@ namespace canopen{
 	extern TPCANMsg NMTmsg;
 
 	inline void sendNMT(uint8_t CANid, uint8_t command){
-		std::cout << "Sending NMT. CANid: " << (uint16_t)CANid << "\tcommand: " << (uint16_t)command << std::endl;
+		//std::cout << "Sending NMT. CANid: " << (uint16_t)CANid << "\tcommand: " << (uint16_t)command << std::endl;
 		NMTmsg.DATA[0] = command;
 		NMTmsg.DATA[1] = CANid;
 		CAN_Write(h, &NMTmsg);
