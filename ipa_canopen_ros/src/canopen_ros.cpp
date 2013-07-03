@@ -98,7 +98,7 @@ void readParamsFromParameterServer(ros::NodeHandle n) {
     n.getParam("/" + chainName + "/joint_names", jointNames_XMLRPC);
     std::vector<std::string> jointNames;
     for (int i=0; i<jointNames_XMLRPC.size(); i++)
-      jointNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
+      jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
     XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
     n.getParam("/" + chainName + "/module_ids", moduleIDs_XMLRPC);
