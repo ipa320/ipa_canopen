@@ -5,6 +5,7 @@
 #include "brics_actuator/JointVelocities.h"
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
+#include <diagnostic_msgs/DiagnosticArray.h>
 // #include "ros_canopen/posmsg.h"
 #include <iostream>
 #include <map>
@@ -160,6 +161,7 @@ int main(int argc, char **argv)
 	std::map<std::string, ros::Publisher> currentOperationModePublishers;
 	std::map<std::string, ros::Publisher> statePublishers;
 	ros::Publisher jointStatesPublisher = n.advertise<sensor_msgs::JointState>("/joint_states", 100);
+    ros::Publisher diagnosticsPublisher = n.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
   
 	for (auto it : canopen::deviceGroups) {
 		std::cout << it.first << std::endl;
@@ -207,6 +209,43 @@ int main(int argc, char **argv)
 			opmode.data = "velocity";
 			currentOperationModePublishers[dg.first].publish(opmode);
 		}
+
+        // publishing diagnostic messages
+        diagnostic_msgs::DiagnosticArray diagnostics;
+        diagnostics.status.resize(1);
+
+    for (auto dg : (canopen::devices)) {
+        std::string name = dg.second.getName();
+        ROS_INFO("Name %s", name.c_str() );
+        bool error_ = dg.second.getHomingError() ||  !dg.second.getVoltageEnabled();
+        bool initialized_ = dg.second.getInitialized();
+
+        // set data to diagnostics
+        if(!error_)
+        {
+          diagnostics.status[0].level = 2;
+          diagnostics.status[0].name = n.getNamespace();
+          break;
+        }
+        else
+        {
+          if (initialized_)
+          {
+            diagnostics.status[0].level = 0;
+            diagnostics.status[0].name = n.getNamespace();
+            diagnostics.status[0].message = "powerball chain initialized and running";
+          }
+          else
+          {
+            diagnostics.status[0].level = 1;
+            diagnostics.status[0].name = n.getNamespace();
+            diagnostics.status[0].message = "powerball chain not initialized";
+            break;
+          }
+        }
+    }
+        // publish diagnostic message
+        diagnosticsPublisher.publish(diagnostics);
 
 		ros::spinOnce();
 		loop_rate.sleep();

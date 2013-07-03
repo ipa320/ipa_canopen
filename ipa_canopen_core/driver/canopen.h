@@ -38,12 +38,25 @@ namespace canopen{
 			bool initialized_;
 			bool voltageEnabled_;
 			bool driveReferenced_;
+            bool homingError_;
 			double actualPos_;		// unit = rad
 			double desiredPos_;		// unit = rad
 			double actualVel_;		// unit = rad/sec
 			double desiredVel_;		// unit = rad/sec
 			std::chrono::milliseconds timeStamp_msec_;
 			std::chrono::microseconds timeStamp_usec_;
+			
+			
+		    //uint16_t mydata = data[4] + (data[5] << 8);
+            double received_state_;
+		    /*uint16_t warning = (mydata & 0x0080)>>7;
+		    uint16_t drive_is_moving = (mydata & 0x0100)>>8;
+		    uint16_t remote = (mydata & 0x0200)>>9;
+		    uint16_t target_reached = (mydata & 0x0400)>>10;
+		    uint16_t internal_limit_active = (mydata & 0x0800)>>11;
+		    uint16_t ip_mode_active = (mydata & 0x1000)>>12;
+		    uint16_t manufacturer_statusbit = (mydata & 0x4000)>>14;
+		    uint16_t drive_referenced = (mydata & 0x8000)>>15;*/
 
 		public:		
 
@@ -94,6 +107,11 @@ namespace canopen{
 			bool getVoltageEnabled(){
 				return voltageEnabled_;
 			}
+
+            bool getHomingError(){
+                return homingError_;
+            }
+
 			bool getDriveReferenced(){
 				return driveReferenced_;
 			}
@@ -139,6 +157,18 @@ namespace canopen{
 			void setMotorState(std::string nextState){
 				motorState_ = nextState;
 			}
+			
+            void setReceivedState(double received_state){
+				received_state_ = received_state;
+			}
+			
+            void setVoltageEnabled(bool voltage_enabled){
+                voltageEnabled_ = voltage_enabled;
+			}
+
+            void setHoming(bool homing_error){
+                homingError_ = homing_error;
+            }
 
 			void setInitialized(bool initialized){
 				initialized_ = initialized;

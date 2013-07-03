@@ -186,7 +186,7 @@ namespace canopen{
 		msg.DATA[5] = 0x00;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
-		//std::cout << "SDO sent" << std::endl;
+		std::cout << "" << std::endl;
 		CAN_Write(h, &msg);
 	}
 
@@ -340,7 +340,19 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 
 		uint16_t mydata = data[4] + (data[5] << 8);
 		uint16_t received_state = mydata & 0x006F;
-		//uint16_t voltage_enabled = (mydata & 0x0010)>>4;
+		uint16_t voltage_enabled = (mydata & 0x0010)>>4;
+		//uint16_t warning = (mydata & 0x0080)>>7;
+		//uint16_t drive_is_moving = (mydata & 0x0100)>>8;
+		//uint16_t remote = (mydata & 0x0200)>>9;
+		//uint16_t target_reached = (mydata & 0x0400)>>10;
+		//uint16_t internal_limit_active = (mydata & 0x0800)>>11;
+		//uint16_t ip_mode_active = (mydata & 0x1000)>>12;
+		uint16_t homing_error = (mydata & 0x2000)>>13;
+		//uint16_t manufacturer_statusbit = (mydata & 0x4000)>>14;
+		//uint16_t drive_referenced = (mydata & 0x8000)>>15;
+        devices[CANid].setReceivedState(received_state);
+        devices[CANid].setVoltageEnabled(voltage_enabled);
+        devices[CANid].setHoming(homing_error);
 
 		if (received_state == 0x0000 | received_state == 0x0020){
 			devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
@@ -363,7 +375,5 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 		else if (received_state == 0x000F | received_state == 0x002F | received_state == 0x0008 | received_state == 0x0028){
 			devices[CANid].setMotorState(canopen::MS_FAULT);
 		}
-
-		//std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
 	}
 }
