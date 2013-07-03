@@ -44,7 +44,7 @@ namespace canopen{
 			exit(EXIT_FAILURE);
 		}
 		else{
-			std::cout << "Connection to CAN bus established" << std::endl;
+			//std::cout << "Connection to CAN bus established" << std::endl;
 		}
 
 		if (atFirstInit){
@@ -186,6 +186,7 @@ namespace canopen{
 		msg.DATA[5] = 0x00;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
+		// TODO: why is it only working when inserting the following command
 		std::cout << "" << std::endl;
 		CAN_Write(h, &msg);
 	}
@@ -307,7 +308,7 @@ namespace canopen{
 
 			// incoming PD0
 			else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-				std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
+				//std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
 				if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()) 
 					incomingPDOHandlers[m.Msg.ID](m); 
 			}
@@ -375,5 +376,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 		else if (received_state == 0x000F | received_state == 0x002F | received_state == 0x0008 | received_state == 0x0028){
 			devices[CANid].setMotorState(canopen::MS_FAULT);
 		}
+
+		//std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
 	}
 }
