@@ -29,21 +29,35 @@ namespace canopen{
 
 		private:
 
+			uint8_t CANid_;
 			std::string NMTState_;
 			std::string motorState_;
-			uint8_t CANid_;
 			std::string deviceFile_;
 			std::string name_;
 			std::string group_;
 			bool initialized_;
 			bool voltageEnabled_;
 			bool driveReferenced_;
+            bool fault_;
+            bool homingError_;
 			double actualPos_;		// unit = rad
 			double desiredPos_;		// unit = rad
 			double actualVel_;		// unit = rad/sec
 			double desiredVel_;		// unit = rad/sec
 			std::chrono::milliseconds timeStamp_msec_;
 			std::chrono::microseconds timeStamp_usec_;
+			
+			
+		    //uint16_t mydata = data[4] + (data[5] << 8);
+            double received_state_;
+		    /*uint16_t warning = (mydata & 0x0080)>>7;
+		    uint16_t drive_is_moving = (mydata & 0x0100)>>8;
+		    uint16_t remote = (mydata & 0x0200)>>9;
+		    uint16_t target_reached = (mydata & 0x0400)>>10;
+		    uint16_t internal_limit_active = (mydata & 0x0800)>>11;
+		    uint16_t ip_mode_active = (mydata & 0x1000)>>12;
+		    uint16_t manufacturer_statusbit = (mydata & 0x4000)>>14;
+		    uint16_t drive_referenced = (mydata & 0x8000)>>15;*/
 
 		public:		
 
@@ -94,6 +108,15 @@ namespace canopen{
 			bool getVoltageEnabled(){
 				return voltageEnabled_;
 			}
+
+            bool getHomingError(){
+                return homingError_;
+            }
+
+            bool getFault(){
+                return fault_;
+            }
+
 			bool getDriveReferenced(){
 				return driveReferenced_;
 			}
@@ -140,22 +163,32 @@ namespace canopen{
 				motorState_ = nextState;
 			}
 
+			void setNMTState(std::string nextState){
+				NMTState_ = nextState;
+			}
+			
+            void setReceivedState(double received_state){
+				received_state_ = received_state;
+			}
+			
+            void setVoltageEnabled(bool voltage_enabled){
+                voltageEnabled_ = voltage_enabled;
+			}
+
+            void setFault(bool fault){
+                fault_ = fault;
+            }
+
+            void setHoming(bool homing_error){
+                homingError_ = homing_error;
+            }
+
 			void setInitialized(bool initialized){
 				initialized_ = initialized;
 			}
 
 			void updateDesiredPos(){
-				//std::cout << "actualPos = " << actualPos_ << std::endl;
-				//std::cout << "desiredPos = " << desiredPos_ << std::endl;
-				//std::cout << "actualVel = " << actualVel_ << std::endl;
-				//std::cout << "desiredVel = " << desiredVel_ << std::endl;
-				//std::cout << "syncInterval = " << syncInterval.count() << std::endl;
 				desiredPos_ += desiredVel_ * (syncInterval.count() / 1000.0);
-				//std::cout << "actualPos = " << actualPos_ << std::endl;
-				//std::cout << "desiredPos = " << desiredPos_ << std::endl;
-				//std::cout << "actualVel = " << actualVel_ << std::endl;
-				//std::cout << "desiredVel = " << desiredVel_ << std::endl;
-				//std::cout << "syncInterval = " << syncInterval.count() << std::endl;
 			}
 
 			void setTimeStamp_msec(std::chrono::milliseconds timeStamp){
@@ -273,16 +306,25 @@ namespace canopen{
 	void setNMTState(uint16_t CANid, std::string targetState);
 	void setMotorState(uint16_t CANid, std::string targetState);
 
+    /***************************************************************/
+    //	define get errors functions
+    /***************************************************************/
+
+    void getErrors(uint16_t CANid);
+
+
 	/***************************************************************/
-	//		define init variables and functions
+	//	define init and recover variables and functions
 	/***************************************************************/
 
 	extern bool atFirstInit;
 
 	bool openConnection(std::string devName);
 	void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
-
+    void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+	
 	extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+    extern std::function< void (uint16_t CANid) > geterrors;
 
 	/***************************************************************/
 	//	define NMT constants, variables and functions
@@ -297,7 +339,7 @@ namespace canopen{
 	extern TPCANMsg NMTmsg;
 
 	inline void sendNMT(uint8_t CANid, uint8_t command){
-		std::cout << "Sending NMT. CANid: " << (uint16_t)CANid << "\tcommand: " << (uint16_t)command << std::endl;
+		//std::cout << "Sending NMT. CANid: " << (uint16_t)CANid << "\tcommand: " << (uint16_t)command << std::endl;
 		NMTmsg.DATA[0] = command;
 		NMTmsg.DATA[1] = CANid;
 		CAN_Write(h, &NMTmsg);
@@ -377,7 +419,7 @@ namespace canopen{
 	void initDeviceManagerThread(std::function<void ()> const& deviceManager);
 	void deviceManager();
 
-	void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
 	void schunkDefaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
 
 	/***************************************************************/
