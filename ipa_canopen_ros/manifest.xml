@@ -19,5 +19,7 @@
   <depend package="cob_srvs"/> 
   <depend package="sensor_msgs"/> 
   <depend package="ipa_canopen_core"/>
+  
+  <rosdep name="yaml-cpp"/>
 
 </package>

@@ -266,7 +266,7 @@ namespace canopen{
 			}
 
 			void setVel(std::vector<double> velocities) {
-				for (int i=0; i<velocities.size(); i++) {
+                for (unsigned int i=0; i<velocities.size(); i++) {
 					devices[CANids_[i]].setDesiredVel(velocities[i]);
 				}
     			}
