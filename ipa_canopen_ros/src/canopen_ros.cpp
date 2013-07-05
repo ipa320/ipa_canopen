@@ -6,13 +6,11 @@
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
 #include <diagnostic_msgs/DiagnosticArray.h>
-// #include "ros_canopen/posmsg.h"
 #include <iostream>
 #include <map>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <canopen.h>
-// #include "yaml-cpp/yaml.h"
 #include <XmlRpcValue.h>
 
 typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Response&)> TriggerType;
