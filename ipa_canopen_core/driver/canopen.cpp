@@ -248,7 +248,7 @@ namespace canopen{
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
 		// TODO: why is it only working when inserting the following command
-		std::cout << "" << std::endl;
+        //std::cout << "" << std::endl;
 		CAN_Write(h, &msg);
 
 
@@ -342,7 +342,12 @@ namespace canopen{
 
         bool fault = m.Msg.DATA[0] & 0x08;
         bool homing_error = m.Msg.DATA[1] & 0x80;
+        bool ip_mode1 = m.Msg.DATA[0] & 0x10;
+        bool ip_mode2 = m.Msg.DATA[1] & 0x10;
+        bool ip_mode = ip_mode1 & ip_mode2;
+
         devices[CANid].setFault(fault);
+        devices[CANid].setIPMode(ip_mode);
         devices[CANid].setHoming(homing_error);
 
 
@@ -363,12 +368,13 @@ namespace canopen{
 		while(true){
 			//std::cout << "Reading incoming data" << std::endl;
 			TPCANRdMsg m;
-			if (errno = LINUX_CAN_Read(h, &m))
+            errno = LINUX_CAN_Read(h, &m);
+            if (errno)
 				perror("LINUX_CAN_Read() error");
 
 			// incoming SYNC
 			else if (m.Msg.ID == 0x080){
-				//std::cout << std::hex << "SYNC received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+               // std::cout << std::hex << "SYNC received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
 			}
 		
 			// incoming EMCY
@@ -380,12 +386,12 @@ namespace canopen{
 
 			// incoming TIME
 			else if (m.Msg.ID == 0x100){
-				//std::cout << std::hex << "TIME received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
-			}
+               // std::cout << std::hex << "TIME received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+            }
 
             // incoming PD0
 			else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-                //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
+               //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
 				if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()) 
 					incomingPDOHandlers[m.Msg.ID](m); 
 			}
@@ -393,14 +399,13 @@ namespace canopen{
 			// incoming SD0
 			else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
                 //std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
-				SDOkey sdoKey(m);
+                SDOkey sdoKey(m);
 				if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end())
 					incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
 			}
 
 			// incoming NMT error control
 			else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF){
-				uint16_t CANid = m.Msg.ID - 0x700;
 				if (m.Msg.DATA[0] == 0x00){
 					std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;	
 				}
@@ -461,6 +466,6 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 			devices[CANid].setMotorState(canopen::MS_FAULT);
 		}
 
-        //std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
+        std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
 	}
 }

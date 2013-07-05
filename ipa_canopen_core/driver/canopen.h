@@ -38,6 +38,7 @@ namespace canopen{
 			bool initialized_;
 			bool voltageEnabled_;
 			bool driveReferenced_;
+            bool ip_mode_active_;
             bool fault_;
             bool homingError_;
 			double actualPos_;		// unit = rad
@@ -117,6 +118,10 @@ namespace canopen{
                 return fault_;
             }
 
+            bool getIPMode(){
+                return ip_mode_active_;
+            }
+
 			bool getDriveReferenced(){
 				return driveReferenced_;
 			}
@@ -177,6 +182,10 @@ namespace canopen{
 
             void setFault(bool fault){
                 fault_ = fault;
+            }
+
+            void setIPMode(bool ip_mode){
+                ip_mode_active_ = ip_mode;
             }
 
             void setHoming(bool homing_error){

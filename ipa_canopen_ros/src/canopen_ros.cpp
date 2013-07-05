@@ -30,12 +30,15 @@ std::string deviceFile;
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
 
 	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
  	for (auto device : canopen::devices){
   		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::cout << device.second.getIPMode() << std::endl;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	canopen::initDeviceManagerThread(canopen::deviceManager);
 
@@ -53,13 +56,15 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 	
 
 	canopen::recover(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
 	for (auto device : canopen::devices){
 		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::cout << device.second.getIPMode() << std::endl;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	//canopen::initDeviceManagerThread(canopen::deviceManager);
 
