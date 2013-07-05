@@ -108,7 +108,7 @@ void readParamsFromParameterServer(ros::NodeHandle n) {
 	XmlRpc::XmlRpcValue chainNames_XMLRPC;
 	n.getParam("chains", chainNames_XMLRPC);
 	std::vector<std::string> chainNames;
-	for (int i=0; i<chainNames_XMLRPC.size(); i++) 
+    for (int i=0; i<chainNames_XMLRPC.size(); i++)
 		chainNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
 
 	for (auto chainName : chainNames) {
@@ -144,10 +144,15 @@ int main(int argc, char **argv)
 	// todo: allow identical module IDs of modules when they are on different CAN buses
 
 	ros::init(argc, argv, "canopen_ros");
-	ros::NodeHandle n; // ("~");
+    ros::NodeHandle n(""); // ("~");
   
 	readParamsFromParameterServer(n);
 
+    XmlRpc::XmlRpcValue chainNames_XMLRPC;
+    n.getParam("chains", chainNames_XMLRPC);
+    std::vector<std::string> chainNames;
+    for (int i=0; i<chainNames_XMLRPC.size(); i++)
+        chainNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
 
 	std::cout << buses.begin()->second.syncInterval << std::endl;
 	canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
@@ -254,7 +259,7 @@ int main(int argc, char **argv)
         if(error_)
         {
           diagnostics.status[0].level = 2;
-          diagnostics.status[0].name = n.getNamespace();
+          diagnostics.status[0].name = chainNames[0];
           diagnostics.status[0].message = "Fault occured.";
           break;
         }
@@ -263,13 +268,13 @@ int main(int argc, char **argv)
           if (initialized_)
           {
             diagnostics.status[0].level = 0;
-            diagnostics.status[0].name = n.getNamespace();
+            diagnostics.status[0].name = chainNames[0];
             diagnostics.status[0].message = "powerball chain initialized and running";
           }
           else
           {
             diagnostics.status[0].level = 1;
-            diagnostics.status[0].name = n.getNamespace();
+            diagnostics.status[0].name = chainNames[0];
             diagnostics.status[0].message = "powerball chain not initialized";
             break;
           }
