@@ -48,12 +48,25 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 	return true;
 }
 
+
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
-	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
- 	for (auto device : canopen::devices)
-  		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	
+
+	canopen::recover(deviceFile, canopen::syncInterval);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+
+	for (auto device : canopen::devices){
+		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+	//canopen::initDeviceManagerThread(canopen::deviceManager);
+
+	for (auto device : canopen::devices){
+		device.second.setInitialized(true);
+	}
+
 	res.success.data = true;
 	res.error_message.data = "";
 	return true;
@@ -135,6 +148,7 @@ int main(int argc, char **argv)
   
 	readParamsFromParameterServer(n);
 
+
 	std::cout << buses.begin()->second.syncInterval << std::endl;
 	canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
 	// ^ todo: this only works with a single CAN bus; add support for more buses!
@@ -142,11 +156,24 @@ int main(int argc, char **argv)
 	std::cout << deviceFile << std::endl;
 	// ^ todo: this only works with a single CAN bus; add support for more buses!
 
+    if (!canopen::openConnection(deviceFile)){
+        std::cout << "Cannot open CAN device; aborting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    else{
+        std::cout << "Connection to CAN bus established" << std::endl;
+    }
+
+    for (auto dg : (canopen::devices)){
+        std::cout << "Module with CAN-id " << (uint16_t)dg.second.getCANid() << " connected" << std::endl;
+        canopen::getErrors(dg.second.getCANid());
+    }
+
 	// add custom PDOs:
-	canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
-	for (auto it : canopen::devices) {
-		canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
-	}
+    canopen::sendPos = canopen::schunkDefaultPDOOutgoing;
+    for (auto it : canopen::devices) {
+        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
+    }
 
 	// set up services, subscribers, and publishers for each of the chains:
 	std::vector<TriggerType> initCallbacks;
@@ -168,7 +195,7 @@ int main(int argc, char **argv)
 
 		initCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
 		initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
-		recoverCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
+        recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
     		recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
     		setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
     		setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
@@ -216,15 +243,19 @@ int main(int argc, char **argv)
 
     for (auto dg : (canopen::devices)) {
         std::string name = dg.second.getName();
-        ROS_INFO("Name %s", name.c_str() );
-        bool error_ = dg.second.getHomingError() ||  !dg.second.getVoltageEnabled();
+        //ROS_INFO("Name %s", name.c_str() );
+        bool error_ = dg.second.getFault();
         bool initialized_ = dg.second.getInitialized();
 
+        //ROS_INFO("Fault: %d", error_);
+        //ROS_INFO("Referenced: %d", initialized_);
+
         // set data to diagnostics
-        if(!error_)
+        if(error_)
         {
           diagnostics.status[0].level = 2;
           diagnostics.status[0].name = n.getNamespace();
+          diagnostics.status[0].message = "Fault occured.";
           break;
         }
         else

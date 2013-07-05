@@ -38,6 +38,7 @@ namespace canopen{
 			bool initialized_;
 			bool voltageEnabled_;
 			bool driveReferenced_;
+            bool fault_;
             bool homingError_;
 			double actualPos_;		// unit = rad
 			double desiredPos_;		// unit = rad
@@ -112,6 +113,10 @@ namespace canopen{
                 return homingError_;
             }
 
+            bool getFault(){
+                return fault_;
+            }
+
 			bool getDriveReferenced(){
 				return driveReferenced_;
 			}
@@ -157,6 +162,10 @@ namespace canopen{
 			void setMotorState(std::string nextState){
 				motorState_ = nextState;
 			}
+
+			void setNMTState(std::string nextState){
+				NMTState_ = nextState;
+			}
 			
             void setReceivedState(double received_state){
 				received_state_ = received_state;
@@ -165,6 +174,10 @@ namespace canopen{
             void setVoltageEnabled(bool voltage_enabled){
                 voltageEnabled_ = voltage_enabled;
 			}
+
+            void setFault(bool fault){
+                fault_ = fault;
+            }
 
             void setHoming(bool homing_error){
                 homingError_ = homing_error;
@@ -293,16 +306,25 @@ namespace canopen{
 	void setNMTState(uint16_t CANid, std::string targetState);
 	void setMotorState(uint16_t CANid, std::string targetState);
 
+    /***************************************************************/
+    //	define get errors functions
+    /***************************************************************/
+
+    void getErrors(uint16_t CANid);
+
+
 	/***************************************************************/
-	//		define init variables and functions
+	//	define init and recover variables and functions
 	/***************************************************************/
 
 	extern bool atFirstInit;
 
 	bool openConnection(std::string devName);
 	void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
-
+    void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+	
 	extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+    extern std::function< void (uint16_t CANid) > geterrors;
 
 	/***************************************************************/
 	//	define NMT constants, variables and functions
@@ -397,7 +419,7 @@ namespace canopen{
 	void initDeviceManagerThread(std::function<void ()> const& deviceManager);
 	void deviceManager();
 
-	void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
 	void schunkDefaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
 
 	/***************************************************************/
