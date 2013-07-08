@@ -36,5 +36,5 @@ list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -
 rosbuild_add_executable(canopen_ros src/canopen_ros.cpp)
 #rosbuild_add_executable(ros_canopenmasternode1 src/ros_canopenmasternode1.cpp)
 # target_link_libraries(ros_canopen boost_system boost_filesystem pthread canopen pcan yaml-cpp)
-target_link_libraries(canopen_ros boost_system pthread canopen pcan yaml-cpp)
+target_link_libraries(canopen_ros boost_system pthread canopen pcan)
 #target_link_libraries(ros_canopenmasternode1 boost_system boost_filesystem pthread canopen pcan yaml-cpp)
