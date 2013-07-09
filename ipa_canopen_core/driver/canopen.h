@@ -36,10 +36,8 @@ namespace canopen{
 			std::string name_;
 			std::string group_;
 			bool initialized_;
-			bool voltageEnabled_;
 			bool driveReferenced_;
             bool ip_mode_active_;
-            bool fault_;
             bool homingError_;
 			double actualPos_;		// unit = rad
 			double desiredPos_;		// unit = rad
@@ -49,16 +47,25 @@ namespace canopen{
 			std::chrono::microseconds timeStamp_usec_;
 			
 			
-		    //uint16_t mydata = data[4] + (data[5] << 8);
-            double received_state_;
-		    /*uint16_t warning = (mydata & 0x0080)>>7;
-		    uint16_t drive_is_moving = (mydata & 0x0100)>>8;
-		    uint16_t remote = (mydata & 0x0200)>>9;
-		    uint16_t target_reached = (mydata & 0x0400)>>10;
-		    uint16_t internal_limit_active = (mydata & 0x0800)>>11;
-		    uint16_t ip_mode_active = (mydata & 0x1000)>>12;
-		    uint16_t manufacturer_statusbit = (mydata & 0x4000)>>14;
-		    uint16_t drive_referenced = (mydata & 0x8000)>>15;*/
+
+            bool ready_switch_on_;
+            bool switched_on_;
+            bool op_enable_;
+            bool fault_;
+            bool volt_enable_;
+            bool quick_stop_;
+            bool switch_on_disabled_;
+            bool warning_;
+
+            bool mode_specific_;
+            bool remote_;
+            bool target_reached_;
+            bool internal_limit_;
+            bool op_specific_;
+            bool op_specific1_;
+            bool man_specific1_;
+            bool man_specific2_;
+
 
 		public:		
 
@@ -106,9 +113,67 @@ namespace canopen{
 			bool getInitialized(){
 				return initialized_;
 			}
+
+
 			bool getVoltageEnabled(){
-				return voltageEnabled_;
+                return volt_enable_;
 			}
+
+            bool getReadySwitchOn(){
+                return ready_switch_on_;
+            }
+
+            bool getSwitchOn(){
+                return switched_on_;
+            }
+
+            bool getOpEnabled(){
+                return op_enable_;
+            }
+
+            bool getQuickStop(){
+                return quick_stop_;
+            }
+
+            bool getSwitchOnDisabled(){
+                return switch_on_disabled_;
+            }
+
+            bool getWarning(){
+                return warning_;
+            }
+
+            bool getModeSpecific(){
+                return mode_specific_;
+            }
+
+            bool getRemote(){
+                return remote_;
+            }
+            bool getTargetReached(){
+                return target_reached_;
+            }
+
+            bool getInternalLimits(){
+                return internal_limit_;
+            }
+
+
+            bool getOpSpec0(){
+                return op_specific_;
+            }
+
+            bool getOpSpec1(){
+                return op_specific1_;
+            }
+
+            bool getManSpec1(){
+                return man_specific1_;
+            }
+
+            bool getmanSpec2(){
+                return man_specific2_;
+            }
 
             bool getHomingError(){
                 return homingError_;
@@ -172,13 +237,69 @@ namespace canopen{
 				NMTState_ = nextState;
 			}
 			
-            void setReceivedState(double received_state){
-				received_state_ = received_state;
-			}
 			
             void setVoltageEnabled(bool voltage_enabled){
-                voltageEnabled_ = voltage_enabled;
+                volt_enable_ = voltage_enabled;
 			}
+
+            void setReadySwitchON(bool r_switch_on){
+                ready_switch_on_ = r_switch_on;
+            }
+
+            void setSwitchON(bool switch_on){
+                switched_on_ = switch_on;
+            }
+
+            void setOpEnable(bool op_enable){
+                op_enable_ = op_enable;
+            }
+
+            void setQuickStop(bool quick_stop){
+                quick_stop_ = quick_stop;
+            }
+
+            void setSwitchOnDisable(bool switch_disabled){
+                switch_on_disabled_ = switch_disabled;
+            }
+
+            void setWarning(bool warning){
+                warning_ = warning;
+            }
+
+
+            void setModeSpec(bool modespec){
+                mode_specific_ = modespec;
+            }
+
+
+            void setRemote(bool remote){
+                remote_ = remote;
+            }
+
+            void setManSpec1(bool manspec1){
+                man_specific1_ = manspec1;
+            }
+
+            void setTargetReached(bool target_reached){
+                target_reached_ = target_reached;
+            }
+
+            void setInternalLimits(bool internal_limits){
+                internal_limit_ = internal_limits;
+            }
+
+
+            void setManSpec2(bool manspec2){
+                man_specific2_ = manspec2;
+            }
+
+            void setOpSpec1(bool opspec1){
+                op_specific1_ = opspec1;
+            }
+
+            void setOpSpec0(bool opspec0){
+                op_specific_ = opspec0;
+            }
 
             void setFault(bool fault){
                 fault_ = fault;
@@ -397,12 +518,12 @@ namespace canopen{
 	const SDOkey IP_TIME_INDEX(0x60C2, 0x2);
 
 	const uint16_t CONTROLWORD_SHUTDOWN = 6;
-	const uint16_t CONTROLWORD_SWITCH_ON = 7;
-	const uint16_t CONTROLWORD_ENABLE_OPERATION = 15;
+    const uint16_t CONTROLWORD_SWITCH_ON = 7;
+    const uint16_t CONTROLWORD_ENABLE_OPERATION = 15;
 	const uint16_t CONTROLWORD_START_HOMING = 16;
 	const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
-	const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00;
-	const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
+    const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00; //0x00;
+    const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
 
 	const uint8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
 	const uint8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;

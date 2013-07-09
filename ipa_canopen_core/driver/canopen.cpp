@@ -63,29 +63,31 @@ namespace canopen{
 		for (auto device : devices){
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-			canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			//canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
 			//std::cout << "Heartbeat protocol for device with CAN-ID " << (uint16_t)device.second.getCANid() << " started" << std::endl;
-			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+            sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 
 		if (atFirstInit)
 			atFirstInit = false;
 	}
+
 
 	void recover(std::string deviceFile, std::chrono::milliseconds syncInterval){
         CAN_Close(h);
@@ -116,30 +118,28 @@ namespace canopen{
 
 		for (auto device : devices){
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-			canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			canopen::sendSDO((uint16_t)device.second.getCANid(), canopen::STATUSWORD);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			//canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
-			//std::cout << "Heartbeat protocol for device with CAN-ID " << (uint16_t)device.second.getCANid() << " started" << std::endl;
-			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			sendSDO(device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 		}
+        recover_active = false;
 	}
 
 	/***************************************************************/
@@ -150,28 +150,80 @@ namespace canopen{
 	
 	}
 
+    void setMotorState(uint16_t CANid, std::string targetState){
+        while (devices[CANid].getMotorState() != targetState){
+                    canopen::sendSDO(CANid, canopen::STATUSWORD);
+        if (devices[CANid].getMotorState() == MS_FAULT)
+    {
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        }
+/*
+        if (devices[CANid].getMotorState() == MS_NOT_READY_TO_SWITCH_ON){
+            canopen::sendSDO(CANid, canopen::STATUSWORD);
+            break;
+        }
+*/
+        if (devices[CANid].getMotorState() == MS_SWITCHED_ON_DISABLED){
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
+        }
+        if (devices[CANid].getMotorState() == MS_READY_TO_SWITCH_ON){
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SWITCH_ON);
+        }
+        if (devices[CANid].getMotorState() == MS_SWITCHED_ON){
+        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        }
+
+
+/*
 	void setMotorState(uint16_t CANid, std::string targetState){
+
 		while (devices[CANid].getMotorState() != targetState){
             canopen::sendSDO(CANid, canopen::STATUSWORD);
-			if (devices[CANid].getMotorState() == MS_FAULT){
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            while (devices[CANid].getFault()){
+
 				canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-				//std::this_thread::sleep_for(std::chrono::milliseconds(50));
-				canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-				//std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
 			}
-			if (devices[CANid].getMotorState() == MS_SWITCHED_ON_DISABLED){
+            if (devices[CANid].getSwitchOnDisabled()){
 				canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
 			}
-			if (devices[CANid].getMotorState() == MS_READY_TO_SWITCH_ON){
+            if (devices[CANid].getReadySwitchOn()){
 				canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SWITCH_ON);
 			}
-			if (devices[CANid].getMotorState() == MS_SWITCHED_ON){
+            if (devices[CANid].getSwitchOn()){
 				canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-	}
 
+	}
+*/
 	/***************************************************************/
 	//			define NMT variables
 	/***************************************************************/
@@ -247,8 +299,6 @@ namespace canopen{
 		msg.DATA[5] = 0x00;
 		msg.DATA[6] = 0x00;
 		msg.DATA[7] = 0x00;
-		// TODO: why is it only working when inserting the following command
-        //std::cout << "" << std::endl;
 		CAN_Write(h, &msg);
 
 
@@ -338,17 +388,79 @@ namespace canopen{
 		devices[CANid].setTimeStamp_msec(std::chrono::milliseconds(m.dwTime));
 		devices[CANid].setTimeStamp_usec(std::chrono::microseconds(m.wUsec));
 
+        uint16_t mydata_low = m.Msg.DATA[0];
+        uint16_t mydata_high = m.Msg.DATA[1];
 
+        bool ready_switch_on = mydata_low & 0x01;
+        bool switched_on = mydata_low & 0x02;
+        bool op_enable = mydata_low & 0x04;
+        bool fault = mydata_low & 0x08;
+       // std::cout << "fault PDO" << fault << std::endl;
+        bool volt_enable = mydata_low & 0x10;
+        bool quick_stop = mydata_low & 0x20;
+        bool switch_on_disabled = mydata_low & 0x40;
+        bool warning = mydata_low & 0x80;
 
-        bool fault = m.Msg.DATA[0] & 0x08;
-        bool homing_error = m.Msg.DATA[1] & 0x80;
-        bool ip_mode1 = m.Msg.DATA[0] & 0x10;
-        bool ip_mode2 = m.Msg.DATA[1] & 0x10;
-        bool ip_mode = ip_mode1 & ip_mode2;
+        bool mode_specific = mydata_high & 0x01;
+        bool remote = mydata_high & 0x02;
+        bool target_reached = mydata_high & 0x04;
+        bool internal_limit = mydata_high & 0x08;
+        bool op_specific = mydata_high & 0x10;
+        bool op_specific1 = mydata_high & 0x20;
+        bool man_specific1 = mydata_high & 0x40;
+        bool man_specific2 = mydata_high & 0x80;
+
+        bool ip_mode = op_specific & volt_enable;
+
+        if(fault)
+         {
+            devices[CANid].setMotorState(canopen::MS_FAULT);
+         }
+        /*
+         else
+            if(!ready_switch_on)
+            {
+                  devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
+            } */
+        else
+             if(switch_on_disabled)
+             {
+                  devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
+             }
+         else
+                 if(ready_switch_on)
+                 {
+                     devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+
+                     if(switched_on)
+                     {
+                         devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
+                     }
+
+                      if(op_enable)
+                      {
+                          devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
+                      }
+                     }
 
         devices[CANid].setFault(fault);
         devices[CANid].setIPMode(ip_mode);
-        devices[CANid].setHoming(homing_error);
+        devices[CANid].setHoming(op_specific);
+        devices[CANid].setOpSpec0(op_specific);
+        devices[CANid].setOpSpec1(op_specific1);
+        devices[CANid].setManSpec1(man_specific1);
+        devices[CANid].setManSpec2(man_specific2);
+        devices[CANid].setInternalLimits(internal_limit);
+        devices[CANid].setTargetReached(target_reached);
+        devices[CANid].setRemote(remote);
+        devices[CANid].setModeSpec(mode_specific);
+        devices[CANid].setWarning(warning);
+        devices[CANid].setSwitchOnDisable(switch_on_disabled);
+        devices[CANid].setQuickStop(quick_stop);
+        devices[CANid].setOpEnable(op_enable);
+        devices[CANid].setVoltageEnabled(volt_enable);
+        devices[CANid].setReadySwitchON(ready_switch_on);
+        devices[CANid].setSwitchON(switched_on);
 
 
 	}
@@ -379,7 +491,7 @@ namespace canopen{
 		
 			// incoming EMCY
 			else if (m.Msg.ID >= 0x081 && m.Msg.ID <= 0x0FF){
-                //std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+                std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
                 if (incomingEMCYHandlers.find(m.Msg.ID) != incomingEMCYHandlers.end())
                     incomingEMCYHandlers[m.Msg.ID](m);
 			}
@@ -391,12 +503,12 @@ namespace canopen{
 
             // incoming PD0
 			else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-               //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
+               std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
 				if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()) 
 					incomingPDOHandlers[m.Msg.ID](m); 
 			}
 
-			// incoming SD0
+            // incoming SD0
 			else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
                 //std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
                 SDOkey sdoKey(m);
@@ -441,31 +553,79 @@ namespace canopen{
 
 void statusword_incoming(uint8_t CANid, BYTE data[8]) {
 
-		uint16_t mydata = data[4] + (data[5] << 8);
-		uint16_t received_state = mydata & 0x006F;
+        //std::cout << (uint16_t)data[4] << std::endl;
+        uint16_t mydata_low = data[4];
+        uint16_t mydata_high = data[5];
 
-		if (received_state == 0x0000 | received_state == 0x0020){
-			devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
-		}
-		else if (received_state == 0x0040 | received_state == 0x0060){
-			devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
-		}
-		else if (received_state == 0x0021){
-			devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
-		}
-		else if (received_state == 0x0023){
-			devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
-		}
-		else if (received_state == 0x0027){
-			devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
-		}
-		else if (received_state == 0x0007){
-			devices[CANid].setMotorState(canopen::MS_QUICK_STOP_ACTIVE);
-		}
-		else if (received_state == 0x000F | received_state == 0x002F | received_state == 0x0008 | received_state == 0x0028){
-			devices[CANid].setMotorState(canopen::MS_FAULT);
-		}
+        bool ready_switch_on = mydata_low & 0x01;
+        bool switched_on = mydata_low & 0x02;
+        bool op_enable = mydata_low & 0x04;
+        bool fault = mydata_low & 0x08;
+        std::cout << "fault SDO" << fault << std::endl;
+        bool volt_enable = mydata_low & 0x10;
+        bool quick_stop = mydata_low & 0x20;
+        bool switch_on_disabled = mydata_low & 0x40;
+        bool warning = mydata_low & 0x80;
 
-        std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
+        bool mode_specific = mydata_high & 0x01;
+        bool remote = mydata_high & 0x02;
+        bool target_reached = mydata_high & 0x04;
+        bool internal_limit = mydata_high & 0x08;
+        bool op_specific = mydata_high & 0x10;
+        bool op_specific1 = mydata_high & 0x20;
+        bool man_specific1 = mydata_high & 0x40;
+        bool man_specific2 = mydata_high & 0x80;
+
+
+        if(fault)
+         {
+            devices[CANid].setMotorState(canopen::MS_FAULT);
+         }
+        /*
+         else
+            if(!ready_switch_on)
+            {
+                  devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
+            }
+            */
+        else
+             if(switch_on_disabled)
+             {
+                  devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
+             }
+         else
+                 if(ready_switch_on)
+                 {
+                     devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+
+                     if(switched_on)
+                     {
+                         devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
+                     }
+
+                      if(op_enable)
+                      {
+                          devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
+                      }
+                     }
+
+
+        devices[CANid].setFault(fault);
+        devices[CANid].setHoming(op_specific);
+        devices[CANid].setOpSpec0(op_specific);
+        devices[CANid].setOpSpec1(op_specific1);
+        devices[CANid].setManSpec1(man_specific1);
+        devices[CANid].setManSpec2(man_specific2);
+        devices[CANid].setInternalLimits(internal_limit);
+        devices[CANid].setTargetReached(target_reached);
+        devices[CANid].setRemote(remote);
+        devices[CANid].setModeSpec(mode_specific);
+        devices[CANid].setWarning(warning);
+        devices[CANid].setSwitchOnDisable(switch_on_disabled);
+        devices[CANid].setQuickStop(quick_stop);
+        devices[CANid].setOpEnable(op_enable);
+        devices[CANid].setVoltageEnabled(volt_enable);
+        devices[CANid].setReadySwitchON(ready_switch_on);
+        devices[CANid].setSwitchON(switched_on);
 	}
 }
