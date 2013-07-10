@@ -504,6 +504,7 @@ namespace canopen{
 	const std::string MS_SWITCHED_ON = "SWITCHED_ON";
 	const std::string MS_OPERATION_ENABLED = "OPERATION_ENABLED";
 	const std::string MS_QUICK_STOP_ACTIVE = "QUICK_STOP_ACTIVE";
+    const std::string MS_FAULT_REACTION_ACTIVE = "FAULT_REACTION_ACTIVE";
 
 	/***************************************************************/
 	//		define SDO protocol constants and functions
@@ -516,6 +517,14 @@ namespace canopen{
 	const SDOkey SYNC_TIMEOUT_FACTOR(0x200e, 0x0);
 	const SDOkey IP_TIME_UNITS(0x60C2, 0x1);
 	const SDOkey IP_TIME_INDEX(0x60C2, 0x2);
+    const SDOkey ERROR_CODE(0x603F, 0x0);
+    const SDOkey ABORT_CONNECTION(0x6007, 0x0);
+    const SDOkey QUICK_STOP(0x605A, 0x0);
+    const SDOkey SHUTDOWN(0x605B, 0x0);
+    const SDOkey DISABLE_CODE(0x605C, 0x0);
+    const SDOkey HALT(0x605D, 0x0);
+    const SDOkey FAULT(0x605E, 0x0);
+    const SDOkey MODES(0x6060, 0x0);
 
 	const uint16_t CONTROLWORD_SHUTDOWN = 6;
     const uint16_t CONTROLWORD_SWITCH_ON = 7;

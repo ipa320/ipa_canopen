@@ -72,9 +72,16 @@ namespace canopen{
 			//std::cout << "Heartbeat protocol for device with CAN-ID " << (uint16_t)device.second.getCANid() << " started" << std::endl;
             //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+
 
             sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -117,7 +124,7 @@ namespace canopen{
 		}
 
 		for (auto device : devices){
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -176,12 +183,11 @@ namespace canopen{
         canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
         canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
         }
-/*
+
         if (devices[CANid].getMotorState() == MS_NOT_READY_TO_SWITCH_ON){
             canopen::sendSDO(CANid, canopen::STATUSWORD);
-            break;
         }
-*/
+
         if (devices[CANid].getMotorState() == MS_SWITCHED_ON_DISABLED){
         canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
         }
@@ -412,36 +418,48 @@ namespace canopen{
 
         bool ip_mode = op_specific & volt_enable;
 
-        if(fault)
-         {
-            devices[CANid].setMotorState(canopen::MS_FAULT);
-         }
-        /*
-         else
-            if(!ready_switch_on)
-            {
-                  devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
-            } */
+
+        if(!ready_switch_on)
+        {
+            if(fault)
+                {
+                 devices[CANid].setMotorState(canopen::MS_FAULT);
+                }
+            else if(switch_on_disabled)
+                {
+                 devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
+                }
+            else
+                 devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
+        }
+
         else
-             if(switch_on_disabled)
-             {
-                  devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
-             }
-         else
-                 if(ready_switch_on)
+         {
+                 if(switched_on)
                  {
-                     devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+                        if(op_enable)
+                         {
 
-                     if(switched_on)
-                     {
-                         devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
-                     }
+                            //if(volt_enable)
+                           // {
+                                devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
+                           // }
 
-                      if(op_enable)
-                      {
-                          devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
-                      }
-                     }
+                        }
+                        else
+                            devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
+                 }
+                 else if(!quick_stop)
+                        devices[CANid].setMotorState(canopen::MS_QUICK_STOP_ACTIVE);
+
+                 else
+                    devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+
+                }
+
+        if(fault & op_enable & switched_on & ready_switch_on)
+            devices[CANid].setMotorState(canopen::MS_FAULT_REACTION_ACTIVE);
+
 
         devices[CANid].setFault(fault);
         devices[CANid].setIPMode(ip_mode);
@@ -461,6 +479,8 @@ namespace canopen{
         devices[CANid].setVoltageEnabled(volt_enable);
         devices[CANid].setReadySwitchON(ready_switch_on);
         devices[CANid].setSwitchON(switched_on);
+
+        std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
 
 
 	}
@@ -577,37 +597,49 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
         bool man_specific2 = mydata_high & 0x80;
 
 
-        if(fault)
-         {
-            devices[CANid].setMotorState(canopen::MS_FAULT);
-         }
-        /*
-         else
-            if(!ready_switch_on)
-            {
-                  devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
-            }
-            */
+
+
+        if(!ready_switch_on)
+        {
+            if(fault)
+                {
+                 devices[CANid].setMotorState(canopen::MS_FAULT);
+                }
+            else if(switch_on_disabled)
+                {
+                 devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
+                }
+            else
+                 devices[CANid].setMotorState(canopen::MS_NOT_READY_TO_SWITCH_ON);
+        }
+
         else
-             if(switch_on_disabled)
-             {
-                  devices[CANid].setMotorState(canopen::MS_SWITCHED_ON_DISABLED);
-             }
-         else
-                 if(ready_switch_on)
+         {
+                 if(switched_on)
                  {
-                     devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+                        if(op_enable)
+                         {
 
-                     if(switched_on)
-                     {
-                         devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
-                     }
+                            //if(volt_enable)
+                           // {
+                                devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
+                           // }
 
-                      if(op_enable)
-                      {
-                          devices[CANid].setMotorState(canopen::MS_OPERATION_ENABLED);
-                      }
-                     }
+                        }
+                        else
+                            devices[CANid].setMotorState(canopen::MS_SWITCHED_ON);
+                 }
+                 else if(!quick_stop)
+                        devices[CANid].setMotorState(canopen::MS_QUICK_STOP_ACTIVE);
+
+                 else
+                    devices[CANid].setMotorState(canopen::MS_READY_TO_SWITCH_ON);
+
+                }
+
+        if(fault & op_enable & switched_on & ready_switch_on)
+            devices[CANid].setMotorState(canopen::MS_FAULT_REACTION_ACTIVE);
+
 
 
         devices[CANid].setFault(fault);
@@ -627,5 +659,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8]) {
         devices[CANid].setVoltageEnabled(volt_enable);
         devices[CANid].setReadySwitchON(ready_switch_on);
         devices[CANid].setSwitchON(switched_on);
+
+        std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
 	}
 }
