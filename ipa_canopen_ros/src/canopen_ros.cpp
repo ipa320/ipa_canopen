@@ -53,14 +53,23 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
 	
 
+
 	canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-	for (auto device : canopen::devices){
-		canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+    for (auto device : canopen::devices)
+    {
+
+        device.second.setDesiredPos((double)device.second.getActualPos());
+        device.second.setDesiredVel(0);
+
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cout << device.second.getIPMode() << std::endl;
+        std::cout << "IPMODE" << device.second.getIPMode() << std::endl;
 	}
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -81,8 +90,10 @@ bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs
 	return true;
 }
 
-void setVel(const brics_actuator::JointVelocities &msg, std::string chainName) {
-	if (!canopen::atFirstInit) {
+void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
+{
+    if (!canopen::atFirstInit & !canopen::recover_active)
+    {
 		std::vector<double> velocities;
 		for (auto it : msg.velocities)
 			velocities.push_back( it.value); 
@@ -186,7 +197,7 @@ int main(int argc, char **argv)
 	// set up services, subscribers, and publishers for each of the chains:
 	std::vector<TriggerType> initCallbacks;
 	std::vector<ros::ServiceServer> initServices;
-	std::vector<TriggerType> recoverCallbacks;
+    std::vector<TriggerType> recoverCallbacks;
 	std::vector<ros::ServiceServer> recoverServices;
 	std::vector<SetOperationModeCallbackType> setOperationModeCallbacks;
 	std::vector<ros::ServiceServer> setOperationModeServices;
@@ -195,7 +206,7 @@ int main(int argc, char **argv)
 	std::vector<ros::Subscriber> jointVelocitiesSubscribers;
 	std::map<std::string, ros::Publisher> currentOperationModePublishers;
 	std::map<std::string, ros::Publisher> statePublishers;
-	ros::Publisher jointStatesPublisher = n.advertise<sensor_msgs::JointState>("/joint_states", 100);
+    ros::Publisher jointStatesPublisher = n.advertise<sensor_msgs::JointState>("/joint_states", 1);
     ros::Publisher diagnosticsPublisher = n.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
   
 	for (auto it : canopen::deviceGroups) {
@@ -204,16 +215,16 @@ int main(int argc, char **argv)
 		initCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
 		initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
-    		recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
+            recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
     		setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
     		setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 
     		jointVelocitiesCallbacks.push_back( boost::bind(setVel, _1, it.first) );
-    		jointVelocitiesSubscribers.push_back( n.subscribe<brics_actuator::JointVelocities>("/" + it.first + "/command_vel", 100, jointVelocitiesCallbacks.back()) );
+            jointVelocitiesSubscribers.push_back( n.subscribe<brics_actuator::JointVelocities>("/" + it.first + "/command_vel", 1, jointVelocitiesCallbacks.back()) );
 
-		currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1000);
+        currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1);
     
-    		statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1000);
+            statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
 	}
 
 	double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();

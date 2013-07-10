@@ -318,7 +318,7 @@ namespace canopen{
 			}
 
 			void updateDesiredPos(){
-				desiredPos_ += desiredVel_ * (syncInterval.count() / 1000.0);
+                desiredPos_ += desiredVel_ * (syncInterval.count() / 1000.0);
 			}
 
 			void setTimeStamp_msec(std::chrono::milliseconds timeStamp){
@@ -382,7 +382,7 @@ namespace canopen{
 			std::vector<double> getDesiredVel() {
 				std::vector<double> desiredVel;
 				for (auto CANid : CANids_)
-					desiredVel.push_back(devices[CANid].getDesiredVel());
+                    desiredVel.push_back(devices[CANid].getDesiredVel());
 				return desiredVel;
 			}
 
@@ -448,6 +448,7 @@ namespace canopen{
 	/***************************************************************/
 
 	extern bool atFirstInit;
+    extern bool recover_active;
 
 	bool openConnection(std::string devName);
 	void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
@@ -529,10 +530,13 @@ namespace canopen{
 	const uint16_t CONTROLWORD_SHUTDOWN = 6;
     const uint16_t CONTROLWORD_SWITCH_ON = 7;
     const uint16_t CONTROLWORD_ENABLE_OPERATION = 15;
-	const uint16_t CONTROLWORD_START_HOMING = 16;
+    const uint16_t CONTROLWORD_START_HOMING = 16;
 	const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
+    const uint16_t CONTROLWORD_DISABLE_INTERPOLATED = 7;
+    const uint16_t CONTROL_WORD_DISABLE_VOLTAGE = 0x7D;
     const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00; //0x00;
     const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
+    const uint16_t CONTROLWORD_HALT = 0x100;
 
 	const uint8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
 	const uint8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;

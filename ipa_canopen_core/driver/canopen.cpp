@@ -98,6 +98,7 @@ namespace canopen{
 
 	void recover(std::string deviceFile, std::chrono::milliseconds syncInterval){
         CAN_Close(h);
+
 	
 		recover_active = true;
 
@@ -123,7 +124,29 @@ namespace canopen{
 			std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl; 
 		}
 
-		for (auto device : devices){
+        for (auto device : devices){
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "desvel" << device.second.getDesiredVel() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "asvel" << device.second.getActualVel() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "despos" << device.second.getDesiredPos() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "acpos" << device.second.getActualPos() << std::endl;
+
+            if(device.second.getMotorState() == MS_OPERATION_ENABLED)
+            {
+                std::cout << "Node" << device.second.getCANid() << "is operational" << std::endl;
+            }
+            else
+            {
+
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
+
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
@@ -145,6 +168,25 @@ namespace canopen{
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+
+            }
+
+
+
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddesvel" << device.second.getDesiredVel() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddasvel" << device.second.getActualVel() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddpos" << device.second.getDesiredPos() << std::endl;
+            std::cout << "Node" << (uint16_t)device.second.getCANid() << "endapos" << device.second.getActualPos() << std::endl;
+
+            device.second.setDesiredPos((double)device.second.getActualPos());
+            device.second.setDesiredVel(0);
+
+            canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+            canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+
+            //canopen::getErrors((uint16_t)device.second.getCANid());
+            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 		}
         recover_active = false;
 	}
@@ -162,26 +204,29 @@ namespace canopen{
                     canopen::sendSDO(CANid, canopen::STATUSWORD);
         if (devices[CANid].getMotorState() == MS_FAULT)
     {
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        canopen::sendSDO(CANid, canopen::STATUSWORD);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        if(!devices[CANid].getFault())
+        {
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+        }
+        else
+        {
         //std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-        canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+        }
+
         }
 
         if (devices[CANid].getMotorState() == MS_NOT_READY_TO_SWITCH_ON){
@@ -338,17 +383,17 @@ namespace canopen{
 	void deviceManager() {
 		// todo: init, recover... (e.g. when to start/stop sending SYNCs)
 		while (true) {
-			auto tic = std::chrono::high_resolution_clock::now();
-			if (!recover_active){
-				for (auto device : canopen::devices) {
-					if (device.second.getInitialized()) {
-						devices[device.first].updateDesiredPos();
+            auto tic = std::chrono::high_resolution_clock::now();
+            if (!recover_active){
+                for (auto device : canopen::devices) {
+                    if (device.second.getInitialized()) {
+                        devices[device.first].updateDesiredPos();
 						sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-					}
-				}
-				canopen::sendSync();
-				std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));
-			}
+                    }
+                }
+                canopen::sendSync();
+                std::this_thread::sleep_for(syncInterval - (std::chrono::high_resolution_clock::now() - tic ));
+            }
 
 		}
 	}
@@ -523,7 +568,7 @@ namespace canopen{
 
             // incoming PD0
 			else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-               std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
+               //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
 				if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end()) 
 					incomingPDOHandlers[m.Msg.ID](m); 
 			}
