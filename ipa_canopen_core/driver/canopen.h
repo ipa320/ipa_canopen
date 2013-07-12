@@ -423,11 +423,14 @@ namespace canopen{
 	}
 
 	void statusword_incoming(uint8_t CANid, BYTE data[8]);
+    void errorword_incoming(uint8_t CANid, BYTE data[8]);
 
 	extern std::map<std::string, DeviceGroup> deviceGroups;	// DeviceGroup name -> DeviceGroup object
 	extern HANDLE h;
 	extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers;	
+    extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingErrorHandlers;
 	extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
+    extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
 
 	/***************************************************************/
 	//			define state machine functions
@@ -449,10 +452,12 @@ namespace canopen{
 
 	extern bool atFirstInit;
     extern bool recover_active;
+    extern bool homing_active;
 
 	bool openConnection(std::string devName);
 	void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void homing(std::string deviceFile, std::chrono::milliseconds syncInterval);
 	
 	extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid) > geterrors;
@@ -512,6 +517,7 @@ namespace canopen{
 	/***************************************************************/
 
 	const SDOkey STATUSWORD(0x6041, 0x0);
+    const SDOkey ERRORWORD(0x1001, 0x0);
 	const SDOkey CONTROLWORD(0x6040, 0x0);
 	const SDOkey MODES_OF_OPERATION(0x6060, 0x0);
  	const SDOkey MODES_OF_OPERATION_DISPLAY(0x6061, 0x0);
@@ -527,11 +533,11 @@ namespace canopen{
     const SDOkey FAULT(0x605E, 0x0);
     const SDOkey MODES(0x6060, 0x0);
 
-	const uint16_t CONTROLWORD_SHUTDOWN = 6;
+    const uint16_t CONTROLWORD_SHUTDOWN = 6;
     const uint16_t CONTROLWORD_SWITCH_ON = 7;
     const uint16_t CONTROLWORD_ENABLE_OPERATION = 15;
     const uint16_t CONTROLWORD_START_HOMING = 16;
-	const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
+    const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
     const uint16_t CONTROLWORD_DISABLE_INTERPOLATED = 7;
     const uint16_t CONTROL_WORD_DISABLE_VOLTAGE = 0x7D;
     const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00; //0x00;
@@ -562,8 +568,9 @@ namespace canopen{
 	void initDeviceManagerThread(std::function<void ()> const& deviceManager);
 	void deviceManager();
 
-    void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
-	void schunkDefaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
+    void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m);
 
 	/***************************************************************/
 	//		define functions for receiving data
