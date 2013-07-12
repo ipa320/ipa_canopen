@@ -1,3 +1,62 @@
+/*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ *   Copyright (c) 2013 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ *   Project name: ipa_canopen
+ * \note
+ *   ROS stack name: ipa_canopen
+ * \note
+ *   ROS package name: ipa_canopen_ros
+ *
+ * \author
+ *   Author: Eduard Herkel, Thiago de Freitas, Tobias Sing
+ * \author
+ *   Supervised by: Eduard Herkel, Thiago de Freitas, Tobias Sing, email:tdf@ipa.fhg.de
+ *
+ * \date Date of creation: December 2012
+ *
+ * \brief
+ *   Implementation of canopen.
+ *
+ *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
 #include "ros/ros.h"
 #include <urdf/model.h>
 #include "std_msgs/String.h"
@@ -37,6 +96,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (auto device : canopen::devices){
+        if(device.second.getHomingError())
+            return false;
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -52,6 +113,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     res.success.data = true;
     res.error_message.data = "";
+
     return true;
 }
 
@@ -101,8 +163,15 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
     if (!canopen::atFirstInit & !canopen::recover_active)
     {
         std::vector<double> velocities;
+
+
         for (auto it : msg.velocities)
+        {
             velocities.push_back( it.value);
+        }
+
+        joint_limits_->checkVelocityLimits(velocities);
+
         canopen::deviceGroups[chainName].setVel(velocities);
     }
 }
@@ -152,7 +221,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (int i=0; i<devices_XMLRPC.size(); i++)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
 
-        for (int i=0; i<jointNames.size(); i++)
+        for (unsigned int i=0; i<jointNames.size(); i++)
             canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
@@ -209,7 +278,7 @@ void setJointConstraints(ros::NodeHandle n)
 
       /// Get max velocities out of urdf model
       std::vector<double> MaxVelocities(DOF);
-      for (unsigned int i = 0; i < DOF; i++)
+      for (int i = 0; i < DOF; i++)
       {
           MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
           std::cout << "max_vel" << MaxVelocities[i] << std::endl;
@@ -217,21 +286,21 @@ void setJointConstraints(ros::NodeHandle n)
 
       /// Get lower limits out of urdf model
       std::vector<double> LowerLimits(DOF);
-      for (unsigned int i = 0; i < DOF; i++)
+      for (int i = 0; i < DOF; i++)
       {
           LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
       }
 
       // Get upper limits out of urdf model
       std::vector<double> UpperLimits(DOF);
-      for (unsigned int i = 0; i < DOF; i++)
+      for (int i = 0; i < DOF; i++)
       {
           UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
       }
 
       /// Get offsets out of urdf model
       std::vector<double> Offsets(DOF);
-      for (unsigned int i = 0; i < DOF; i++)
+      for (int i = 0; i < DOF; i++)
       {
           Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
       }
