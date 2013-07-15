@@ -78,10 +78,12 @@ typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Res
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
 typedef boost::function<bool(cob_srvs::SetOperationMode::Request&, cob_srvs::SetOperationMode::Response&)> SetOperationModeCallbackType;
 
-struct BusParams {
+struct BusParams
+{
     std::string baudrate;
     uint32_t syncInterval;
 };
+
 std::map<std::string, BusParams> buses;
 
 std::string deviceFile;
@@ -90,25 +92,31 @@ JointLimits* joint_limits_;
 std::vector<std::string> chainNames;
 std::vector<std::string> jointNames;
 
-bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
+bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
+{
 
     canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    for (auto device : canopen::devices){
-        if(device.second.getHomingError())
-            return false;
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 
+    for (auto device : canopen::devices)
+    {
+
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cout << device.second.getIPMode() << std::endl;
     }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     canopen::initDeviceManagerThread(canopen::deviceManager);
 
-    for (auto device : canopen::devices) {
+    for (auto device : canopen::devices)
+    {
         device.second.setInitialized(true);
+       // if(device.second.getHomingError())
+         //   return false;
+
     }
 
     res.success.data = true;
@@ -118,7 +126,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 }
 
 
-bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName) {
+bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
+{
 
 
 
@@ -128,22 +137,21 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
     for (auto device : canopen::devices)
     {
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+    }
+    //canopen::initDeviceManagerThread(canopen::deviceManager);
+
+    for (auto device : canopen::devices)
+    {
         device.second.setDesiredPos((double)device.second.getActualPos());
         device.second.setDesiredVel(0);
 
         canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
         canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
 
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cout << "IPMODE" << device.second.getIPMode() << std::endl;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
-
-    for (auto device : canopen::devices){
         device.second.setInitialized(true);
     }
 
@@ -153,7 +161,8 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 }
 
 
-bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res, std::string chainName) {
+bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res, std::string chainName)
+{
     res.success.data = true;  // for now this service is just a dummy, not used elsewhere
     return true;
 }
@@ -188,7 +197,8 @@ void readParamsFromParameterServer(ros::NodeHandle n)
     }
 
     n.getParam("devices", busParams);
-    for (int i=0; i<busParams.size(); i++) {
+    for (int i=0; i<busParams.size(); i++)
+    {
         BusParams busParam;
         auto name = static_cast<std::string>(busParams[i]["name"]);
         busParam.baudrate = static_cast<std::string>(busParams[i]["baudrate"]);
@@ -241,7 +251,6 @@ void setJointConstraints(ros::NodeHandle n)
     /// Get robot_description from ROS parameter server
       joint_limits_ = new JointLimits();
       int DOF = jointNames.size();
-      std::cout << "Degrees of Freedom" << DOF << std::endl;
 
       std::string param_name = "/robot_description";
       std::string full_param_name;
@@ -281,7 +290,6 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
-          std::cout << "max_vel" << MaxVelocities[i] << std::endl;
       }
 
       /// Get lower limits out of urdf model
@@ -313,8 +321,6 @@ void setJointConstraints(ros::NodeHandle n)
       joint_limits_->setMaxVelocities(MaxVelocities);
       joint_limits_->setOffsets(Offsets);
 
-      std::cout << "Final DOF" << joint_limits_->getDOF() << std::endl;
-
      /********************************************
      *
      *
@@ -332,18 +338,20 @@ int main(int argc, char **argv)
 
     readParamsFromParameterServer(n);
 
-    std::cout << buses.begin()->second.syncInterval << std::endl;
+    std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
     // ^ todo: this only works with a single CAN bus; add support for more buses!
     deviceFile = buses.begin()->first;
-    std::cout << deviceFile << std::endl;
+    std::cout << "Opening device..." << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
 
-    if (!canopen::openConnection(deviceFile)){
-        std::cout << "Cannot open CAN device; aborting." << std::endl;
+    if (!canopen::openConnection(deviceFile))
+    {
+        ROS_ERROR("Cannot open CAN device; aborting.");
         exit(EXIT_FAILURE);
     }
-    else{
+    else
+    {
         std::cout << "Connection to CAN bus established" << std::endl;
     }
 
@@ -374,34 +382,37 @@ int main(int argc, char **argv)
     ros::Publisher jointStatesPublisher = n.advertise<sensor_msgs::JointState>("/joint_states", 1);
     ros::Publisher diagnosticsPublisher = n.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
 
-    for (auto it : canopen::deviceGroups) {
-        std::cout << it.first << std::endl;
+    for (auto it : canopen::deviceGroups)
+    {
+        ROS_INFO("Configuring %s", it.first.c_str());
 
         initCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
         initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
-            recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
-            setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
-            setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
+        recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
+        setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
+        setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 
-            jointVelocitiesCallbacks.push_back( boost::bind(setVel, _1, it.first) );
-            jointVelocitiesSubscribers.push_back( n.subscribe<brics_actuator::JointVelocities>("/" + it.first + "/command_vel", 1, jointVelocitiesCallbacks.back()) );
+        jointVelocitiesCallbacks.push_back( boost::bind(setVel, _1, it.first) );
+        jointVelocitiesSubscribers.push_back( n.subscribe<brics_actuator::JointVelocities>("/" + it.first + "/command_vel", 1, jointVelocitiesCallbacks.back()) );
 
         currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1);
 
-            statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
+        statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
     }
 
     double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();
-    std::cout << "Loop rate: " << lr << std::endl;
+
     ros::Rate loop_rate(lr);
 
     setJointConstraints(n);
 
-    while (ros::ok()) {
+    while (ros::ok())
+    {
 
     // iterate over all chains, get current pos and vel and publish as topics:
-        for (auto dg : (canopen::deviceGroups)) {
+        for (auto dg : (canopen::deviceGroups))
+        {
             sensor_msgs::JointState js;
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
@@ -442,7 +453,6 @@ int main(int argc, char **argv)
           diagnostics.status[0].level = 2;
           diagnostics.status[0].name = chainNames[0];
           diagnostics.status[0].message = "Fault occured.";
-          canopen::sendSDO(dg.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
           break;
         }
         else

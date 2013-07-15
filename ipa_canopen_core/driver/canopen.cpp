@@ -123,12 +123,11 @@ namespace canopen{
         for (auto device : devices)
         {
 
-            //canopen::sendSDO(device.second.getCANid(), canopen::HEARTBEAT, canopen::HEARTBEAT_TIME);
-            //std::cout << "Heartbeat protocol for device with CAN-ID " << (uint16_t)device.second.getCANid() << " started" << std::endl;
-            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
@@ -143,8 +142,12 @@ namespace canopen{
             canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-
-
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         }
 
@@ -198,53 +201,40 @@ namespace canopen{
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
+                canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
             }
 
-
-
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddesvel" << device.second.getDesiredVel() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddasvel" << device.second.getActualVel() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "enddpos" << device.second.getDesiredPos() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "endapos" << device.second.getActualPos() << std::endl;
 
             device.second.setDesiredPos((double)device.second.getActualPos());
             device.second.setDesiredVel(0);
@@ -314,35 +304,6 @@ namespace canopen{
         }
         }
 
-
-/*
-    void setMotorState(uint16_t CANid, std::string targetState){
-
-        while (devices[CANid].getMotorState() != targetState){
-            canopen::sendSDO(CANid, canopen::STATUSWORD);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            while (devices[CANid].getFault()){
-
-                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-            }
-            if (devices[CANid].getSwitchOnDisabled()){
-                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
-            }
-            if (devices[CANid].getReadySwitchOn()){
-                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SWITCH_ON);
-            }
-            if (devices[CANid].getSwitchOn()){
-                canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-
-    }
-*/
     /***************************************************************/
     //			define NMT variables
     /***************************************************************/
@@ -704,7 +665,6 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
         bool switched_on = mydata_low & 0x02;
         bool op_enable = mydata_low & 0x04;
         bool fault = mydata_low & 0x08;
-        std::cout << "fault SDO" << fault << std::endl;
         bool volt_enable = mydata_low & 0x10;
         bool quick_stop = mydata_low & 0x20;
         bool switch_on_disabled = mydata_low & 0x40;
