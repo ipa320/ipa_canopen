@@ -155,7 +155,6 @@ namespace canopen{
         }
 
         for (auto device : devices){
-            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " we" << std::endl;
             getErrors(device.second.getCANid());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -329,6 +328,38 @@ namespace canopen{
     //		define SDO protocol functions
     /***************************************************************/
 
+    void requestDataBlock1(uint8_t CANid){
+        TPCANMsg msg;
+        msg.ID = CANid + 0x600;
+        msg.MSGTYPE = 0x00;
+        msg.LEN = 8;
+        msg.DATA[0] = 0x60;
+        msg.DATA[1] = 0x00;
+        msg.DATA[2] = 0x00;
+        msg.DATA[3] = 0x00;
+        msg.DATA[4] = 0x00;
+        msg.DATA[5] = 0x00;
+        msg.DATA[6] = 0x00;
+        msg.DATA[7] = 0x00;
+        CAN_Write(h, &msg);
+    }
+
+    void requestDataBlock2(uint8_t CANid){
+        TPCANMsg msg;
+        msg.ID = CANid + 0x600;
+        msg.MSGTYPE = 0x00;
+        msg.LEN = 8;
+        msg.DATA[0] = 0x70;
+        msg.DATA[1] = 0x00;
+        msg.DATA[2] = 0x00;
+        msg.DATA[3] = 0x00;
+        msg.DATA[4] = 0x00;
+        msg.DATA[5] = 0x00;
+        msg.DATA[6] = 0x00;
+        msg.DATA[7] = 0x00;
+        CAN_Write(h, &msg);
+    }
+
     void sendSDO(uint8_t CANid, SDOkey sdo){
         TPCANMsg msg;
         msg.ID = CANid + 0x600;
@@ -342,7 +373,6 @@ namespace canopen{
         msg.DATA[5] = 0x00;
         msg.DATA[6] = 0x00;
         msg.DATA[7] = 0x00;
-        std::cout << "" << std::endl;
         CAN_Write(h, &msg);
     }
 
@@ -617,14 +647,15 @@ namespace canopen{
 
             // incoming PD0
             else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF){
-               //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl; ;
+               //std::cout << std::hex << "PDO received:  " << (m.Msg.ID - 0x180) << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " <<  m.Msg.DATA[7] << " " << std::endl;
+               //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl;
                 if (incomingPDOHandlers.find(m.Msg.ID) != incomingPDOHandlers.end())
                     incomingPDOHandlers[m.Msg.ID](m);
             }
 
             // incoming SD0
             else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
-                std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+                //std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
                 SDOkey sdoKey(m);
                 if (incomingErrorHandlers.find(sdoKey) != incomingErrorHandlers.end())
                     incomingErrorHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
@@ -658,8 +689,6 @@ namespace canopen{
     void errorword_incoming(uint8_t CANid, BYTE data[1])
     {
         uint16_t mydata_low = data[0];
-
-        std::cout << "Error reply " << (uint16_t)CANid << " is: " << (uint16_t)data[0] << std::endl;
 
     }
 

@@ -588,6 +588,22 @@ namespace canopen{
     const SDOkey STATUSWORD(0x6041, 0x0);
     const SDOkey ERRORWORD(0x1001, 0x0);
     const SDOkey MANUFACTURER(0x1002, 0x0);
+    const SDOkey MANUFACTURERDEVICENAME(0x1008, 0x0);
+    const SDOkey MANUFACTURERHWVERSION(0x1009, 0x0);
+    const SDOkey MANUFACTURERSOFTWAREVERSION(0x100A, 0x0);
+
+    const SDOkey IDENTITYVENDORID(0x1018, 0x01);
+    const SDOkey IDENTITYPRODUCTCODE(0x1018, 0x02);
+    const SDOkey IDENTITYREVNUMBER(0x1018, 0x03);
+
+    /*************************
+     * Specific for schunk hardware
+     ************************/
+    const SDOkey SCHUNKLINE(0x200b, 0x1);
+    const SDOkey SCHUNKDETAIL(0x200b, 0x3);
+    /****************************************
+     */
+
     const SDOkey CONTROLWORD(0x6040, 0x0);
     const SDOkey MODES_OF_OPERATION(0x6060, 0x0);
     const SDOkey MODES_OF_OPERATION_DISPLAY(0x6061, 0x0);
@@ -627,6 +643,9 @@ namespace canopen{
     const uint8_t SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT = 0;
 
     void sendSDO(uint8_t CANid, SDOkey sdo);
+    void requestDataBlock1(uint8_t CANid);
+    void requestDataBlock2(uint8_t CANid);
+
     void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value);

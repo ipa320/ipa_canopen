@@ -66,7 +66,6 @@ bool JointLimits::checkVelocityLimits(std::vector<double> velocities)
 
     for (int i = 0; i < JointLimits::getDOF(); i++)
       {
-        std::cout << "Velocity" << velocities[i] << " : " << JointLimits::getMaxVelocities()[i] << std::endl;
           if(abs(velocities[i]) > JointLimits::getMaxVelocities()[i])
         {
               if(velocities[i] >= 0)
