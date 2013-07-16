@@ -115,10 +115,13 @@ namespace canopen{
             canopen::initListenerThread(canopen::defaultListener);
         }
 
-        /*for (auto device : devices){
+        for (auto device : devices){
             std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
             getErrors(device.second.getCANid());
-        }*/
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         for (auto device : devices)
         {
@@ -149,6 +152,12 @@ namespace canopen{
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+        }
+
+        for (auto device : devices){
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " we" << std::endl;
+            getErrors(device.second.getCANid());
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         if (atFirstInit)
@@ -615,7 +624,7 @@ namespace canopen{
 
             // incoming SD0
             else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF){
-                //std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+                std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
                 SDOkey sdoKey(m);
                 if (incomingErrorHandlers.find(sdoKey) != incomingErrorHandlers.end())
                     incomingErrorHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);

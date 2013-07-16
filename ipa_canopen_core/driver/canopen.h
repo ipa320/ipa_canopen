@@ -556,6 +556,19 @@ namespace canopen{
     const uint16_t HEARTBEAT_TIME = 1500;
 
     /***************************************************************/
+    //		Error Constants for Error Register
+    /***************************************************************/
+
+    static unsigned char const EMC_k_1001_GENERIC        = 0x01;
+    static unsigned char const EMC_k_1001_CURRENT        = 0x02;
+    static unsigned char const EMC_k_1001_VOLTAGE        = 0x04;
+    static unsigned char const EMC_k_1001_TEMPERATURE    = 0x08;
+    static unsigned char const EMC_k_1001_COMMUNICATION  = 0x10;
+    static unsigned char const EMC_k_1001_DEV_PROF_SPEC  = 0x20;
+    static unsigned char const EMC_k_1001_RESERVED       = 0x40;
+    static unsigned char const EMC_k_1001_MANUFACTURER   = 0x80;
+
+    /***************************************************************/
     //		define motor state constants
     /***************************************************************/
 
@@ -574,6 +587,7 @@ namespace canopen{
 
     const SDOkey STATUSWORD(0x6041, 0x0);
     const SDOkey ERRORWORD(0x1001, 0x0);
+    const SDOkey MANUFACTURER(0x1002, 0x0);
     const SDOkey CONTROLWORD(0x6040, 0x0);
     const SDOkey MODES_OF_OPERATION(0x6060, 0x0);
     const SDOkey MODES_OF_OPERATION_DISPLAY(0x6061, 0x0);
