@@ -61,10 +61,10 @@
 #include <iostream>
 #include <iomanip>
 #include "canopen.h"
-#include "schunkErrors.h"
 #include <sstream>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
     if (argc != 3) {
         std::cout << "Arguments:" << std::endl
@@ -105,350 +105,37 @@ int main(int argc, char *argv[]) {
 
     TPCANRdMsg m;
 
-    canopen::sendSDO(CANid, canopen::STATUSWORD);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    canopen::sendSDO(CANid, canopen::ERRORWORD);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    uint16_t error_register;
-    error_register = m.Msg.DATA[4];
-
-    std::cout << "error_register=0x" << std::hex << (int)error_register << ", categories:";
-
-    if ( error_register & canopen::EMC_k_1001_GENERIC )
-        std::cout << " generic,";
-    if ( error_register & canopen::EMC_k_1001_CURRENT)
-        std::cout << " current,";
-    if ( error_register & canopen::EMC_k_1001_VOLTAGE )
-        std::cout << " voltage,";
-    if ( error_register & canopen::EMC_k_1001_TEMPERATURE )
-        std::cout << " temperature,";
-    if ( error_register & canopen::EMC_k_1001_COMMUNICATION )
-        std::cout << " communication,";
-    if ( error_register & canopen::EMC_k_1001_DEV_PROF_SPEC )
-        std::cout << " device profile specific,";
-    if ( error_register & canopen::EMC_k_1001_RESERVED )
-        std::cout << " reserved,";
-    if ( error_register & canopen::EMC_k_1001_MANUFACTURER)
-        std::cout << " manufacturer specific";
-    std::cout << "\n";
+    canopen::readErrorsRegister(CANid, &m);
 
     /***************************************************************/
     //		Manufacturer specific errors register
     /***************************************************************/
-
-    canopen::sendSDO(CANid, canopen::MANUFACTURER);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    uint16_t code = m.Msg.DATA[4];
-    uint16_t classification = m.Msg.DATA[5];
-
-    std::cout << "manufacturer_status_register=0x" << std::hex << int(classification) << int(code) <<
-                 ": code=0x" << std::hex << int( code ) << " (" << errorsCode[int(code)] << "),"
-           << ", classification=0x" << std::hex << int( classification ) << std::dec;
-    if ( classification == 0x88 )
-        std::cout << " (CMD_ERROR)";
-    if ( classification == 0x89 )
-        std::cout << " (CMD_WARNING)";
-    if ( classification == 0x8a )
-        std::cout << " (CMD_INFO)";
-    std::cout << "\n";
-
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    std::cout << "Error checking complete" << std::endl;
+    canopen::readManErrReg(CANid, &m);
 
     /**************************
      * Hardware and Software Information
     *************************/
 
-    canopen::sendSDO(CANid, canopen::IDENTITYVENDORID);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    uint16_t id4 = m.Msg.DATA[4];
-    uint16_t id3 = m.Msg.DATA[5];
-    uint16_t id2 = m.Msg.DATA[6];
-    uint16_t id1 = m.Msg.DATA[7];
-
-    /*****************
-     */
-
-    canopen::sendSDO(CANid, canopen::IDENTITYREVNUMBER);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    uint16_t rev_number = m.Msg.DATA[4];
-
-
-    /*****************************
-    **/
-    canopen::sendSDO(CANid, canopen::IDENTITYPRODUCTCODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-
-    /*****************
-     */
-
-    canopen::sendSDO(CANid, canopen::MANUFACTURERDEVICENAME);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    std::vector<char> manufacturer_device_name;
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    int size = m.Msg.DATA[4];
-
-    canopen::requestDataBlock1(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-
-    for (auto it : m.Msg.DATA)
-    {
-        if(manufacturer_device_name.size() <= size)
-            manufacturer_device_name.push_back(it);
-    }
-
-
-    canopen::requestDataBlock2(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-
-    for (auto it : m.Msg.DATA)
-    {
-        if(manufacturer_device_name.size() <= size)
-            manufacturer_device_name.push_back(it);
-    }
-
-
-
-
-/****************************************
- */
-
-    canopen::sendSDO(CANid, canopen::MANUFACTURERHWVERSION);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    std::vector<char> manufacturer_hw_version;
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    size = m.Msg.DATA[4];
-
-    canopen::requestDataBlock1(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-
-    for (auto it : m.Msg.DATA)
-    {
-        if(manufacturer_hw_version.size() <= size)
-            manufacturer_hw_version.push_back(it);
-    }
-
-
-    canopen::requestDataBlock2(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    m.Msg.ID = 0x00;
-
-    while (m.Msg.ID != (0x580+CANid))
-    {
-        LINUX_CAN_Read(canopen::h, &m);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-
-    for (auto it : m.Msg.DATA)
-    {
-        if(manufacturer_hw_version.size() <= size)
-            manufacturer_hw_version.push_back(it);
-    }
-
-
-
-
-    /****************************************
-     */
-
-        canopen::sendSDO(CANid, canopen::MANUFACTURERSOFTWAREVERSION);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        std::vector<char> manufacturer_sw_version;
-
-        m.Msg.ID = 0x00;
-
-        while (m.Msg.ID != (0x580+CANid))
-        {
-            LINUX_CAN_Read(canopen::h, &m);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-        size = m.Msg.DATA[4];
-
-        canopen::requestDataBlock1(CANid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        m.Msg.ID = 0x00;
-
-        while (m.Msg.ID != (0x580+CANid))
-        {
-            LINUX_CAN_Read(canopen::h, &m);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-
-        for (auto it : m.Msg.DATA)
-        {
-            if(manufacturer_sw_version.size() <= size)
-                manufacturer_sw_version.push_back(it);
-        }
-
-
-        canopen::requestDataBlock2(CANid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        m.Msg.ID = 0x00;
-
-        while (m.Msg.ID != (0x580+CANid))
-        {
-            LINUX_CAN_Read(canopen::h, &m);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-
-        for (auto it : m.Msg.DATA)
-        {
-            if(manufacturer_sw_version.size() <= size)
-                manufacturer_sw_version.push_back(it);
-        }
-
-        canopen::requestDataBlock1(CANid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        m.Msg.ID = 0x00;
-
-        while (m.Msg.ID != (0x580+CANid))
-        {
-            LINUX_CAN_Read(canopen::h, &m);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-
-        for (auto it : m.Msg.DATA)
-        {
-            if(manufacturer_sw_version.size() <= size)
-                manufacturer_sw_version.push_back(it);
-        }
-
-        canopen::requestDataBlock2(CANid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        m.Msg.ID = 0x00;
-
-        while (m.Msg.ID != (0x580+CANid))
-        {
-            LINUX_CAN_Read(canopen::h, &m);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-
-        for (auto it : m.Msg.DATA)
-        {
-            if(manufacturer_sw_version.size() <= size)
-                manufacturer_sw_version.push_back(it);
-        }
+    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, &m);
+    uint16_t rev_number = canopen::obtainRevNr(CANid, &m);
+    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, &m);
+    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,&m);
+    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, &m);
+    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, &m);
 
         /****
          *Printing the data
          */
 
-        std::cout << "vendor_id=0x" << std::hex << int(id1) << int(id2) << int(id3) << int(id4) << std::endl;
+        std::cout << "vendor_id=0x";
+
+        for (auto it : vendor_id)
+        {
+           std::cout <<  std::hex << it;
+        }
+
+        std::cout << std::endl;
 
         std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
         std::cout << "device_name:";

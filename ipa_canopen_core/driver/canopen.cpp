@@ -89,6 +89,56 @@ namespace canopen{
         return true;
     }
 
+    void pre_init()
+    {
+        canopen::NMTmsg.ID = 0;
+        canopen::NMTmsg.MSGTYPE = 0x00;
+        canopen::NMTmsg.LEN = 2;
+
+        canopen::syncMsg.ID = 0x80;
+        canopen::syncMsg.MSGTYPE = 0x00;
+
+        canopen::syncMsg.LEN = 0x00;
+
+        for (auto dg : (canopen::devices))
+        {
+        /*********************************************/
+        canopen::sendNMT(dg.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+        TPCANRdMsg m;
+
+
+        canopen::readErrorsRegister(dg.second.getCANid(), &m);
+
+        /***************************************************************/
+        //		Manufacturer specific errors register
+        /***************************************************************/
+        canopen::readManErrReg(dg.second.getCANid(), &m);
+
+        /**************************
+         * Hardware and Software Information
+        *************************/
+
+        std::vector<uint16_t> vendor_id = canopen::obtainVendorID(dg.second.getCANid(), &m);
+        uint16_t rev_number = canopen::obtainRevNr(dg.second.getCANid(), &m);
+        std::vector<uint16_t> product_code = canopen::obtainProdCode(dg.second.getCANid(), &m);
+        std::vector<char> manufacturer_device_name = canopen::obtainManDevName(dg.second.getCANid(),&m);
+        std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(dg.second.getCANid(), &m);
+        std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(dg.second.getCANid(), &m);
+
+        dg.second.setManufacturerSWVersion(manufacturer_sw_version);
+        dg.second.setManufacturerHWVersion(manufacturer_hw_version);
+        dg.second.setManufacturerDevName(manufacturer_device_name);
+        dg.second.setVendorID(vendor_id);
+        dg.second.setProdCode(product_code);
+        dg.second.setRevNum(rev_number);
+        }
+    }
+
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval){
         CAN_Close(h);
 
@@ -132,6 +182,7 @@ namespace canopen{
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -692,6 +743,273 @@ namespace canopen{
 
     }
 
+    void readManErrReg(uint16_t CANid, TPCANRdMsg *m)
+    {
+
+        canopen::sendSDO(CANid, canopen::MANUFACTURER);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+        uint16_t code = m->Msg.DATA[4];
+        uint16_t classification = m->Msg.DATA[5];
+
+        std::cout << "manufacturer_status_register=0x" << std::hex << int(classification) << int(code) <<
+                     ": code=0x" << std::hex << int( code ) << " (" << errorsCode[int(code)] << "),"
+               << ", classification=0x" << std::hex << int( classification ) << std::dec;
+        if ( classification == 0x88 )
+            std::cout << " (CMD_ERROR)";
+        if ( classification == 0x89 )
+            std::cout << " (CMD_WARNING)";
+        if ( classification == 0x8a )
+            std::cout << " (CMD_INFO)";
+        std::cout << "\n";
+
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    void readErrorsRegister(uint16_t CANid, TPCANRdMsg *m)
+    {
+        canopen::sendSDO(CANid, canopen::STATUSWORD);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        canopen::processSingleSDO(CANid, m);
+
+        canopen::sendSDO(CANid, canopen::ERRORWORD);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        canopen::processSingleSDO(CANid, m);
+
+        uint16_t error_register;
+        error_register = m->Msg.DATA[4];
+
+        std::cout << "error_register=0x" << std::hex << (int)error_register << ", categories:";
+
+        if ( error_register & canopen::EMC_k_1001_GENERIC )
+            std::cout << " generic,";
+        if ( error_register & canopen::EMC_k_1001_CURRENT)
+            std::cout << " current,";
+        if ( error_register & canopen::EMC_k_1001_VOLTAGE )
+            std::cout << " voltage,";
+        if ( error_register & canopen::EMC_k_1001_TEMPERATURE )
+            std::cout << " temperature,";
+        if ( error_register & canopen::EMC_k_1001_COMMUNICATION )
+            std::cout << " communication,";
+        if ( error_register & canopen::EMC_k_1001_DEV_PROF_SPEC )
+            std::cout << " device profile specific,";
+        if ( error_register & canopen::EMC_k_1001_RESERVED )
+            std::cout << " reserved,";
+        if ( error_register & canopen::EMC_k_1001_MANUFACTURER)
+            std::cout << " manufacturer specific";
+        std::cout << "\n";
+    }
+
+    std::vector<uint16_t> obtainVendorID(uint16_t CANid, TPCANRdMsg *m)
+    {
+        canopen::sendSDO(CANid, canopen::IDENTITYVENDORID);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        std::vector<uint16_t> vendor_id;
+
+        canopen::processSingleSDO(CANid, m);
+
+        uint16_t id4 = m->Msg.DATA[4];
+        uint16_t id3 = m->Msg.DATA[5];
+        uint16_t id2 = m->Msg.DATA[6];
+        uint16_t id1 = m->Msg.DATA[7];
+
+        vendor_id.push_back(id1);
+        vendor_id.push_back(id2);
+        vendor_id.push_back(id3);
+        vendor_id.push_back(id4);
+
+        return vendor_id;
+    }
+
+    std::vector<uint16_t> obtainProdCode(uint16_t CANid, TPCANRdMsg *m)
+    {
+        canopen::sendSDO(CANid, canopen::IDENTITYPRODUCTCODE);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        std::vector<uint16_t> product_code;
+
+        canopen::processSingleSDO(CANid, m);
+
+        uint16_t id4 = m->Msg.DATA[4];
+        uint16_t id3 = m->Msg.DATA[5];
+        uint16_t id2 = m->Msg.DATA[6];
+        uint16_t id1 = m->Msg.DATA[7];
+
+        product_code.push_back(id1);
+        product_code.push_back(id2);
+        product_code.push_back(id3);
+        product_code.push_back(id4);
+
+        return product_code;
+
+    }
+
+    uint16_t obtainRevNr(uint16_t CANid, TPCANRdMsg* m)
+    {
+        canopen::sendSDO(CANid, canopen::IDENTITYREVNUMBER);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+        canopen::processSingleSDO(CANid, m);
+
+        uint16_t rev_number = m->Msg.DATA[4];
+
+        return rev_number;
+
+    }
+
+    std::vector<char> obtainManDevName(uint16_t CANid, TPCANRdMsg* m)
+    {
+        canopen::sendSDO(CANid, canopen::MANUFACTURERDEVICENAME);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        std::vector<char> manufacturer_device_name;
+
+        canopen::processSingleSDO(CANid, m);
+
+        int size = m->Msg.DATA[4];
+
+        canopen::requestDataBlock1(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_device_name.size() <= size)
+                manufacturer_device_name.push_back(it);
+        }
+
+
+        canopen::requestDataBlock2(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_device_name.size() <= size)
+                manufacturer_device_name.push_back(it);
+        }
+
+        return manufacturer_device_name;
+
+    }
+
+
+
+
+     std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m)
+     {
+         canopen::sendSDO(CANid, canopen::MANUFACTURERHWVERSION);
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+         std::vector<char> manufacturer_hw_version;
+
+         canopen::processSingleSDO(CANid, m);
+
+         int size = m->Msg.DATA[4];
+
+         canopen::requestDataBlock1(CANid);
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+         canopen::processSingleSDO(CANid, m);
+
+
+         for (auto it : m->Msg.DATA)
+         {
+             if(manufacturer_hw_version.size() <= size)
+                 manufacturer_hw_version.push_back(it);
+         }
+
+
+         canopen::requestDataBlock2(CANid);
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+         canopen::processSingleSDO(CANid, m);
+
+
+         for (auto it : m->Msg.DATA)
+         {
+             if(manufacturer_hw_version.size() <= size)
+                 manufacturer_hw_version.push_back(it);
+         }
+
+         return manufacturer_hw_version;
+     }
+
+    std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m)
+    {
+        std::vector<char> manufacturer_sw_version;
+
+        canopen::sendSDO(CANid, canopen::MANUFACTURERSOFTWAREVERSION);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+        int size = (uint8_t)m->Msg.DATA[4];
+
+        canopen::requestDataBlock1(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_sw_version.size() <= size)
+                manufacturer_sw_version.push_back(it);
+        }
+
+
+        canopen::requestDataBlock2(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_sw_version.size() <= size)
+                manufacturer_sw_version.push_back(it);
+        }
+
+        canopen::requestDataBlock1(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_sw_version.size() <= size)
+                manufacturer_sw_version.push_back(it);
+        }
+
+        canopen::requestDataBlock2(CANid);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        canopen::processSingleSDO(CANid, m);
+
+
+        for (auto it : m->Msg.DATA)
+        {
+            if(manufacturer_sw_version.size() <= size)
+                manufacturer_sw_version.push_back(it);
+        }
+
+        return manufacturer_sw_version;
+
+    }
+
+
+
 void statusword_incoming(uint8_t CANid, BYTE data[8])
 {
 
@@ -784,4 +1102,16 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
         std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
     }
+
+    void processSingleSDO(uint8_t CANid, TPCANRdMsg* message)
+    {
+        message->Msg.ID = 0x00;
+
+        while (message->Msg.ID != (0x580+CANid))
+        {
+            LINUX_CAN_Read(canopen::h, message);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+
 }

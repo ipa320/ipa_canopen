@@ -75,6 +75,7 @@
 #include <fcntl.h>    // for O_RDWR
 #include <stdint.h>
 #include <inttypes.h>
+#include "schunkErrors.h"
 
 namespace canopen{
 
@@ -94,6 +95,15 @@ namespace canopen{
             std::string deviceFile_;
             std::string name_;
             std::string group_;
+
+            std::vector<char> manufacturer_sw_version_;
+            std::vector<char> manufacturer_hw_version_;
+            std::vector<char> manufacturer_device_name_;
+
+            std::vector<uint16_t> vendor_id_;
+            std::vector<uint16_t> product_code_;
+            uint16_t revision_number_;
+
             bool initialized_;
             bool driveReferenced_;
             bool ip_mode_active_;
@@ -157,6 +167,31 @@ namespace canopen{
             std::string getMotorState(){
                 return motorState_;
             }
+
+            std::vector<char> getManufacturerSWVersion(){
+                return manufacturer_sw_version_;
+            }
+
+            std::vector<char> getManufacturerHWVersion(){
+                return manufacturer_hw_version_;
+            }
+
+            std::vector<char> getManufacturerDevName(){
+                return manufacturer_device_name_;
+            }
+
+            std::vector<uint16_t> getVendorID(){
+                return vendor_id_;
+            }
+
+            std::vector<uint16_t> getProdCode(){
+                return product_code_;
+            }
+
+            uint16_t getRevNumber(){
+                return revision_number_;
+            }
+
             uint8_t getCANid(){
                 return CANid_;
             }
@@ -291,6 +326,32 @@ namespace canopen{
             void setMotorState(std::string nextState){
                 motorState_ = nextState;
             }
+
+            void setManufacturerSWVersion(std::vector<char> ms_version){
+                manufacturer_sw_version_ = ms_version;
+            }
+
+            void setManufacturerHWVersion(std::vector<char> mh_version){
+                manufacturer_hw_version_ = mh_version;
+            }
+
+            void setManufacturerDevName(std::vector<char> dev_name){
+                manufacturer_device_name_ = dev_name;
+            }
+
+            void setVendorID(std::vector<uint16_t> v_id){
+                vendor_id_ = v_id;
+            }
+
+            void setProdCode(std::vector<uint16_t> prod_code){
+                product_code_ = prod_code;
+            }
+
+
+            void setRevNum(uint16_t rev_num){
+                revision_number_ = rev_num;
+            }
+
 
             void setNMTState(std::string nextState){
                 NMTState_ = nextState;
@@ -502,6 +563,14 @@ namespace canopen{
     /***************************************************************/
 
     void getErrors(uint16_t CANid);
+    std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m);
+    std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m);
+    std::vector<char> obtainManDevName(uint16_t CANid, TPCANRdMsg* m);
+    std::vector<uint16_t> obtainVendorID(uint16_t CANid, TPCANRdMsg* m);
+    uint16_t obtainRevNr(uint16_t CANid, TPCANRdMsg* m);
+    std::vector<uint16_t> obtainProdCode(uint16_t CANid, TPCANRdMsg* m);
+    void readErrorsRegister(uint16_t CANid, TPCANRdMsg *m);
+    void readManErrReg(uint16_t CANid, TPCANRdMsg *m);
 
 
     /***************************************************************/
@@ -513,6 +582,7 @@ namespace canopen{
 
     bool openConnection(std::string devName);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void pre_init();
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
@@ -643,6 +713,7 @@ namespace canopen{
     const uint8_t SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT = 0;
 
     void sendSDO(uint8_t CANid, SDOkey sdo);
+    void processSingleSDO(uint8_t CANid, TPCANRdMsg* message);
     void requestDataBlock1(uint8_t CANid);
     void requestDataBlock2(uint8_t CANid);
 

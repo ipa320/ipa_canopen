@@ -355,10 +355,9 @@ int main(int argc, char **argv)
         std::cout << "Connection to CAN bus established" << std::endl;
     }
 
-    for (auto dg : (canopen::devices)){
-        std::cout << "Module with CAN-id " << (uint16_t)dg.second.getCANid() << " connected" << std::endl;
-        canopen::getErrors(dg.second.getCANid());
-    }
+    canopen::pre_init();
+
+    /********************************************/
 
     // add custom PDOs:
     canopen::sendPos = canopen::defaultPDOOutgoing;
