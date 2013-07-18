@@ -14,10 +14,13 @@
   <depend package="pr2_controllers_msgs"/>
   <depend package="brics_actuator"/>
   <depend package="rospy"/>
+  <depend package="urdf"/>
   <depend package="roscpp"/>
   <depend package="libpcan"/>
   <depend package="cob_srvs"/> 
   <depend package="sensor_msgs"/> 
   <depend package="ipa_canopen_core"/>
+  
+  <rosdep name="yaml-cpp"/>
 
 </package>
