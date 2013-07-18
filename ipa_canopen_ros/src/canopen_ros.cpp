@@ -435,11 +435,67 @@ int main(int argc, char **argv)
 
         // publishing diagnostic messages
         diagnostic_msgs::DiagnosticArray diagnostics;
+        diagnostic_msgs::DiagnosticStatus diagstatus;
+        std::vector<diagnostic_msgs::DiagnosticStatus> diagstatus_msg;
+        diagnostic_msgs::KeyValue keyval;
+
+        std::vector<diagnostic_msgs::KeyValue> keyvalues;
+
+
+
         diagnostics.status.resize(1);
 
-    for (auto dg : (canopen::devices)) {
+    for (auto dg : (canopen::devices))
+    {
         std::string name = dg.second.getName();
         //ROS_INFO("Name %s", name.c_str() );
+
+        keyval.key = "Node ID";
+        uint16_t node_id = dg.second.getCANid();
+        std::stringstream result;
+        result << node_id;
+        keyval.value = result.str().c_str();
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Hardware Version";
+        std::vector<char> manhw = dg.second.getManufacturerHWVersion();
+        keyval.value = std::string(manhw.begin(), manhw.end());
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Software Version";
+        std::vector<char> mansw = dg.second.getManufacturerSWVersion();
+        keyval.value = std::string(mansw.begin(), mansw.end());
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Device Name";
+        std::vector<char> dev_name = dg.second.getManufacturerDevName();
+        keyval.value = std::string(dev_name.begin(), dev_name.end());
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Vendor ID";
+        std::vector<uint16_t> vendor_id = dg.second.getVendorID();
+        std::stringstream result1;
+        for (auto it : vendor_id)
+        {
+           result1 <<  std::hex << it;
+        }
+        keyval.value = result1.str().c_str();
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Revision Number";
+        uint16_t rev_number = dg.second.getRevNumber();
+        std::stringstream result2;
+        result2 << rev_number;
+        keyval.value = result2.str().c_str();
+        keyvalues.push_back(keyval);
+
+        keyval.key = "Product Code";
+        std::vector<uint16_t> prod_code = dg.second.getProdCode();
+        std::stringstream result3;
+        std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
+        keyval.value = result3.str().c_str();
+        keyvalues.push_back(keyval);
+
         bool error_ = dg.second.getFault();
         bool initialized_ = dg.second.getInitialized();
 
@@ -449,29 +505,35 @@ int main(int argc, char **argv)
         // set data to diagnostics
         if(error_)
         {
-          diagnostics.status[0].level = 2;
-          diagnostics.status[0].name = chainNames[0];
-          diagnostics.status[0].message = "Fault occured.";
+          diagstatus.level = 2;
+          diagstatus.name = chainNames[0];
+          diagstatus.message = "Fault occured.";
+          diagstatus.values = keyvalues;
           break;
         }
         else
         {
           if (initialized_)
           {
-            diagnostics.status[0].level = 0;
-            diagnostics.status[0].name = chainNames[0];
-            diagnostics.status[0].message = "powerball chain initialized and running";
+            diagstatus.level = 0;
+            diagstatus.name = chainNames[0];
+            diagstatus.message = "powerball chain initialized and running";
+            diagstatus.values = keyvalues;
           }
           else
           {
-            diagnostics.status[0].level = 1;
-            diagnostics.status[0].name = chainNames[0];
-            diagnostics.status[0].message = "powerball chain not initialized";
+            diagstatus.level = 1;
+            diagstatus.name = chainNames[0];
+            diagstatus.message = "powerball chain not initialized";
+            diagstatus.values = keyvalues;
             break;
           }
         }
     }
+        diagstatus_msg.push_back(diagstatus);
         // publish diagnostic message
+        diagnostics.status = diagstatus_msg;
+        diagnostics.header.stamp = ros::Time::now();
         diagnosticsPublisher.publish(diagnostics);
 
         ros::spinOnce();

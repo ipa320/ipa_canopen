@@ -130,12 +130,13 @@ namespace canopen{
         std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(dg.second.getCANid(), &m);
         std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(dg.second.getCANid(), &m);
 
-        dg.second.setManufacturerSWVersion(manufacturer_sw_version);
-        dg.second.setManufacturerHWVersion(manufacturer_hw_version);
-        dg.second.setManufacturerDevName(manufacturer_device_name);
-        dg.second.setVendorID(vendor_id);
-        dg.second.setProdCode(product_code);
-        dg.second.setRevNum(rev_number);
+
+        devices[dg.second.getCANid()].setManufacturerHWVersion(manufacturer_hw_version);
+        devices[dg.second.getCANid()].setManufacturerSWVersion(manufacturer_sw_version);
+        devices[dg.second.getCANid()].setManufacturerDevName(manufacturer_device_name);
+        devices[dg.second.getCANid()].setVendorID(vendor_id);
+        devices[dg.second.getCANid()].setProdCode(product_code);
+        devices[dg.second.getCANid()].setRevNum(rev_number);
         }
     }
 
