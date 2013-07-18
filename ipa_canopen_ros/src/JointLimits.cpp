@@ -83,28 +83,28 @@ bool JointLimits::checkVelocityLimits(std::vector<double> velocities)
 }
 
 
-bool JointLimits::checkPositionLimits(std::vector<double> target_pos)
+bool JointLimits::checkPositionLimits(std::vector<double> target_pos,std::vector<double> velocities)
 {
 
     for (int i = 0; i < JointLimits::getDOF(); i++)
       {
-         /// check position limits
+    if ((target_pos[i] < JointLimits::getLowerLimits()[i]) && (velocities[i] < 0))
+        {
+            ROS_INFO("Skipping command: %f Target position exceeds lower limit (%f).", target_pos[i], JointLimits::getLowerLimits()[i]);
+            // target position is set to actual position and velocity to Null. So only movement in the non limit direction is possible.
+
+            return true;
+        }
+
         // if target position is outer limits and the command velocity is in in direction away from working range, skip command
-    if ((target_pos[i] < JointLimits::getLowerLimits()[i]))
-      {
-          ROS_INFO("Skipping command: %f Target position exceeds lower limit (%f).", target_pos[i], JointLimits::getLowerLimits()[i]);
-          // target position is set to actual position and velocity to Null. So only movement in the non limit direction is possible.
+        if ((target_pos[i] > JointLimits::getUpperLimits()[i]) && (velocities[i] > 0))
+        {
+            ROS_INFO("Skipping command: %f Target position exceeds upper limit (%f).", target_pos[i], JointLimits::getUpperLimits()[i]);
+            // target position is set to actual position. So only movement in the non limit direction is possible.
 
-          return true;
-      }
-
-      // if target position is outer limits and the command velocity is in in direction away from working range, skip command
-      if ((target_pos[i] > JointLimits::getUpperLimits()[i]))
-      {
-          ROS_INFO("Skipping command: %f Target position exceeds upper limit (%f).", target_pos[i], JointLimits::getUpperLimits()[i]);
-          // target position is set to actual position. So only movement in the non limit direction is possible.
-          return true;
-      }
+            return true;
+        }
     }
-    return false;
+
+        return false;
 }

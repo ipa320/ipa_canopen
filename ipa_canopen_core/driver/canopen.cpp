@@ -245,10 +245,6 @@ namespace canopen{
         }
 
         for (auto device : devices){
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "desvel" << device.second.getDesiredVel() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "asvel" << device.second.getActualVel() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "despos" << device.second.getDesiredPos() << std::endl;
-            std::cout << "Node" << (uint16_t)device.second.getCANid() << "acpos" << device.second.getActualPos() << std::endl;
 
             if(device.second.getMotorState() == MS_OPERATION_ENABLED)
             {
@@ -296,14 +292,11 @@ namespace canopen{
             }
 
 
-            device.second.setDesiredPos((double)device.second.getActualPos());
-            device.second.setDesiredVel(0);
+            devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+            devices[device.second.getCANid()].setDesiredVel(0);
 
             canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
             canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-
-            //canopen::getErrors((uint16_t)device.second.getCANid());
-            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         }
         recover_active = false;

@@ -81,7 +81,7 @@ class JointLimits
 
         public:
 
-            bool checkPositionLimits(std::vector<double> positions);
+            bool checkPositionLimits(std::vector<double> positions,std::vector<double> velocities);
             bool checkVelocityLimits(std::vector<double> velocities);
 
             int setMaxVelocities(std::vector<double> max_vel)

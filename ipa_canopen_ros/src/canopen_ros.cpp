@@ -146,8 +146,8 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
     for (auto device : canopen::devices)
     {
-        device.second.setDesiredPos((double)device.second.getActualPos());
-        device.second.setDesiredVel(0);
+        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
         canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
         canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
@@ -172,6 +172,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
     if (!canopen::atFirstInit & !canopen::recover_active)
     {
         std::vector<double> velocities;
+        std::vector<double> positions;
 
 
         for (auto it : msg.velocities)
@@ -179,7 +180,13 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             velocities.push_back( it.value);
         }
 
+        for (auto device : canopen::devices)
+        {
+            positions.push_back((double)device.second.getDesiredPos());
+        }
+
         joint_limits_->checkVelocityLimits(velocities);
+        joint_limits_->checkPositionLimits(velocities, positions);
 
         canopen::deviceGroups[chainName].setVel(velocities);
     }
