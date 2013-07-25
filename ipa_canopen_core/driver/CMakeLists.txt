@@ -9,5 +9,6 @@ install (TARGETS canopen
 
 install (FILES 
   canopen.h
+  schunkErrors.h
   DESTINATION include)
 
