@@ -5,6 +5,7 @@
 #include "brics_actuator/JointVelocities.h"
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
+#include "ipa_canopen_ros/SchunkControllerState.h"
 // #include "ros_canopen/posmsg.h"
 #include <iostream>
 #include <map>
@@ -142,6 +143,8 @@ int main(int argc, char **argv)
   for (auto it : canopen::devices) {
     canopen::incomingPDOHandlers[ 0x180 + it.first ] = 
       [it](const TPCANRdMsg m) { canopen::schunkDefaultPDO_incoming( it.first, m ); };
+    canopen::incomingPDOHandlers[ 0x280 + it.first ] = 
+      [it](const TPCANRdMsg m) { canopen::schunkCustomPDO_incoming( it.first, m ); };
   }
 
   // set up services, subscribers, and publishers for each of the chains:
@@ -156,6 +159,7 @@ int main(int argc, char **argv)
   std::vector<ros::Subscriber> jointVelocitiesSubscribers;
   std::map<std::string, ros::Publisher> currentOperationModePublishers;
   std::map<std::string, ros::Publisher> statePublishers;
+  std::map<std::string, ros::Publisher> schunkStatePublishers;
   ros::Publisher jointStatesPublisher = 
     n.advertise<sensor_msgs::JointState>("/joint_states", 100);
   
@@ -183,6 +187,10 @@ int main(int argc, char **argv)
     statePublishers[it.first] =
       n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>
       ("/" + it.first + "/state", 1000);
+
+    schunkStatePublishers[it.first] = 
+      n.advertise<ipa_canopen_ros::SchunkControllerState>
+      ("/" + it.first + "/controller_state", 1000);
   }
 
   double lr = 1000.0 / std::chrono::duration_cast
@@ -211,6 +219,12 @@ int main(int argc, char **argv)
       jtcs.desired.positions = dg.second.getDesiredPos();
       jtcs.desired.velocities = dg.second.getDesiredVel();
       statePublishers[dg.first].publish(jtcs);
+
+      ipa_canopen_ros::SchunkControllerState scs;
+      scs.header.stamp = js.header.stamp;
+      scs.name = dg.second.names_;
+      scs.extended_status = dg.second.getExtendedStatus();
+      schunkStatePublishers[dg.first].publish(scs);
       
       std_msgs::String opmode;
       opmode.data = "velocity";

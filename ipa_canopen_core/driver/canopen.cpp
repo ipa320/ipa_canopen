@@ -29,6 +29,33 @@ namespace canopen {
     return true;
   }
 
+  /**
+   * Configure Schunk controllers to publish additional information.
+   */
+  void initSchunkPDO(std::pair<const uint8_t, Device> &device) {
+    
+    int TPDO1 = 0x280 + device.first;
+    SDOkey TPDO1_mapping_length = {0x1A02, 0x0};
+    SDOkey TPDO1_mapping_object1 = {0x1A02, 0x1};
+    SDOkey TPDO1_communication = {0x1802, 0x1};
+    
+    // Disable the PDO (setting the highest bit as a mask when writing to COB_ID)
+    sendSDO(device.second.CANid_, TPDO1_communication, (uint32_t)0x80000000 + TPDO1);
+    
+    // Write zero to the number of mapping entries 
+    sendSDO(device.second.CANid_, TPDO1_mapping_length, (uint8_t)0x00);
+    
+    // Set data address that we want to put into PDO message
+    // Payload (4 bytes) = [ Index (16 bytes) | Sub-index (1 byte) | Length (1 byte) ]
+    sendSDO(device.second.CANid_, TPDO1_mapping_object1, (uint32_t)(0x2050 << 16) | (0x00 << 8) | 8);
+    
+    // Write the new number of mapping entries
+    sendSDO(device.second.CANid_, TPDO1_mapping_length, (uint8_t)0x01);
+    
+    // Enable the PDO (clearing the highest bit as a mask when writing to COB_ID)
+    sendSDO(device.second.CANid_, TPDO1_communication,  (uint32_t)TPDO1);
+  }
+
   void setMotorState(uint16_t CANid, std::string targetState) { // todo: not finished
     // if (devices[CANid].motorState_ == "fault")
     while (devices[CANid].motorState_ != targetState) {
@@ -80,6 +107,9 @@ namespace canopen {
       sendSDO(device.second.CANid_, ip_time_index, ip_time_index_milliseconds);
       sendSDO(device.second.CANid_, sync_timeout_factor, sync_timeout_factor_disable_timeout);
 
+      // Set PDO mapping to add extended status bytes
+      initSchunkPDO(device);
+      
       // NMT & motor state machine:
       if (atFirstInit) {
 	canopen::sendNMT(device.second.CANid_, canopen::NMT_stop);
@@ -180,6 +210,15 @@ namespace canopen {
 
   void modes_of_operation_display_incoming(uint8_t CANid, BYTE data[8]) {
     // update variables of the corresponding device object
+  }
+
+  /**
+   * Deserialized a custom second data stream containing extended
+   * state information from the Schunk controllers 
+   */
+  void schunkCustomPDO_incoming(uint8_t CANid, const TPCANRdMsg m) {
+    // The first byte of this message is the extended_status (0x2050/0)
+    devices[ CANid ].extendedStatus_ = m.Msg.DATA[0];
   }
 
   void schunkDefaultPDO_incoming(uint8_t CANid, const TPCANRdMsg m) {
