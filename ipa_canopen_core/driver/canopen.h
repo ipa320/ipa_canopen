@@ -51,10 +51,11 @@ namespace canopen {
   class Device {
   public:
     Device() {};
-  Device(uint8_t CANid) : CANid_(CANid), desiredVel_(0), actualVel_(0),
+  Device(uint8_t CANid) : CANid_(CANid), extendedStatus_(255), desiredVel_(0), actualVel_(0),
       actualPos_(0), desiredPos_(0), initialized(false), motorState_("not initialized") {};
   Device(uint8_t CANid, std::string name, std::string group, std::string bus) : 
     CANid_(CANid), name_(name), group_(group), deviceFile_(bus), 
+      extendedStatus_(255),
       desiredVel_(0), actualVel_(0),
       actualPos_(0), desiredPos_(0), initialized(false) {};
 
@@ -73,6 +74,7 @@ namespace canopen {
     bool initialized;
     bool voltage_enabled_;
     bool driveReferenced_;
+    uint8_t extendedStatus_;
     double actualPos_; // unit = rad
     double desiredPos_; // unit = rad
     double actualVel_; // unit = rad/sec
@@ -90,6 +92,12 @@ namespace canopen {
   DeviceGroup(std::vector<uint8_t> CANids, std::vector<std::string> names) : 
     CANids_(CANids), names_(names) {};
 
+    inline std::vector<uint8_t> getExtendedStatus() {
+      std::vector<uint8_t> status;
+      for (uint8_t CANid : CANids_)
+        status.push_back(devices[CANid].extendedStatus_);
+      return status;
+    }
     inline std::vector<double> getActualPos() {
       std::vector<double> actualPos;
       for (uint8_t CANid : CANids_)
@@ -183,6 +191,7 @@ namespace canopen {
   // ----------------- manufacturer-specific PDOs: --------------
 
   void schunkDefaultPDO_incoming(uint8_t CANid, const TPCANRdMsg m);
+  void schunkCustomPDO_incoming(uint8_t CANid, const TPCANRdMsg m);
   void schunkDefaultPDOOutgoing(uint16_t CANid, double positionValue);
 
   // ----------------- prep-prepared CAN messages: --------------
