@@ -161,12 +161,12 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 }
 
 
-bool CANOpenStop(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
+bool CANOpenHalt(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
 
 
 
-    canopen::stop(deviceFile, canopen::syncInterval);
+    canopen::halt(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     res.success.data = true;
@@ -412,8 +412,8 @@ int main(int argc, char **argv)
         initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
         recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
-        stopCallbacks.push_back( boost::bind(CANOpenStop, _1, _2, it.first) );
-        stopServices.push_back( n.advertiseService("/" + it.first + "/stop", stopCallbacks.back()) );
+        stopCallbacks.push_back( boost::bind(CANOpenHalt, _1, _2, it.first) );
+        stopServices.push_back( n.advertiseService("/" + it.first + "/halt", stopCallbacks.back()) );
         setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
         setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 

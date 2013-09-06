@@ -302,7 +302,7 @@ namespace canopen{
         recover_active = false;
     }
 
-    void stop(std::string deviceFile, std::chrono::milliseconds syncInterval){
+    void halt(std::string deviceFile, std::chrono::milliseconds syncInterval){
         CAN_Close(h);
 
         NMTmsg.ID = 0;
