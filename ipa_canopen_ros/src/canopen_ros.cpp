@@ -161,6 +161,20 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 }
 
 
+bool CANOpenHalt(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
+{
+
+
+
+    canopen::halt(deviceFile, canopen::syncInterval);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    res.success.data = true;
+    res.error_message.data = "";
+    return true;
+}
+
+
 bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res, std::string chainName)
 {
     res.success.data = true;  // for now this service is just a dummy, not used elsewhere
@@ -378,6 +392,8 @@ int main(int argc, char **argv)
     std::vector<ros::ServiceServer> initServices;
     std::vector<TriggerType> recoverCallbacks;
     std::vector<ros::ServiceServer> recoverServices;
+    std::vector<TriggerType> stopCallbacks;
+    std::vector<ros::ServiceServer> stopServices;
     std::vector<SetOperationModeCallbackType> setOperationModeCallbacks;
     std::vector<ros::ServiceServer> setOperationModeServices;
 
@@ -396,6 +412,8 @@ int main(int argc, char **argv)
         initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
         recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
+        stopCallbacks.push_back( boost::bind(CANOpenHalt, _1, _2, it.first) );
+        stopServices.push_back( n.advertiseService("/" + it.first + "/halt", stopCallbacks.back()) );
         setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
         setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 
