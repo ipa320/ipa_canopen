@@ -302,6 +302,57 @@ namespace canopen{
         recover_active = false;
     }
 
+    void halt(std::string deviceFile, std::chrono::milliseconds syncInterval){
+        CAN_Close(h);
+
+        NMTmsg.ID = 0;
+        NMTmsg.MSGTYPE = 0x00;
+        NMTmsg.LEN = 2;
+
+        syncMsg.ID = 0x80;
+        syncMsg.MSGTYPE = 0x00;
+
+        syncMsg.LEN = 0x00;
+
+        if (!canopen::openConnection(deviceFile)){
+            std::cout << "Cannot open CAN device; aborting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        else{
+            std::cout << "Connection to CAN bus established (recover)" << std::endl;
+        }
+
+
+        for (auto device : devices){
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
+        }
+
+        for (auto device : devices){
+
+
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
+                canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+
+
+
+
+        }
+    }
+
     /***************************************************************/
     //		define state machine functions
     /***************************************************************/

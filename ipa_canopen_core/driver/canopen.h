@@ -584,6 +584,7 @@ namespace canopen{
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid) > geterrors;
