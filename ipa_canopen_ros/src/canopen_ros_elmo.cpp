@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(lr);
 
-    setJointConstraints(n);
+    //setJointConstraints(n);
 
     while (ros::ok())
     {
