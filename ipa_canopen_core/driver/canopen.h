@@ -204,6 +204,7 @@ namespace canopen{
             std::string getName(){
                 return name_;
             }
+
             bool getInitialized(){
                 return initialized_;
             }
@@ -562,6 +563,16 @@ namespace canopen{
     //	define get errors functions
     /***************************************************************/
 
+    void makeTPDOMapping(TPCANMsg *mes);
+    void disableTPDO(TPCANMsg *mes);
+    void clearTPDOMapping(TPCANMsg *mes);
+    void enableTPDO(TPCANMsg *mes);
+    void makeRPDOMapping(TPCANMsg *mes);
+    void disableRPDO(TPCANMsg *mes);
+    void clearRPDOMapping(TPCANMsg *mes);
+    void enableRPDO(TPCANMsg *mes);
+    void pdoChanged(TPCANMsg *mes);
+
     void getErrors(uint16_t CANid);
     std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m);
     std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m);
@@ -582,8 +593,10 @@ namespace canopen{
 
     bool openConnection(std::string devName);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+	void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
@@ -729,9 +742,13 @@ namespace canopen{
 
     void initDeviceManagerThread(std::function<void ()> const& deviceManager);
     void deviceManager();
+    void deviceManager_elmo();
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void defaultPDOOutgoing_elmo(uint16_t CANid, double positionValue);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m);
     void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m);
 
     /***************************************************************/
