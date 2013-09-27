@@ -138,14 +138,6 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-    for (auto device : canopen::devices)
-    {
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
 
     for (auto device : canopen::devices)
     {
@@ -438,7 +430,6 @@ int main(int argc, char **argv)
             jtcs.actual.velocities = js.velocity;
             jtcs.desired.positions = dg.second.getDesiredPos();
             jtcs.desired.velocities = dg.second.getDesiredVel();
-            std::cout << "DesiredVel" << jtcs.desired.velocities[0] << std::endl;
             statePublishers[dg.first].publish(jtcs);
 
             std_msgs::String opmode;
