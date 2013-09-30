@@ -1,4 +1,3 @@
-
 /*!
  *****************************************************************
  * \file
@@ -15,17 +14,17 @@
  * \note
  *   ROS stack name: ipa_canopen
  * \note
- *   ROS package name: ipa_canopen_ros
+ *   ROS package name: ipa_canopen_core
  *
  * \author
- *   Author: Eduard Herkel, Thiago de Freitas, Tobias Sing
+ *   Author: Thiago de Freitas
  * \author
- *   Supervised by: Eduard Herkel, Thiago de Freitas, Tobias Sing, email:tdf@ipa.fhg.de
+ *   Supervised by: Thiago de Freitas, email:tdf@ipa.fhg.de
  *
- * \date Date of creation: December 2012
+ * \date Date of creation: September 2013
  *
  * \brief
- *   Implementation of canopen.
+ *   This ros node is specific to the Elmo motor controller
  *
  *****************************************************************
  *
@@ -57,7 +56,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-
 #include "ros/ros.h"
 #include <urdf/model.h>
 #include "std_msgs/String.h"

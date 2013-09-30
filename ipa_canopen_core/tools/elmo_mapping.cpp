@@ -21,10 +21,10 @@
  * \author
  *   Supervised by: Thiago de Freitas Oliveira Araujo, email:tdf@ipa.fhg.de
  *
- * \date Date of creation: July 2013
+ * \date Date of creation: September 2013
  *
  * \brief
- *   Get errors from the canopen device
+ *   This executable maps the Elmo 6063 e 6069h
  *
  *****************************************************************
  *
