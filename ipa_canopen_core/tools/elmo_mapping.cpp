@@ -107,25 +107,25 @@ int main(int argc, char *argv[])
 
     TPCANMsg mes;
 
-   canopen::disableTPDO(&mes);
+   canopen::disableTPDO4(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::clearTPDOMapping(&mes);
+   canopen::clearTPDO4Mapping(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::makeTPDOMapping(&mes);
+   canopen::makeTPDO4Mapping(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::disableTPDO(&mes);
+   canopen::disableTPDO4(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::clearTPDOMapping(&mes);
+   canopen::clearTPDO4Mapping(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::makeTPDOMapping(&mes);
+   canopen::makeTPDO4Mapping(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::enableTPDO(&mes);
+   canopen::enableTPDO4(&mes);
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
    canopen::pdoChanged(&mes);

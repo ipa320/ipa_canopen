@@ -116,6 +116,9 @@ namespace canopen{
             std::chrono::microseconds timeStamp_usec_;
 
 
+            bool hardware_limit_positive_;
+            bool hardware_limit_negative_;
+
 
             bool ready_switch_on_;
             bool switched_on_;
@@ -274,6 +277,15 @@ namespace canopen{
                 return homingError_;
             }
 
+
+            bool getNegativeLimit(){
+                return hardware_limit_negative_;
+            }
+
+            bool getPositiveLimit(){
+                return hardware_limit_positive_;
+            }
+
             bool getFault(){
                 return fault_;
             }
@@ -422,6 +434,15 @@ namespace canopen{
                 op_specific_ = opspec0;
             }
 
+            void setPositiveLimit(bool pos_limit){
+                hardware_limit_positive_ = pos_limit;
+            }
+
+
+            void setNegativeLimit(bool neg_limit){
+                hardware_limit_negative_ = neg_limit;
+            }
+
             void setFault(bool fault){
                 fault_ = fault;
             }
@@ -563,14 +584,21 @@ namespace canopen{
     //	define get errors functions
     /***************************************************************/
 
-    void makeTPDOMapping(TPCANMsg *mes);
-    void disableTPDO(TPCANMsg *mes);
-    void clearTPDOMapping(TPCANMsg *mes);
-    void enableTPDO(TPCANMsg *mes);
-    void makeRPDOMapping(TPCANMsg *mes);
-    void disableRPDO(TPCANMsg *mes);
-    void clearRPDOMapping(TPCANMsg *mes);
-    void enableRPDO(TPCANMsg *mes);
+    void makeTPDO4Mapping(TPCANMsg *mes);
+    void disableTPDO4(TPCANMsg *mes);
+    void clearTPDO4Mapping(TPCANMsg *mes);
+    void enableTPDO4(TPCANMsg *mes);
+    void makeRPDO4Mapping(TPCANMsg *mes);
+    void disableRPDO4(TPCANMsg *mes);
+    void clearRPDO4Mapping(TPCANMsg *mes);
+    void enableRPDO4(TPCANMsg *mes);
+
+    void makeTPDO1Mapping(TPCANMsg *mes);
+    void disableTPDO1(TPCANMsg *mes);
+    void clearTPDO1Mapping(TPCANMsg *mes);
+    void enableTPDO1(TPCANMsg *mes);
+
+
     void pdoChanged(TPCANMsg *mes);
 
     void getErrors(uint16_t CANid);
