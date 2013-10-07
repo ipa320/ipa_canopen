@@ -167,10 +167,37 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         std::vector<double> velocities;
         std::vector<double> positions;
 
+        double velocity;
 
         for (auto it : msg.velocities)
         {
-            velocities.push_back( it.value);
+            velocity = it.value;
+
+
+            if(velocity > 0)
+            {
+                if(canopen::halt_positive)
+                {
+                    velocity = 0;
+                    ROS_WARN("Current position is extreme positive. Can not move more in this direction.");
+                    canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                }
+            }
+
+
+            if(velocity < 0)
+            {
+                if(canopen::halt_negative)
+                {
+                    velocity = 0;
+
+                    ROS_WARN("Current position is extreme negative. Can not move more in this direction.");
+                    canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                }
+            }
+
+
+            velocities.push_back( velocity);
         }
 
         for (auto device : canopen::devices)

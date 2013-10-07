@@ -618,6 +618,10 @@ namespace canopen{
 
     extern bool atFirstInit;
     extern bool recover_active;
+    extern bool halt_active;
+
+    extern bool halt_positive;
+    extern bool halt_negative;
 
     bool openConnection(std::string devName);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
@@ -626,6 +630,7 @@ namespace canopen{
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
 	void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid) > geterrors;

@@ -74,6 +74,10 @@ namespace canopen{
     std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
     bool recover_active;
+    bool halt_active;
+
+    bool halt_positive;
+    bool halt_negative;
 
     /***************************************************************/
     //		define init and recover sequence
@@ -300,6 +304,30 @@ namespace canopen{
 
         }
         recover_active = false;
+
+    }
+
+    void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval)
+    {
+        TPCANMsg m;
+        //////////////////// Ready to switch on
+           m.ID = 0x60B;//CANid + 0x60B;
+           m.MSGTYPE = 0x00;
+           m.LEN = 8;
+           m.DATA[0] = 0x22;
+           m.DATA[1] = 0x40;
+           m.DATA[2] = 0x60;
+           m.DATA[3] = 0x00;
+           m.DATA[4] = 0x06;
+           m.DATA[5] = 0x00;
+           m.DATA[6] = 0x00;
+           m.DATA[7] = 0x00;
+           CAN_Write(canopen::h, &m);
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+//                                       /////////////////////////
     }
 
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval){
@@ -398,6 +426,15 @@ namespace canopen{
           canopen::makeTPDO4Mapping(&mes);
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+          canopen::disableTPDO1(&mes);
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+          canopen::clearTPDO1Mapping(&mes);
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+          canopen::makeTPDO1Mapping(&mes);
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
           canopen::disableRPDO4(&mes);
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -440,7 +477,7 @@ namespace canopen{
 
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            
+
 
 
 
@@ -458,7 +495,7 @@ namespace canopen{
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
             canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            
+
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -658,6 +695,9 @@ namespace canopen{
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         canopen::enableTPDO4(&mes);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::enableTPDO1(&mes);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         canopen::pdoChanged(&mes);
@@ -869,6 +909,7 @@ namespace canopen{
 
         }
         recover_active = false;
+
     }
 
 
@@ -1082,14 +1123,22 @@ namespace canopen{
         }
     }
 
-	void deviceManager_elmo() {
+    void deviceManager_elmo() {
         // todo: init, recover... (e.g. when to start/stop sending SYNCs)
         while (true) {
             auto tic = std::chrono::high_resolution_clock::now();
             if (!recover_active){
-                for (auto device : canopen::devices) {
-                    if (device.second.getInitialized()) {
+                for (auto device : canopen::devices)
+                {
+                    if (device.second.getInitialized())
+                    {
                         devices[device.first].updateDesiredPos();
+
+                        double diff_pos = devices[device.first].getDesiredPos() - devices[device.first].getActualPos();
+
+//                        /////
+                        canopen::halt_positive = device.second.getPositiveLimit();
+                        canopen::halt_negative = device.second.getNegativeLimit();
                         sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
                     }
                 }
@@ -1175,8 +1224,8 @@ namespace canopen{
 
          uint16_t limit_switch_ = m.Msg.DATA[2];
 
-         bool hardware_limit_positive = limit_switch_ & 0x01;
-         bool hardware_limit_negative = limit_switch_ & 0x02;
+         bool hardware_limit_positive = limit_switch_ & 0x02;
+         bool hardware_limit_negative = limit_switch_ & 0x01;
 
          bool ready_switch_on = mydata_low & 0x01;
          bool switched_on = mydata_low & 0x02;
