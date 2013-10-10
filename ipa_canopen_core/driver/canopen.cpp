@@ -761,6 +761,12 @@ namespace canopen{
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

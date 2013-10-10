@@ -180,7 +180,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
                 {
                     velocity = 0;
                     ROS_WARN("Current position is extreme positive. Can not move more in this direction.");
-                    canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                    //canopen::elmo_halt(deviceFile, canopen::syncInterval);
                 }
             }
 
@@ -192,7 +192,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
                     velocity = 0;
 
                     ROS_WARN("Current position is extreme negative. Can not move more in this direction.");
-                    canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                    //canopen::elmo_halt(deviceFile, canopen::syncInterval);
                 }
             }
 
