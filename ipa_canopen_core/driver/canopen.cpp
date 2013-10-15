@@ -455,30 +455,7 @@ namespace canopen{
             TPCANMsg m;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-//            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//               ////////////////////
-//                  m.ID = 0x00;
-//                  m.MSGTYPE = 0x00;
-//                  m.LEN = 2;
-//                  m.DATA[0] = 0x00;
-//                  m.DATA[1] = 0x81;
-//                 CAN_Write(canopen::h, &m);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-
-//                              m.ID = 0x00;
-//                  m.MSGTYPE = 0x00;
-//                  m.LEN = 2;
-//                  m.DATA[0] = 0x00;
-//                  m.DATA[1] = 0x01;
-//                 CAN_Write(canopen::h, &m);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_STOP_REMOTE_NODE);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-//            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -486,7 +463,7 @@ namespace canopen{
 
 
 
-           canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE);
+           canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::operation_mode);
            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
@@ -509,25 +486,6 @@ namespace canopen{
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-//            canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-//            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-//            canopen::setMotorState(device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-//            ////////////////////
-//               m.ID = 0x00;
-//               m.MSGTYPE = 0x00;
-//               m.LEN = 3;
-//               m.DATA[0] = 0x00;
-//               m.DATA[1] = 0x01;
-//               m.DATA[2] = 0x00;
-//               CAN_Write(canopen::h, &m);
 
 //            //////////////////// QUICK STOP
                m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
@@ -654,44 +612,9 @@ namespace canopen{
 
                                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-
-//                                 /////////////////////////
-
-//                                 //// //////////////////// disable TPDO 4
-//                                     m.ID =CANid + 0x600;
-//                                     m.MSGTYPE = 0x00;
-//                                     m.LEN = 8;
-//                                     m.DATA[0] = 0x22;
-//                                     m.DATA[1] = 0x03;
-//                                     m.DATA[2] = 0x18;
-//                                     m.DATA[3] = 0x01;
-//                                     m.DATA[4] = 0x8B;
-//                                     m.DATA[5] = 0x04;
-//                                     m.DATA[6] = 0x00;
-//                                     m.DATA[7] = 0x80;
-//                                     CAN_Write(canopen::h, &m);
-
-//                                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-
-                                        /////////////////////////
-
-//            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//            sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//            sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-
         }
 
-//        for (auto device : devices){
-//            getErrors(device.second.getCANid());
-//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//        }
+
 
         if (atFirstInit)
             atFirstInit = false;
@@ -748,7 +671,7 @@ namespace canopen{
             canopen::sendNMT(0, canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-           canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE);
+           canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::operation_mode);
            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);

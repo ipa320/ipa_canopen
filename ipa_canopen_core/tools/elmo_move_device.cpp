@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 	double targetVel = std::stod(std::string(argv[4]));
     double accel = std::stod(std::string(argv[5]));
 
-
+    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
 	//std::cout << deviceFile << std::endl;
 	//std::cout << CANid << std::endl;
 	//std::cout << canopen::syncInterval.count() << std::endl;
