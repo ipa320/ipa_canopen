@@ -1199,8 +1199,9 @@ namespace canopen{
 //           m.DATA[7] = (mvel >> 24) & 0xFF;
 //           CAN_Write(canopen::h, &m);
 
-
-                   m.ID = 0x50B;//CANid + CANid + 0x600;
+        for (auto device : devices)
+        {
+                   m.ID = device.second.getCANid() + 0x500;//CANid + CANid + 0x600;
                    m.MSGTYPE = 0x00;
                    m.LEN = 4;
                    int32_t mvel = positionValue*83445;//positionValue;
@@ -1209,7 +1210,7 @@ namespace canopen{
                    m.DATA[2] = (mvel >> 16) & 0xFF;
                    m.DATA[3] = (mvel >> 24) & 0xFF;
                    CAN_Write(canopen::h, &m);
-
+        }
           // std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     }
