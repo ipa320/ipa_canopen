@@ -623,6 +623,8 @@ namespace canopen{
     extern bool halt_positive;
     extern bool halt_negative;
 
+    extern uint8_t operation_mode;
+
     bool openConnection(std::string devName);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
@@ -779,7 +781,8 @@ namespace canopen{
     void deviceManager_elmo();
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
-    void defaultPDOOutgoing_elmo(uint16_t CANid, double positionValue);
+    void defaultPDOOutgoing_elmo(uint16_t CANid, double velocityValue);
+    void posPDOOutgoing_elmo(uint16_t CANid, double positionValue);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m);

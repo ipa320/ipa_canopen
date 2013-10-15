@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 	canopen::devices[ CANid ] = canopen::Device(CANid);
     canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos_elmo( CANid, m ); };
     canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( CANid, m ); };
-    canopen::sendPos = canopen::defaultPDOOutgoing_elmo;
+    canopen::sendVel = canopen::defaultPDOOutgoing_elmo;
 
 
 

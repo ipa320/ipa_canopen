@@ -79,6 +79,8 @@ namespace canopen{
     bool halt_positive;
     bool halt_negative;
 
+    uint8_t operation_mode;
+
     /***************************************************************/
     //		define init and recover sequence
     /***************************************************************/
@@ -527,7 +529,7 @@ namespace canopen{
 //               m.DATA[2] = 0x00;
 //               CAN_Write(canopen::h, &m);
 
-//            ////////////////////
+//            //////////////////// QUICK STOP
                m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                m.MSGTYPE = 0x00;
                m.LEN = 8;
@@ -1115,7 +1117,7 @@ namespace canopen{
     }
 
     void deviceManager() {
-        // todo: init, recover... (e.g. when to start/stop sending SYNCs)
+
         while (true) {
             auto tic = std::chrono::high_resolution_clock::now();
             if (!recover_active){
@@ -1133,7 +1135,7 @@ namespace canopen{
     }
 
     void deviceManager_elmo() {
-        // todo: init, recover... (e.g. when to start/stop sending SYNCs)
+
         while (true) {
             auto tic = std::chrono::high_resolution_clock::now();
             if (!recover_active){
@@ -1148,7 +1150,10 @@ namespace canopen{
 //                        /////
                         canopen::halt_positive = device.second.getPositiveLimit();
                         canopen::halt_negative = device.second.getNegativeLimit();
-                        sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
+                        if(operation_mode == MODES_OF_OPERATION_PROFILE_VELOCITY_MODE)
+                            sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
+                        else if(operation_mode == MODES_OF_OPERATION_PROFILE_POSITION_MODE)
+                            sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
                     }
                 }
                 canopen::sendSync();
@@ -1180,7 +1185,7 @@ namespace canopen{
         CAN_Write(h, &msg);
     }
 
-    void defaultPDOOutgoing_elmo(uint16_t CANid, double positionValue)
+    void defaultPDOOutgoing_elmo(uint16_t CANid, double velocityValue)
     {
 
         TPCANMsg m;
@@ -1205,7 +1210,7 @@ namespace canopen{
                    m.ID = device.second.getCANid() + 0x500;//CANid + CANid + 0x600;
                    m.MSGTYPE = 0x00;
                    m.LEN = 4;
-                   int32_t mvel = positionValue*83445;//positionValue;
+                   int32_t mvel = velocityValue*83445;//positionValue;
                    m.DATA[0] = mvel & 0xFF;
                    m.DATA[1] = (mvel >> 8) & 0xFF;
                    m.DATA[2] = (mvel >> 16) & 0xFF;
@@ -1213,6 +1218,94 @@ namespace canopen{
                    CAN_Write(canopen::h, &m);
         }
           // std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    }
+
+    void posPDOOutgoing_elmo(uint16_t CANid, double positionValue)
+    {
+
+        TPCANMsg m;
+        int32_t pos = positionValue;
+
+        for (auto device : devices)
+        {
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            //////////////////// Set speed(10000)
+               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+               m.MSGTYPE = 0x00;
+               m.LEN = 8;
+               m.DATA[0] = 0x22;
+               m.DATA[1] = 0x81;
+               m.DATA[2] = 0x60;
+               m.DATA[3] = 0x00;
+               m.DATA[4] = 0x10;
+               m.DATA[5] = 0x10;
+               m.DATA[6] = 0x00;
+               m.DATA[7] = 0x00;
+               CAN_Write(canopen::h, &m);
+
+               std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+               /////////////////////////
+
+               //////////////////// Set target position(3000)
+                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                  m.MSGTYPE = 0x00;
+                  m.LEN = 8;
+                  m.DATA[0] = 0x22;
+                  m.DATA[1] = 0x7a;
+                  m.DATA[2] = 0x60;
+                  m.DATA[3] = 0x00;
+                  m.DATA[4] = pos & 0xFF;
+                  m.DATA[5] = (pos >> 8) & 0xFF;
+                  m.DATA[6] = (pos >> 16) & 0xFF;
+                  m.DATA[7] = (pos >> 24) & 0xFF;
+                  CAN_Write(canopen::h, &m);
+
+                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+                  /////////////////////////
+
+                  //////////////////// Set point absolute
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.MSGTYPE = 0x00;
+                     m.LEN = 8;
+                     m.DATA[0] = 0x22;
+                     m.DATA[1] = 0x40;
+                     m.DATA[2] = 0x60;
+                     m.DATA[3] = 0x00;
+                     m.DATA[4] = 0x0f;
+                     m.DATA[5] = 0x00;
+                     m.DATA[6] = 0x00;
+                     m.DATA[7] = 0x00;
+                     CAN_Write(canopen::h, &m);
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.MSGTYPE = 0x00;
+                     m.LEN = 8;
+                     m.DATA[0] = 0x22;
+                     m.DATA[1] = 0x40;
+                     m.DATA[2] = 0x60;
+                     m.DATA[3] = 0x00;
+                     m.DATA[4] = 0x1f;
+                     m.DATA[5] = 0x00;
+                     m.DATA[6] = 0x00;
+                     m.DATA[7] = 0x00;
+                     CAN_Write(canopen::h, &m);
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+                     /////////////////////////
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        }
 
     }
 
