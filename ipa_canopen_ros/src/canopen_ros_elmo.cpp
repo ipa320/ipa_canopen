@@ -387,7 +387,7 @@ int main(int argc, char **argv)
     /********************************************/
 
     // add custom PDOs:
-    canopen::sendPos = canopen::defaultPDOOutgoing_elmo;
+    canopen::sendVel = canopen::defaultPDOOutgoing_elmo;
     for (auto it : canopen::devices) {
         canopen::incomingPDOHandlers[ 0x180 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( it.first, m ); };
         canopen::incomingPDOHandlers[ 0x480 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos_elmo( it.first, m ); };

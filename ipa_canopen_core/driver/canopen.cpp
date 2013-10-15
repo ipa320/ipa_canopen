@@ -911,8 +911,8 @@ namespace canopen{
             devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
             devices[device.second.getCANid()].setDesiredVel(0);
 
-            canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-            canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+            canopen::sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
+            canopen::sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
 
 
 
@@ -1148,7 +1148,7 @@ namespace canopen{
 //                        /////
                         canopen::halt_positive = device.second.getPositiveLimit();
                         canopen::halt_negative = device.second.getNegativeLimit();
-                        sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
+                        sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
                     }
                 }
                 canopen::sendSync();
@@ -1159,6 +1159,7 @@ namespace canopen{
     }
 
 
+    std::function< void (uint16_t CANid, double velocityValue) > sendVel;
     std::function< void (uint16_t CANid, double positionValue) > sendPos;
 
         void defaultPDOOutgoing(uint16_t CANid, double positionValue) {

@@ -633,6 +633,7 @@ namespace canopen{
     void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+    extern std::function< void (uint16_t CANid, double velocityValue) > sendVel;
     extern std::function< void (uint16_t CANid) > geterrors;
 
     /***************************************************************/
