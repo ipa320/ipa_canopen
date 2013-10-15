@@ -310,8 +310,10 @@ namespace canopen{
     void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval)
     {
         TPCANMsg m;
+
+        for (auto device : devices){
         //////////////////// Ready to switch on
-           m.ID = 0x60B;//CANid + 0x60B;
+            m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
            m.MSGTYPE = 0x00;
            m.LEN = 8;
            m.DATA[0] = 0x22;
@@ -325,6 +327,7 @@ namespace canopen{
            CAN_Write(canopen::h, &m);
 
            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
 
 
 //                                       /////////////////////////
@@ -525,7 +528,7 @@ namespace canopen{
 //               CAN_Write(canopen::h, &m);
 
 //            ////////////////////
-               m.ID = 0x60B;//CANid + 0x60B;
+               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                m.MSGTYPE = 0x00;
                m.LEN = 8;
                m.DATA[0] = 0x22;
@@ -539,7 +542,7 @@ namespace canopen{
                CAN_Write(canopen::h, &m);
 
                //////////////////// Ready to switch on
-                  m.ID = 0x60B;//CANid + 0x60B;
+                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                   m.MSGTYPE = 0x00;
                   m.LEN = 8;
                   m.DATA[0] = 0x22;
@@ -558,7 +561,7 @@ namespace canopen{
                   /////////////////////////
 
                   //////////////////// Read status
-                     m.ID = 0x60B;//CANid + 0x60B;
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x40;
@@ -577,7 +580,7 @@ namespace canopen{
                      /////////////////////////
 
                      //////////////////// Switch on
-                        m.ID = 0x60B;//CANid + 0x60B;
+                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                         m.MSGTYPE = 0x00;
                         m.LEN = 8;
                         m.DATA[0] = 0x22;
@@ -596,7 +599,7 @@ namespace canopen{
                         /////////////////////////
 
                         //////////////////// Read status
-                           m.ID = 0x60B;//CANid + 0x60B;
+                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                            m.MSGTYPE = 0x00;
                            m.LEN = 8;
                            m.DATA[0] = 0x40;
@@ -615,7 +618,7 @@ namespace canopen{
                            /////////////////////////
 
                            //////////////////// Start mo=1
-                              m.ID = 0x60B;//CANid + 0x60B;
+                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                               m.MSGTYPE = 0x00;
                               m.LEN = 8;
                               m.DATA[0] = 0x22;
@@ -634,7 +637,7 @@ namespace canopen{
                               /////////////////////////
 
                               //////////////////// Read status
-                                 m.ID = 0x60B;//CANid + 0x60B;
+                                 m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                                  m.MSGTYPE = 0x00;
                                  m.LEN = 8;
                                  m.DATA[0] = 0x40;
@@ -653,7 +656,7 @@ namespace canopen{
 //                                 /////////////////////////
 
 //                                 //// //////////////////// disable TPDO 4
-//                                     m.ID =0x60B;
+//                                     m.ID =CANid + 0x600;
 //                                     m.MSGTYPE = 0x00;
 //                                     m.LEN = 8;
 //                                     m.DATA[0] = 0x22;
@@ -775,7 +778,7 @@ namespace canopen{
 
 
 //            ////////////////////
-               m.ID = 0x60B;//CANid + 0x60B;
+               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                m.MSGTYPE = 0x00;
                m.LEN = 8;
                m.DATA[0] = 0x22;
@@ -789,7 +792,7 @@ namespace canopen{
                CAN_Write(canopen::h, &m);
 
                //////////////////// Ready to switch on
-                  m.ID = 0x60B;//CANid + 0x60B;
+                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                   m.MSGTYPE = 0x00;
                   m.LEN = 8;
                   m.DATA[0] = 0x22;
@@ -808,7 +811,7 @@ namespace canopen{
                   /////////////////////////
 
                   //////////////////// Read status
-                     m.ID = 0x60B;//CANid + 0x60B;
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x40;
@@ -827,7 +830,7 @@ namespace canopen{
                      /////////////////////////
 
                      //////////////////// Switch on
-                        m.ID = 0x60B;//CANid + 0x60B;
+                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                         m.MSGTYPE = 0x00;
                         m.LEN = 8;
                         m.DATA[0] = 0x22;
@@ -846,7 +849,7 @@ namespace canopen{
                         /////////////////////////
 
                         //////////////////// Read status
-                           m.ID = 0x60B;//CANid + 0x60B;
+                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                            m.MSGTYPE = 0x00;
                            m.LEN = 8;
                            m.DATA[0] = 0x40;
@@ -865,7 +868,7 @@ namespace canopen{
                            /////////////////////////
 
                            //////////////////// Start mo=1
-                              m.ID = 0x60B;//CANid + 0x60B;
+                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                               m.MSGTYPE = 0x00;
                               m.LEN = 8;
                               m.DATA[0] = 0x22;
@@ -884,7 +887,7 @@ namespace canopen{
                               /////////////////////////
 
                               //////////////////// Read status
-                                 m.ID = 0x60B;//CANid + 0x60B;
+                                 m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                                  m.MSGTYPE = 0x00;
                                  m.LEN = 8;
                                  m.DATA[0] = 0x40;
@@ -1182,7 +1185,7 @@ namespace canopen{
         TPCANMsg m;
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////// Set speed(10000)
-//           m.ID = 0x60B;//CANid + 0x60B;
+//           m.ID = CANid + 0x600;//CANid + CANid + 0x600;
 //           m.MSGTYPE = 0x00;
 //           m.LEN = 8;
 //           m.DATA[0] = 0x22;
@@ -1197,7 +1200,7 @@ namespace canopen{
 //           CAN_Write(canopen::h, &m);
 
 
-                   m.ID = 0x50B;//CANid + 0x60B;
+                   m.ID = 0x50B;//CANid + CANid + 0x600;
                    m.MSGTYPE = 0x00;
                    m.LEN = 4;
                    int32_t mvel = positionValue*83445;//positionValue;
@@ -1903,9 +1906,10 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
    void disableTPDO4(TPCANMsg *mes)
    {
-
+       for (auto device : devices)
+       {
           //////////////////// Disable tpdo4
-             mes->ID =0x60B;
+             mes->ID =device.second.getCANid() + 0x600;
              mes->MSGTYPE = 0x00;
              mes->LEN = 8;
              mes->DATA[0] = 0x22;
@@ -1921,14 +1925,16 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
              /////////////////////////
-
+    }
 
    }
 
    void clearTPDO4Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// clear mapping
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -1942,14 +1948,17 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           CAN_Write(canopen::h, mes);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       }
    }
 
    void makeTPDO4Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        /////////////////////////
 
        //////////////////// sub ind1=63
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -1968,7 +1977,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
 
           //////////////////// sub ind2=69
-             mes->ID =0x60B;
+             mes->ID =device.second.getCANid() + 0x600;
              mes->MSGTYPE = 0x00;
              mes->LEN = 8;
              mes->DATA[0] = 0x2F;
@@ -1987,7 +1996,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
 
              //////////////////// ASync
-                mes->ID =0x60B;
+                mes->ID =device.second.getCANid() + 0x600;
                 mes->MSGTYPE = 0x00;
                 mes->LEN = 8;
                 mes->DATA[0] = 0x2F;
@@ -2006,7 +2015,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                 ///
                 ///
                 /////////////////////// Mapping 2 objects
-                      mes->ID =0x60B;
+                      mes->ID =device.second.getCANid() + 0x600;
                       mes->MSGTYPE = 0x00;
                       mes->LEN = 8;
                       mes->DATA[0] = 0x2F;
@@ -2022,13 +2031,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                       std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                       /////////////////////////
-
+        }
    }
 
    void enableTPDO4(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// Enable tpdo4
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x22;
@@ -2044,12 +2055,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
           /////////////////////////
+       }
    }
 
    void pdoChanged(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// Enable tpdo4
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -2063,13 +2077,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           CAN_Write(canopen::h, mes);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       }
    }
 
    void disableRPDO4(TPCANMsg *mes)
    {
-
+       for (auto device : devices)
+       {
           //////////////////// Disable tpdo4
-             mes->ID =0x60B;
+             mes->ID =device.second.getCANid() + 0x600;
              mes->MSGTYPE = 0x00;
              mes->LEN = 8;
              mes->DATA[0] = 0x22;
@@ -2086,13 +2102,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
              /////////////////////////
 
-
+        }
    }
 
    void clearRPDO4Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// clear mapping
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -2106,14 +2124,17 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           CAN_Write(canopen::h, mes);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       }
    }
 
    void makeRPDO4Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        /////////////////////////
 
        //////////////////// sub ind1=63
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -2131,7 +2152,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           /////////////////////////
 
              //////////////////// ASync
-                mes->ID =0x60B;
+                mes->ID =device.second.getCANid() + 0x600;
                 mes->MSGTYPE = 0x00;
                 mes->LEN = 8;
                 mes->DATA[0] = 0x2F;
@@ -2150,7 +2171,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                 ///
                 ///
                 /////////////////////// Mapping 2 objects
-                      mes->ID =0x60B;
+                      mes->ID =device.second.getCANid() + 0x600;
                       mes->MSGTYPE = 0x00;
                       mes->LEN = 8;
                       mes->DATA[0] = 0x2F;
@@ -2166,13 +2187,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                       std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                       /////////////////////////
-
+        }
    }
 
    void enableRPDO4(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// Enable tpdo4
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x22;
@@ -2188,6 +2211,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
           /////////////////////////
+       }
    }
 
 
@@ -2199,8 +2223,10 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
    void disableTPDO1(TPCANMsg *mes)
    {
 
+       for(auto device : devices)
+       {
           //////////////////// Disable tpdo4
-             mes->ID =0x60B;
+             mes->ID =device.second.getCANid() + 0x600;
              mes->MSGTYPE = 0x00;
              mes->LEN = 8;
              mes->DATA[0] = 0x22;
@@ -2216,14 +2242,17 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
              /////////////////////////
+       }
 
 
    }
 
    void clearTPDO1Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices)
+       {
        //////////////////// clear mapping
-          mes->ID =0x60B;
+          mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -2237,14 +2266,16 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           CAN_Write(canopen::h, mes);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       }
    }
 
    void makeTPDO1Mapping(TPCANMsg *mes)
    {
+       for (auto device : devices){
        /////////////////////////
 
        //////////////////// sub ind1=63
-          mes->ID =0x60B;
+           mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x2F;
@@ -2263,7 +2294,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
 
           //////////////////// sub ind2=69
-             mes->ID =0x60B;
+             mes->ID =device.second.getCANid() + 0x600;
              mes->MSGTYPE = 0x00;
              mes->LEN = 8;
              mes->DATA[0] = 0x2F;
@@ -2282,7 +2313,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
 
              //////////////////// ASync
-                mes->ID =0x60B;
+                mes->ID =device.second.getCANid() + 0x600;
                 mes->MSGTYPE = 0x00;
                 mes->LEN = 8;
                 mes->DATA[0] = 0x2F;
@@ -2301,7 +2332,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                 ///
                 ///
                 /////////////////////// Mapping 2 objects
-                      mes->ID =0x60B;
+                      mes->ID =device.second.getCANid() + 0x600;
                       mes->MSGTYPE = 0x00;
                       mes->LEN = 8;
                       mes->DATA[0] = 0x2F;
@@ -2317,13 +2348,15 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                       std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                       /////////////////////////
+       }
 
    }
 
    void enableTPDO1(TPCANMsg *mes)
    {
+       for (auto device : devices){
        //////////////////// Enable tpdo4
-          mes->ID =0x60B;
+           mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
           mes->LEN = 8;
           mes->DATA[0] = 0x22;
@@ -2337,7 +2370,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           CAN_Write(canopen::h, mes);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+    }
           /////////////////////////
    }
 

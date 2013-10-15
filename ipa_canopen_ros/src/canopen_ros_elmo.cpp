@@ -112,13 +112,13 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     for (auto device : canopen::devices)
     {
-        device.second.setInitialized(true);
+        canopen::devices[(uint16_t)device.second.getCANid()].setInitialized(true);
+
        // if(device.second.getHomingError())
          //   return false;
 
     }
 
-    canopen::devices[11].setInitialized(true);
 
     res.success.data = true;
     res.error_message.data = "";
