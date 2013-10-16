@@ -1112,21 +1112,6 @@ namespace canopen{
     {
 
         TPCANMsg m;
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////// Set speed(10000)
-//           m.ID = CANid + 0x600;//CANid + CANid + 0x600;
-//           m.MSGTYPE = 0x00;
-//           m.LEN = 8;
-//           m.DATA[0] = 0x22;
-//           m.DATA[1] = 0xff;
-//           m.DATA[2] = 0x60;
-//           m.DATA[3] = 0x00;
-//           int32_t mvel = positionValue*83445;//positionValue;
-//           m.DATA[4] = mvel & 0xFF;
-//           m.DATA[5] = (mvel >> 8) & 0xFF;
-//           m.DATA[6] = (mvel >> 16) & 0xFF;
-//           m.DATA[7] = (mvel >> 24) & 0xFF;
-//           CAN_Write(canopen::h, &m);
 
         for (auto device : devices)
         {
@@ -1985,7 +1970,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           mes->DATA[3] = 0x01;
           mes->DATA[4] = 0x20;
           mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x63;
+          mes->DATA[6] = 0x64;//0x63;
           mes->DATA[7] = 0x60;
           CAN_Write(canopen::h, mes);
 
@@ -2004,7 +1989,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              mes->DATA[3] = 0x02;
              mes->DATA[4] = 0x20;
              mes->DATA[5] = 0x00;
-             mes->DATA[6] = 0x69;
+             mes->DATA[6] = 0x6C;//0x69;
              mes->DATA[7] = 0x60;
              CAN_Write(canopen::h,mes);
 
