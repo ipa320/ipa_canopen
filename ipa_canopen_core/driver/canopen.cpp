@@ -190,7 +190,7 @@ namespace canopen{
             {
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
@@ -672,7 +672,7 @@ namespace canopen{
         {
             TPCANMsg m;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
 
 
             canopen::sendNMT(0, canopen::NMT_START_REMOTE_NODE);

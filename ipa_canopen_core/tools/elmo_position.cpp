@@ -99,8 +99,6 @@ int main(int argc, char *argv[])
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    //canopen::sendNMT(0, canopen::NMT_RESET_NODE);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
