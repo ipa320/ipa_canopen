@@ -99,8 +99,6 @@ int main(int argc, char *argv[])
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    //canopen::sendNMT(0, canopen::NMT_RESET_NODE);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -302,7 +300,7 @@ int main(int argc, char *argv[])
 
                                /////////////////////////
 
-                               //////////////////// Set target position(166890)
+                               //////////////////// Set target position(10000)
                                   m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                                   m.MSGTYPE = 0x00;
                                   m.LEN = 8;
@@ -310,9 +308,9 @@ int main(int argc, char *argv[])
                                   m.DATA[1] = 0x7a;
                                   m.DATA[2] = 0x60;
                                   m.DATA[3] = 0x00;
-                                  m.DATA[4] = 0xea;
-                                  m.DATA[5] = 0x8b;
-                                  m.DATA[6] = 0x02;
+                                  m.DATA[4] = 0x00;
+                                  m.DATA[5] = 0x00;
+                                  m.DATA[6] = 0x00;
                                   m.DATA[7] = 0x00;
                                   CAN_Write(canopen::h, &m);
 
@@ -354,24 +352,11 @@ int main(int argc, char *argv[])
                                         m.DATA[7] = 0x00;
                                         CAN_Write(canopen::h, &m);
 
-                                        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+                                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                                        //////////////////// Ready to switch on
-             m.ID = CANid + 0x600;//CANid + CANid + 0x600;
-             m.MSGTYPE = 0x00;
-             m.LEN = 8;
-             m.DATA[0] = 0x22;
-             m.DATA[1] = 0x40;
-             m.DATA[2] = 0x60;
-             m.DATA[3] = 0x00;
-             m.DATA[4] = 0x06;
-             m.DATA[5] = 0x00;
-             m.DATA[6] = 0x00;
-             m.DATA[7] = 0x00;
-             CAN_Write(canopen::h, &m);
 
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+             
               canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));

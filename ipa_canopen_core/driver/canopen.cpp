@@ -165,7 +165,7 @@ namespace canopen{
             exit(EXIT_FAILURE);
         }
         else{
-            //std::cout << "Connection to CAN bus established" << std::endl;
+            std::cout << "Connection to CAN bus established" << std::endl;
         }
 
         if (atFirstInit){
@@ -173,7 +173,7 @@ namespace canopen{
         }
 
         for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
             getErrors(device.second.getCANid());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -182,15 +182,9 @@ namespace canopen{
 
         for (auto device : devices)
         {
-            if(device.second.getMotorState() == MS_OPERATION_ENABLED)
-            {
-                std::cout << "Node" << device.second.getCANid() << "is already operational" << std::endl;
-            }
-            else
-            {
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
@@ -249,19 +243,19 @@ namespace canopen{
             exit(EXIT_FAILURE);
         }
         else{
-            //std::cout << "Connection to CAN bus established (recover)" << std::endl;
+            std::cout << "Connection to CAN bus established (recover)" << std::endl;
         }
 
 
         for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
         }
 
         for (auto device : devices){
 
             if(device.second.getMotorState() == MS_OPERATION_ENABLED)
             {
-                std::cout << "Node" << device.second.getCANid() << "is already operational" << std::endl;
+                std::cout << "Node" << device.second.getCANid() << "is operational" << std::endl;
             }
             else
             {
@@ -359,12 +353,12 @@ namespace canopen{
             exit(EXIT_FAILURE);
         }
         else{
-           // std::cout << "Connection to CAN bus established (recover)" << std::endl;
+            std::cout << "Connection to CAN bus established (recover)" << std::endl;
         }
 
 
         for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
         }
 
         for (auto device : devices){
@@ -412,7 +406,7 @@ namespace canopen{
             exit(EXIT_FAILURE);
         }
         else{
-            //std::cout << "Connection to CAN bus established" << std::endl;
+            std::cout << "Connection to CAN bus established" << std::endl;
         }
 
         if (atFirstInit){
@@ -420,7 +414,7 @@ namespace canopen{
         }
 
         for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
             getErrors(device.second.getCANid());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -461,7 +455,7 @@ namespace canopen{
         {
             TPCANMsg m;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
 
 
             canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
@@ -660,19 +654,19 @@ namespace canopen{
             exit(EXIT_FAILURE);
         }
         else{
-           // std::cout << "Connection to CAN bus established (recover)" << std::endl;
+            std::cout << "Connection to CAN bus established (recover)" << std::endl;
         }
 
 
         for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
+            std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
         }
 
         for (auto device : devices)
         {
             TPCANMsg m;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
 
 
             canopen::sendNMT(0, canopen::NMT_START_REMOTE_NODE);
@@ -1230,7 +1224,7 @@ namespace canopen{
         uint16_t mydata_low = m.Msg.DATA[0];
         uint16_t mydata_high = m.Msg.DATA[1];
 
-       // std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << std::endl;
+        std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << std::endl;
 
 
     }
@@ -1900,7 +1894,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
         devices[CANid].setReadySwitchON(ready_switch_on);
         devices[CANid].setSwitchON(switched_on);
 
-        //std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
+        std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
     }
 
     void processSingleSDO(uint8_t CANid, TPCANRdMsg* message)
