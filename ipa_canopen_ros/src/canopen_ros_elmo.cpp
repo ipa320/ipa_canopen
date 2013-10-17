@@ -93,7 +93,7 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
-
+    ROS_INFO("Initializing modules");
     canopen::init_elmo(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -122,7 +122,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     res.success.data = true;
     res.error_message.data = "";
-
+    ROS_INFO("Init concluded");
     return true;
 }
 
@@ -131,7 +131,7 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 {
 
 
-
+    ROS_INFO("Recovering modules");
     canopen::recover_elmo(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -150,6 +150,7 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
     res.success.data = true;
     res.error_message.data = "";
+    ROS_INFO("Recover concluded");
     return true;
 }
 
@@ -300,7 +301,7 @@ void setJointConstraints(ros::NodeHandle n)
           ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
           n.shutdown();
       }
-      ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+      //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
       /// Get urdf model out of robot_description
       urdf::Model model;
@@ -547,14 +548,14 @@ int main(int argc, char **argv)
           {
             diagstatus.level = 0;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain initialized and running";
+            diagstatus.message = "canopen_elmo chain initialized and running";
             diagstatus.values = keyvalues;
           }
           else
           {
             diagstatus.level = 1;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain not initialized";
+            diagstatus.message = "canopen_elmo chain not initialized";
             diagstatus.values = keyvalues;
             break;
           }

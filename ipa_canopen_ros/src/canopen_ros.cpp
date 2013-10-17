@@ -94,7 +94,7 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
-
+    ROS_INFO("Initializing modules");
     canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -103,7 +103,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     {
 
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+        //std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
@@ -121,7 +121,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     res.success.data = true;
     res.error_message.data = "";
-
+    ROS_INFO("Init concluded");
     return true;
 }
 
@@ -130,7 +130,7 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 {
 
 
-
+    ROS_INFO("Recovering modules");
     canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -138,7 +138,7 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
     for (auto device : canopen::devices)
     {
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+        //std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     }
@@ -157,6 +157,7 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
     res.success.data = true;
     res.error_message.data = "";
+    ROS_INFO("Recover concluded");
     return true;
 }
 
@@ -165,7 +166,7 @@ bool CANOpenHalt(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 {
 
 
-
+    ROS_INFO("Halting modules");
     canopen::halt(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -542,14 +543,14 @@ int main(int argc, char **argv)
           {
             diagstatus.level = 0;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain initialized and running";
+            diagstatus.message = "canopen chain initialized and running";
             diagstatus.values = keyvalues;
           }
           else
           {
             diagstatus.level = 1;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain not initialized";
+            diagstatus.message = "canopen chain not initialized";
             diagstatus.values = keyvalues;
             break;
           }
