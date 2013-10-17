@@ -77,12 +77,16 @@ class JointLimits
             std::vector<double> LowerLimits_;
             std::vector<double> UpperLimits_;
             std::vector<double> Offsets_;
+            std::vector<double> HWPositive_;
+            std::vector<double> HWNegative_;
             int DOF_;
 
         public:
 
             bool checkPositionLimits(std::vector<double> positions,std::vector<double> velocities);
             bool checkVelocityLimits(std::vector<double> velocities);
+
+            bool checkHardwareLimits(std::vector<double> velocities);
 
             int setMaxVelocities(std::vector<double> max_vel)
             {

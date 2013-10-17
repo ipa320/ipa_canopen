@@ -116,6 +116,9 @@ namespace canopen{
             std::chrono::microseconds timeStamp_usec_;
 
 
+            bool hardware_limit_positive_;
+            bool hardware_limit_negative_;
+
 
             bool ready_switch_on_;
             bool switched_on_;
@@ -204,6 +207,7 @@ namespace canopen{
             std::string getName(){
                 return name_;
             }
+
             bool getInitialized(){
                 return initialized_;
             }
@@ -271,6 +275,15 @@ namespace canopen{
 
             bool getHomingError(){
                 return homingError_;
+            }
+
+
+            bool getNegativeLimit(){
+                return hardware_limit_negative_;
+            }
+
+            bool getPositiveLimit(){
+                return hardware_limit_positive_;
             }
 
             bool getFault(){
@@ -421,6 +434,15 @@ namespace canopen{
                 op_specific_ = opspec0;
             }
 
+            void setPositiveLimit(bool pos_limit){
+                hardware_limit_positive_ = pos_limit;
+            }
+
+
+            void setNegativeLimit(bool neg_limit){
+                hardware_limit_negative_ = neg_limit;
+            }
+
             void setFault(bool fault){
                 fault_ = fault;
             }
@@ -562,6 +584,23 @@ namespace canopen{
     //	define get errors functions
     /***************************************************************/
 
+    void makeTPDO4Mapping(TPCANMsg *mes);
+    void disableTPDO4(TPCANMsg *mes);
+    void clearTPDO4Mapping(TPCANMsg *mes);
+    void enableTPDO4(TPCANMsg *mes);
+    void makeRPDO4Mapping(TPCANMsg *mes);
+    void disableRPDO4(TPCANMsg *mes);
+    void clearRPDO4Mapping(TPCANMsg *mes);
+    void enableRPDO4(TPCANMsg *mes);
+
+    void makeTPDO1Mapping(TPCANMsg *mes);
+    void disableTPDO1(TPCANMsg *mes);
+    void clearTPDO1Mapping(TPCANMsg *mes);
+    void enableTPDO1(TPCANMsg *mes);
+
+
+    void pdoChanged(TPCANMsg *mes);
+
     void getErrors(uint16_t CANid);
     std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m);
     std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m);
@@ -579,13 +618,24 @@ namespace canopen{
 
     extern bool atFirstInit;
     extern bool recover_active;
+    extern bool halt_active;
+
+    extern bool halt_positive;
+    extern bool halt_negative;
+
+    extern uint8_t operation_mode;
 
     bool openConnection(std::string devName);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+	void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+    extern std::function< void (uint16_t CANid, double velocityValue) > sendVel;
     extern std::function< void (uint16_t CANid) > geterrors;
 
     /***************************************************************/
@@ -728,9 +778,14 @@ namespace canopen{
 
     void initDeviceManagerThread(std::function<void ()> const& deviceManager);
     void deviceManager();
+    void deviceManager_elmo();
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void defaultPDOOutgoing_elmo(uint16_t CANid, double velocityValue);
+    void posPDOOutgoing_elmo(uint16_t CANid, double positionValue);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m);
     void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m);
 
     /***************************************************************/
