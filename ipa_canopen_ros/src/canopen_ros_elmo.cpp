@@ -14,17 +14,17 @@
  * \note
  *   ROS stack name: ipa_canopen
  * \note
- *   ROS package name: ipa_canopen_ros
+ *   ROS package name: ipa_canopen_core
  *
  * \author
- *   Author: Eduard Herkel, Thiago de Freitas, Tobias Sing
+ *   Author: Thiago de Freitas
  * \author
- *   Supervised by: Eduard Herkel, Thiago de Freitas, Tobias Sing, email:tdf@ipa.fhg.de
+ *   Supervised by: Thiago de Freitas, email:tdf@ipa.fhg.de
  *
- * \date Date of creation: December 2012
+ * \date Date of creation: September 2013
  *
  * \brief
- *   Implementation of canopen.
+ *   This ros node is specific to the Elmo motor controller
  *
  *****************************************************************
  *
@@ -56,7 +56,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-
 #include "ros/ros.h"
 #include <urdf/model.h>
 #include "std_msgs/String.h"
@@ -95,29 +94,31 @@ std::vector<std::string> jointNames;
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
     ROS_INFO("Initializing modules");
-    canopen::init(deviceFile, canopen::syncInterval);
+    canopen::init_elmo(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-    for (auto device : canopen::devices)
-    {
+//    for (auto device : canopen::devices)
+//    {
 
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        //std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+//        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+//        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    canopen::initDeviceManagerThread(canopen::deviceManager);
+    canopen::initDeviceManagerThread(canopen::deviceManager_elmo);
 
     for (auto device : canopen::devices)
     {
-        device.second.setInitialized(true);
+        canopen::devices[(uint16_t)device.second.getCANid()].setInitialized(true);
+
        // if(device.second.getHomingError())
          //   return false;
 
     }
+
 
     res.success.data = true;
     res.error_message.data = "";
@@ -131,18 +132,10 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
 
     ROS_INFO("Recovering modules");
-    canopen::recover(deviceFile, canopen::syncInterval);
+    canopen::recover_elmo(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-    for (auto device : canopen::devices)
-    {
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        //std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
 
     for (auto device : canopen::devices)
     {
@@ -162,20 +155,6 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 }
 
 
-bool CANOpenHalt(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
-{
-
-
-    ROS_INFO("Halting modules");
-    canopen::halt(deviceFile, canopen::syncInterval);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    res.success.data = true;
-    res.error_message.data = "";
-    return true;
-}
-
-
 bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res, std::string chainName)
 {
     res.success.data = true;  // for now this service is just a dummy, not used elsewhere
@@ -189,10 +168,37 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         std::vector<double> velocities;
         std::vector<double> positions;
 
+        double velocity;
 
         for (auto it : msg.velocities)
         {
-            velocities.push_back( it.value);
+            velocity = it.value;
+
+
+            if(velocity > 0)
+            {
+                if(canopen::halt_positive)
+                {
+                    velocity = 0;
+                    ROS_WARN("Current position is extreme positive. Can not move more in this direction.");
+                    //canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                }
+            }
+
+
+            if(velocity < 0)
+            {
+                if(canopen::halt_negative)
+                {
+                    velocity = 0;
+
+                    ROS_WARN("Current position is extreme negative. Can not move more in this direction.");
+                    //canopen::elmo_halt(deviceFile, canopen::syncInterval);
+                }
+            }
+
+
+            velocities.push_back( velocity);
         }
 
         for (auto device : canopen::devices)
@@ -200,8 +206,8 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             positions.push_back((double)device.second.getDesiredPos());
         }
 
-        joint_limits_->checkVelocityLimits(velocities);
-        joint_limits_->checkPositionLimits(velocities, positions);
+        //joint_limits_->checkVelocityLimits(velocities);
+        //joint_limits_->checkPositionLimits(velocities, positions);
 
         canopen::deviceGroups[chainName].setVel(velocities);
     }
@@ -295,7 +301,7 @@ void setJointConstraints(ros::NodeHandle n)
           ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
           n.shutdown();
       }
-      ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+      //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
       /// Get urdf model out of robot_description
       urdf::Model model;
@@ -359,6 +365,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
+    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
 
     std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
@@ -382,10 +389,11 @@ int main(int argc, char **argv)
     /********************************************/
 
     // add custom PDOs:
-    canopen::sendPos = canopen::defaultPDOOutgoing;
+    canopen::sendVel = canopen::defaultPDOOutgoing_elmo;
     for (auto it : canopen::devices) {
-        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming( it.first, m ); };
-        canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
+        canopen::incomingPDOHandlers[ 0x180 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( it.first, m ); };
+        canopen::incomingPDOHandlers[ 0x480 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos_elmo( it.first, m ); };
+       // canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
     }
 
     // set up services, subscribers, and publishers for each of the chains:
@@ -393,8 +401,6 @@ int main(int argc, char **argv)
     std::vector<ros::ServiceServer> initServices;
     std::vector<TriggerType> recoverCallbacks;
     std::vector<ros::ServiceServer> recoverServices;
-    std::vector<TriggerType> stopCallbacks;
-    std::vector<ros::ServiceServer> stopServices;
     std::vector<SetOperationModeCallbackType> setOperationModeCallbacks;
     std::vector<ros::ServiceServer> setOperationModeServices;
 
@@ -413,8 +419,6 @@ int main(int argc, char **argv)
         initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
         recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
-        stopCallbacks.push_back( boost::bind(CANOpenHalt, _1, _2, it.first) );
-        stopServices.push_back( n.advertiseService("/" + it.first + "/halt", stopCallbacks.back()) );
         setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
         setOperationModeServices.push_back( n.advertiseService("/" + it.first + "/set_operation_mode", setOperationModeCallbacks.back()) );
 
@@ -430,7 +434,7 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(lr);
 
-    setJointConstraints(n);
+    //setJointConstraints(n);
 
     while (ros::ok())
     {
@@ -442,6 +446,7 @@ int main(int argc, char **argv)
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
             js.position = dg.second.getActualPos();
+            //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
             jointStatesPublisher.publish(js);
@@ -543,14 +548,14 @@ int main(int argc, char **argv)
           {
             diagstatus.level = 0;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "canopen chain initialized and running";
+            diagstatus.message = "canopen_elmo chain initialized and running";
             diagstatus.values = keyvalues;
           }
           else
           {
             diagstatus.level = 1;
             diagstatus.name = chainNames[0];
-            diagstatus.message = "canopen chain not initialized";
+            diagstatus.message = "canopen_elmo chain not initialized";
             diagstatus.values = keyvalues;
             break;
           }
