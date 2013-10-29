@@ -1,6 +1,6 @@
 ## Status ##
 
-[![Build Status](https://travis-ci.org/thiagodefreitas/ipa_canopen.png)](https://travis-ci.org/thiagodefreitas/ipa_canopen)
+[![Build Status](https://travis-ci.org/thiagodefreitas/ipa_canopen.png?branch=groovy_dev)](https://travis-ci.org/thiagodefreitas/ipa_canopen)
 
 CANopen is a high-level communication protocol which also standardizes the behavior of hardware in a number of so-called device profiles, allowing for vendor-independent control of devices.
 
