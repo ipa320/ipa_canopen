@@ -13,6 +13,7 @@ install:
   - rosdep update
 script:
   - source /opt/ros/groovy/setup.bash
+  - export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:.
   - cd ipa_canopen_core
   - make
 notifications:
