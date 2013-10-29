@@ -14,7 +14,8 @@ install:
 script:
   - source /opt/ros/groovy/setup.bash
   - export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:.
+  - echo $ROS_PACKAGE_PATH
   - cd ipa_canopen_core
-  - make
+  - catkin_make
 notifications:
   email: false
