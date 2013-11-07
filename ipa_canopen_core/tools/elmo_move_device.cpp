@@ -62,7 +62,7 @@
 
 int main(int argc, char *argv[]) {
 
-	if (argc != 6) {
+    if (argc != 7) {
 		std::cout << "Arguments:" << std::endl
 		<< "(1) device file" << std::endl
 		<< "(2) CAN deviceID" << std::endl

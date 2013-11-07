@@ -365,7 +365,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
-    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
+    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE; //HERE::set operation_mode
 
     std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
@@ -390,7 +390,9 @@ int main(int argc, char **argv)
     /********************************************/
 
     // add custom PDOs:
-    canopen::sendVel = canopen::defaultPDOOutgoing_elmo;
+    canopen::sendVel = canopen::defaultPDOOutgoing_elmo; //HERE::
+    canopen::sendPos = canopen::posPDOOutgoing_elmo;
+
     for (auto it : canopen::devices) {
         canopen::incomingPDOHandlers[ 0x180 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( it.first, m ); };
         canopen::incomingPDOHandlers[ 0x480 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos_elmo( it.first, m ); };

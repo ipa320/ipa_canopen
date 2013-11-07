@@ -1159,7 +1159,7 @@ namespace canopen{
                m.DATA[2] = 0x60;
                m.DATA[3] = 0x00;
                m.DATA[4] = 0x10;
-               m.DATA[5] = 0x10;
+               m.DATA[5] = 0x27;
                m.DATA[6] = 0x00;
                m.DATA[7] = 0x00;
                CAN_Write(canopen::h, &m);
@@ -1345,7 +1345,7 @@ namespace canopen{
 
          //std::cout << "Received POs"<< newPos << std::endl;
 
-         newPos = 0.0000119839*newPos;
+         newPos = 0.0000119839*newPos; //TODO: conversion from yaml file
          newVel = 0.0000119839*newVel;
 
              devices[CANid].setActualPos(newPos);

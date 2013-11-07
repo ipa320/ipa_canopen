@@ -66,7 +66,7 @@
 int main(int argc, char *argv[])
 {
 
-    if (argc != 3) {
+    if (argc != 4) {
         std::cout << "Arguments:" << std::endl
         << "(1) device file" << std::endl
         << "(2) CAN deviceID" << std::endl
@@ -89,10 +89,12 @@ int main(int argc, char *argv[])
 
     if (!canopen::openConnection(deviceFile, canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
+
         exit(EXIT_FAILURE);
     }
     else{
         std::cout << "Connection to CAN bus established" << std::endl;
+        std::cout << "Baud Rate:" << canopen::baudRate << std::endl;
     }
 
     uint16_t CANid = std::stoi(std::string(argv[2]));
