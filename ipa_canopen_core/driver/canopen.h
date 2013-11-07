@@ -80,6 +80,7 @@
 namespace canopen{
 
     extern std::chrono::milliseconds syncInterval;
+    extern std::string baudRate;
 
     /***************************************************************/
     //		    define classes and structs
@@ -625,7 +626,7 @@ namespace canopen{
 
     extern uint8_t operation_mode;
 
-    bool openConnection(std::string devName);
+    bool openConnection(std::string devName, std::string baudrate);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();

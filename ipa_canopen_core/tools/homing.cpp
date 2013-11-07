@@ -66,12 +66,13 @@ int main(int argc, char *argv[]) {
 		std::cout << "Arguments:" << std::endl
 		<< "(1) device file" << std::endl
 		<< "(2) CAN deviceID" << std::endl
-		<< "Example: ./homing /dev/pcan32 12" << std::endl;
+           << "(3) Baud Rate" << std::endl
+        << "Example: ./homing /dev/pcan32 12 500K" << std::endl;
 		return -1;
 	}
 	std::string deviceFile = std::string(argv[1]);
 	uint16_t CANid = std::stoi(std::string(argv[2]));
-
+    canopen::baudRate = std::string(argv[3]);
   	// configure CANopen device objects and custom incoming and outgoing PDOs:
 
 	canopen::devices[ CANid ] = canopen::Device(CANid);

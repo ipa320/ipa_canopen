@@ -66,11 +66,12 @@
 int main(int argc, char *argv[])
 {
 
-    if (argc != 3) {
+    if (argc != 4) {
         std::cout << "Arguments:" << std::endl
         << "(1) device file" << std::endl
         << "(2) CAN deviceID" << std::endl
-        << "Example: ./elmo_test /dev/pcan32 12" << std::endl;
+        << "(3) Baud Rate" << std::endl
+        << "Example: ./elmo_mapping /dev/pcan32 12 500K" << std::endl;
         return -1;
     }
 
@@ -86,8 +87,9 @@ int main(int argc, char *argv[])
     canopen::syncMsg.LEN = 0x00;
 
     std::string deviceFile = std::string(argv[1]);
+    canopen::baudRate = std::string(argv[3]);
 
-    if (!canopen::openConnection(deviceFile)){
+    if (!canopen::openConnection(deviceFile,canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
         exit(EXIT_FAILURE);
     }

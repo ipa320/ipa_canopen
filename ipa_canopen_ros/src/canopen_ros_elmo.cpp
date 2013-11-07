@@ -369,12 +369,13 @@ int main(int argc, char **argv)
 
     std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
+    canopen::baudRate = std::string( buses.begin()->second.baudrate );
     // ^ todo: this only works with a single CAN bus; add support for more buses!
     deviceFile = buses.begin()->first;
     std::cout << "Opening device..." << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
 
-    if (!canopen::openConnection(deviceFile))
+    if (!canopen::openConnection(deviceFile, canopen::baudRate))
     {
         ROS_ERROR("Cannot open CAN device; aborting.");
         exit(EXIT_FAILURE);

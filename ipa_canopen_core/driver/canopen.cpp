@@ -66,6 +66,7 @@ namespace canopen{
     /***************************************************************/
 
     std::chrono::milliseconds syncInterval;
+    std::string baudRate;
     std::map<uint8_t, Device> devices;
     std::map<std::string, DeviceGroup> deviceGroups;
     HANDLE h;
@@ -87,11 +88,14 @@ namespace canopen{
 
     bool atFirstInit = true;
 
-    bool openConnection(std::string devName){
+    bool openConnection(std::string devName, std::string baudrate){
         h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
         if (!h)
             return false;
-        errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+        if(baudrate == "500K")
+            errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
+        else
+            errno = CAN_Init(h, CAN_BAUD_1M, CAN_INIT_TYPE_ST);
         return true;
     }
 
@@ -160,7 +164,7 @@ namespace canopen{
 
         recover_active = false;
 
-        if (!canopen::openConnection(deviceFile)){
+        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -244,7 +248,7 @@ namespace canopen{
 
         syncMsg.LEN = 0x00;
 
-        if (!canopen::openConnection(deviceFile)){
+        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -354,7 +358,7 @@ namespace canopen{
 
         syncMsg.LEN = 0x00;
 
-        if (!canopen::openConnection(deviceFile)){
+        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -407,7 +411,7 @@ namespace canopen{
 
         recover_active = false;
 
-        if (!canopen::openConnection(deviceFile)){
+        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -655,7 +659,7 @@ namespace canopen{
 
         syncMsg.LEN = 0x00;
 
-        if (!canopen::openConnection(deviceFile)){
+        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }

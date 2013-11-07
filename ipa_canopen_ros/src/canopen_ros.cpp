@@ -367,7 +367,7 @@ int main(int argc, char **argv)
     std::cout << "Opening device..." << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
 
-    if (!canopen::openConnection(deviceFile))
+    if (!canopen::openConnection(deviceFile, buses.begin()->second.baudrate))
     {
         ROS_ERROR("Cannot open CAN device; aborting.");
         exit(EXIT_FAILURE);
