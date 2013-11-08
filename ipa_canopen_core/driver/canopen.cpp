@@ -94,8 +94,13 @@ namespace canopen{
             return false;
         if(baudrate == "500K")
             errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
-        else
+        else if(baudrate == "1M")
             errno = CAN_Init(h, CAN_BAUD_1M, CAN_INIT_TYPE_ST);
+        else
+        {
+            std::cout << "This baud rate is not currently supported" << std::endl;
+            return false;
+        }
         return true;
     }
 

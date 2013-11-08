@@ -253,6 +253,14 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (int i=0; i<moduleIDs_XMLRPC.size(); i++)
             moduleIDs.push_back(static_cast<int>(moduleIDs_XMLRPC[i]));
 
+        XmlRpc::XmlRpcValue opmode_XMLRPC;
+        n.getParam("/" + chainName + "/operation_mode", opmode_XMLRPC);
+        std::vector<std::string> opMode;
+        for (int i=0; i<opmode_XMLRPC.size(); i++)
+            opMode.push_back(static_cast<std::string>(opmode_XMLRPC[i]));
+
+        std::cout << "Operation Mode" << opMode[0] << std::endl;
+
         XmlRpc::XmlRpcValue devices_XMLRPC;
         n.getParam("/" + chainName + "/devices", devices_XMLRPC);
         std::vector<std::string> devices;
