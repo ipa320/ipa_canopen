@@ -83,6 +83,34 @@ namespace canopen{
     extern std::string baudRate;
 
     /***************************************************************/
+    // Define baudrates variables for accessing as string
+    // this overrrides the definitions from the libpcan.h
+    /**************************************************************/
+    //static std::map<std::string, uint16_t> baudrates;
+
+    static std::map<std::string, uint32_t> baudrates = {
+        {"1M" , CAN_BAUD_1M},
+        {"500K" , CAN_BAUD_500K},
+        {"250K" , CAN_BAUD_250K},
+        {"125K" , CAN_BAUD_125K},
+        {"100K" , CAN_BAUD_100K},
+        {"50K" , CAN_BAUD_50K},
+        {"20K" , CAN_BAUD_20K},
+        {"10K" , CAN_BAUD_10K},
+        {"5K" , CAN_BAUD_5K}
+    };
+/*
+    #define    0x001C  // 500 kBit/s
+    #define    0x011C  // 250 kBit/s
+    #define    0x031C  // 125 kBit/s
+    #define    0x432F  // 100 kBit/s
+    #define     0x472F  //  50 kBit/s
+    #define     0x532F  //  20 kBit/s
+    #define     0x672F  //  10 kBit/s
+    #define      0x7F7F  //   5 kBit/s
+*/
+
+    /***************************************************************/
     //		    define classes and structs
     /***************************************************************/
 
@@ -638,6 +666,7 @@ namespace canopen{
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid, double velocityValue) > sendVel;
     extern std::function< void (uint16_t CANid) > geterrors;
+
 
     /***************************************************************/
     //	define NMT constants, variables and functions

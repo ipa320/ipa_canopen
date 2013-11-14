@@ -82,6 +82,7 @@ namespace canopen{
 
     uint8_t operation_mode;
 
+
     /***************************************************************/
     //		define init and recover sequence
     /***************************************************************/
@@ -92,15 +93,9 @@ namespace canopen{
         h = LINUX_CAN_Open(devName.c_str(), O_RDWR);
         if (!h)
             return false;
-        if(baudrate == "500K")
-            errno = CAN_Init(h, CAN_BAUD_500K, CAN_INIT_TYPE_ST);
-        else if(baudrate == "1M")
-            errno = CAN_Init(h, CAN_BAUD_1M, CAN_INIT_TYPE_ST);
-        else
-        {
-            std::cout << "This baud rate is not currently supported" << std::endl;
-            return false;
-        }
+
+        errno = CAN_Init(h, baudrates[baudrate], CAN_INIT_TYPE_ST);
+
         return true;
     }
 
