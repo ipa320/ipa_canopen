@@ -99,16 +99,6 @@ namespace canopen{
         {"10K" , CAN_BAUD_10K},
         {"5K" , CAN_BAUD_5K}
     };
-/*
-    #define    0x001C  // 500 kBit/s
-    #define    0x011C  // 250 kBit/s
-    #define    0x031C  // 125 kBit/s
-    #define    0x432F  // 100 kBit/s
-    #define     0x472F  //  50 kBit/s
-    #define     0x532F  //  20 kBit/s
-    #define     0x672F  //  10 kBit/s
-    #define      0x7F7F  //   5 kBit/s
-*/
 
     /***************************************************************/
     //		    define classes and structs
