@@ -1935,7 +1935,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              mes->DATA[1] = 0x03;
              mes->DATA[2] = 0x18;
              mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x8B;
+             mes->DATA[4] = 0x80 + device.second.getCANid();
              mes->DATA[5] = 0x04;
              mes->DATA[6] = 0x00;
              mes->DATA[7] = 0x80;
@@ -1986,7 +1986,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           mes->DATA[3] = 0x01;
           mes->DATA[4] = 0x20;
           mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x64;//0x63;
+          mes->DATA[6] = 0x63;//0x63; 0x64
           mes->DATA[7] = 0x60;
           CAN_Write(canopen::h, mes);
 
@@ -2005,7 +2005,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              mes->DATA[3] = 0x02;
              mes->DATA[4] = 0x20;
              mes->DATA[5] = 0x00;
-             mes->DATA[6] = 0x6C;//0x69;
+             mes->DATA[6] = 0x69;//0x69; 0x6C
              mes->DATA[7] = 0x60;
              CAN_Write(canopen::h,mes);
 
@@ -2065,7 +2065,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           mes->DATA[1] = 0x03;
           mes->DATA[2] = 0x18;
           mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x8B;
+          mes->DATA[4] = 0x80 + device.second.getCANid();
           mes->DATA[5] = 0x04;
           mes->DATA[6] = 0x00;
           mes->DATA[7] = 0x00;
@@ -2111,7 +2111,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              mes->DATA[1] = 0x03;
              mes->DATA[2] = 0x14;
              mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x0B;
+             mes->DATA[4] = 0x00 + device.second.getCANid();
              mes->DATA[5] = 0x05;
              mes->DATA[6] = 0x00;
              mes->DATA[7] = 0x80;
@@ -2221,7 +2221,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           mes->DATA[1] = 0x03;
           mes->DATA[2] = 0x14;
           mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x0B;
+          mes->DATA[4] = 0x00 + device.second.getCANid();
           mes->DATA[5] = 0x05;
           mes->DATA[6] = 0x00;
           mes->DATA[7] = 0x00;
@@ -2252,7 +2252,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
              mes->DATA[1] = 0x00;
              mes->DATA[2] = 0x18;
              mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x8B;
+             mes->DATA[4] = 0x80 + device.second.getCANid();
              mes->DATA[5] = 0x01;
              mes->DATA[6] = 0x00;
              mes->DATA[7] = 0x80;
@@ -2382,7 +2382,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
           mes->DATA[1] = 0x00;
           mes->DATA[2] = 0x18;
           mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x8B;
+          mes->DATA[4] = 0x80 + device.second.getCANid();
           mes->DATA[5] = 0x01;
           mes->DATA[6] = 0x00;
           mes->DATA[7] = 0x00;
