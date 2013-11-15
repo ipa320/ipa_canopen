@@ -1129,7 +1129,7 @@ namespace canopen{
                    m.ID = device.second.getCANid() + 0x500;//CANid + CANid + 0x600;
                    m.MSGTYPE = 0x00;
                    m.LEN = 4;
-                   int32_t mvel = velocityValue*83445;//positionValue;
+                   int32_t mvel = velocityValue*((float)1/ (float) devices[CANid].getConversionFactor());//positionValue;
                    m.DATA[0] = mvel & 0xFF;
                    m.DATA[1] = (mvel >> 8) & 0xFF;
                    m.DATA[2] = (mvel >> 16) & 0xFF;
@@ -1345,8 +1345,8 @@ namespace canopen{
 
          //std::cout << "Received POs"<< newPos << std::endl;
 
-         newPos = 0.0000119839*newPos; //TODO: conversion from yaml file
-         newVel = 0.0000119839*newVel;
+         newPos = devices[CANid].getConversionFactor()*newPos; //TODO: conversion from yaml file
+         newVel = devices[CANid].getConversionFactor()*newVel;
 
              devices[CANid].setActualPos(newPos);
              devices[CANid].setActualVel(newVel);

@@ -263,6 +263,12 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         //for (int i=0; i<opmode_XMLRPC.size(); i++)
             opMode.push_back(static_cast<std::string>(opmode_XMLRPC));
 
+        XmlRpc::XmlRpcValue factors_XMLRPC;
+        n.getParam("/" + chainName + "/unit_conversion_factors", factors_XMLRPC);
+        std::vector<double> factors;
+        for (int i=0; i<factors_XMLRPC.size(); i++)
+            factors.push_back(static_cast<double>(factors_XMLRPC[i]));
+
 
         std::cout << "Operation Mode" << opMode[0] << std::endl;
 
@@ -273,7 +279,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
 
         for (unsigned int i=0; i<jointNames.size(); i++)
-            canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
+            canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i], factors[i]);
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
 

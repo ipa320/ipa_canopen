@@ -109,6 +109,7 @@ namespace canopen{
         private:
 
             uint8_t CANid_;
+            double conversion_factor_;
             std::string NMTState_;
             std::string motorState_;
             std::string deviceFile_;
@@ -183,6 +184,18 @@ namespace canopen{
                 actualPos_(0),
                 initialized_(false) {};
 
+            Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor):
+                CANid_(CANid),
+                name_(name),
+                group_(group),
+                deviceFile_(bus),
+                conversion_factor_(conversion_factor),
+                desiredVel_(0),
+                actualVel_(0),
+                desiredPos_(0),
+                actualPos_(0),
+                initialized_(false) {};
+
             std::string getNMTState(){
                 return NMTState_;
             }
@@ -217,6 +230,11 @@ namespace canopen{
             uint8_t getCANid(){
                 return CANid_;
             }
+
+            double getConversionFactor(){
+                return conversion_factor_;
+            }
+
             std::string getDeviceFile(){
                 return deviceFile_;
             }
@@ -341,6 +359,10 @@ namespace canopen{
 
             void setActualPos(double pos){
                 actualPos_ = pos;
+            }
+
+            void setConversionFactor(double conversion_factor){
+                conversion_factor_ = conversion_factor;
             }
 
             void setDesiredPos(double pos){
