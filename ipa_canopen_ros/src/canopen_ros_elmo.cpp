@@ -77,6 +77,8 @@ typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Res
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
 typedef boost::function<bool(cob_srvs::SetOperationMode::Request&, cob_srvs::SetOperationMode::Response&)> SetOperationModeCallbackType;
 
+double offset;
+double c_factor;
 struct BusParams
 {
     std::string baudrate;
@@ -201,10 +203,15 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             velocities.push_back( velocity);
         }
 
-        for (auto device : canopen::devices)
-        {
-            positions.push_back((double)device.second.getDesiredPos());
-        }
+        int counter = 0;
+
+                for (auto device : canopen::devices)
+                {
+
+                    double pos = (double)device.second.getDesiredPos() - offset*c_factor;// + joint_limits_->getOffsets()[counter];
+                    positions.push_back(pos);
+                 counter++;
+                }
 
         //joint_limits_->checkVelocityLimits(velocities);
         //joint_limits_->checkPositionLimits(velocities, positions);
@@ -269,6 +276,12 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (int i=0; i<factors_XMLRPC.size(); i++)
             factors.push_back(static_cast<double>(factors_XMLRPC[i]));
 
+        XmlRpc::XmlRpcValue offsets_yaml_XMLRPC;
+        n.getParam("/" + chainName + "/offsets_yaml", offsets_yaml_XMLRPC);
+        std::vector<double> offsets_yaml;
+        for (int i=0; i<offsets_yaml_XMLRPC.size(); i++)
+            offsets_yaml.push_back(static_cast<double>(offsets_yaml_XMLRPC[i]));
+
 
         std::cout << "Operation Mode" << opMode[0] << std::endl;
 
@@ -279,9 +292,12 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
 
         for (unsigned int i=0; i<jointNames.size(); i++)
-            canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i], factors[i]);
+            canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i], factors[i], offsets_yaml[i]);
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
+
+        offset = offsets_yaml[0]*1000;
+        c_factor = factors[0];
 
     }
 
@@ -384,7 +400,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
-    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE; //HERE::set operation_mode
+    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE; //HERE::set operation_mode
 
     std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
@@ -460,6 +476,19 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
+        // iterate over all chains, get current pos and vel and publish as topics:
+               int counter = 0;
+               std::vector <double> positions;
+
+        for (auto device : canopen::devices)
+                {
+
+                    double pos = (double)device.second.getActualPos() - offset*c_factor; //+ joint_limits_->getOffsets()[counter];
+                    positions.push_back(pos);
+                 counter++;
+                }
+
+
 
     // iterate over all chains, get current pos and vel and publish as topics:
         for (auto dg : (canopen::deviceGroups))
@@ -467,7 +496,8 @@ int main(int argc, char **argv)
             sensor_msgs::JointState js;
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
-            js.position = dg.second.getActualPos();
+
+            js.position = positions;
             //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);

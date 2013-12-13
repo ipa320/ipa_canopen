@@ -110,6 +110,7 @@ namespace canopen{
 
             uint8_t CANid_;
             double conversion_factor_;
+            double offset_;
             std::string NMTState_;
             std::string motorState_;
             std::string deviceFile_;
@@ -184,12 +185,13 @@ namespace canopen{
                 actualPos_(0),
                 initialized_(false) {};
 
-            Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor):
+            Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
                 CANid_(CANid),
                 name_(name),
                 group_(group),
                 deviceFile_(bus),
                 conversion_factor_(conversion_factor),
+                offset_(offsets),
                 desiredVel_(0),
                 actualVel_(0),
                 desiredPos_(0),
