@@ -100,13 +100,24 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-//    for (auto device : canopen::devices)
-//    {
-
-//        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-//        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//    }
+    for (auto device : canopen::devices)
+    {
+    
+        if (canopen::operation_mode_param == "velocity")
+        {
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE);
+        std::cout << "Setting Velocity mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
+        }
+        else if (canopen::operation_mode_param == "position")
+        {
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE);
+        std::cout << "Setting Position mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE;
+        }
+    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -269,6 +280,8 @@ void readParamsFromParameterServer(ros::NodeHandle n)
 
         //for (int i=0; i<opmode_XMLRPC.size(); i++)
             opMode.push_back(static_cast<std::string>(opmode_XMLRPC));
+        
+        canopen::operation_mode_param =  opMode[0];
 
         XmlRpc::XmlRpcValue factors_XMLRPC;
         n.getParam("/" + chainName + "/unit_conversion_factors", factors_XMLRPC);
@@ -400,7 +413,6 @@ int main(int argc, char **argv)
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
-    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE; //HERE::set operation_mode
 
     std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );

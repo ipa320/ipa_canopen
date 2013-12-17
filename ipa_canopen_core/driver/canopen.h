@@ -370,6 +370,7 @@ namespace canopen{
             void setDesiredPos(double pos){
                 desiredPos_ = pos;
             }
+            
 
             void setActualVel(double vel){
                 actualVel_ = vel;
@@ -667,6 +668,7 @@ namespace canopen{
     extern bool halt_negative;
 
     extern uint8_t operation_mode;
+    extern std::string operation_mode_param;
 
     bool openConnection(std::string devName, std::string baudrate);
     void init(std::string deviceFile, std::chrono::milliseconds syncInterval);

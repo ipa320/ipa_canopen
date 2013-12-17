@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     double targetVel = std::stod(std::string(argv[5]));
     double accel = std::stod(std::string(argv[6]));
 
-    canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
+    
 	//std::cout << deviceFile << std::endl;
 	//std::cout << CANid << std::endl;
 	//std::cout << canopen::syncInterval.count() << std::endl;
@@ -101,6 +101,8 @@ int main(int argc, char *argv[]) {
     canopen::init_elmo(deviceFile, canopen::syncInterval);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	
+	canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
 
 
 //CHANGED FROM INTERPOLATED
@@ -114,6 +116,7 @@ int main(int argc, char *argv[]) {
     canopen::initDeviceManagerThread(canopen::deviceManager_elmo);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	canopen::devices[CANid].setInitialized(true);
+	canopen::devices[CANid].setConversionFactor(0.0000119839);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 

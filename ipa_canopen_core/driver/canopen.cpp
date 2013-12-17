@@ -81,6 +81,7 @@ namespace canopen{
     bool halt_negative;
 
     uint8_t operation_mode;
+    std::string operation_mode_param;
 
 
     /***************************************************************/
@@ -1186,6 +1187,21 @@ namespace canopen{
                   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
+
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.MSGTYPE = 0x00;
+                     m.LEN = 8;
+                     m.DATA[0] = 0x22;
+                     m.DATA[1] = 0x40;
+                     m.DATA[2] = 0x60;
+                     m.DATA[3] = 0x00;
+                     m.DATA[4] = 0x1f;
+                     m.DATA[5] = 0x00;
+                     m.DATA[6] = 0x00;
+                     m.DATA[7] = 0x00;
+                     CAN_Write(canopen::h, &m);
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                   /////////////////////////
 
                   //////////////////// Set point absolute
@@ -1206,24 +1222,11 @@ namespace canopen{
 
 
 
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                     m.MSGTYPE = 0x00;
-                     m.LEN = 8;
-                     m.DATA[0] = 0x22;
-                     m.DATA[1] = 0x40;
-                     m.DATA[2] = 0x60;
-                     m.DATA[3] = 0x00;
-                     m.DATA[4] = 0x1f;
-                     m.DATA[5] = 0x00;
-                     m.DATA[6] = 0x00;
-                     m.DATA[7] = 0x00;
-                     CAN_Write(canopen::h, &m);
-
-                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    
 
 
                      /////////////////////////
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20000));
         }
 
     }
