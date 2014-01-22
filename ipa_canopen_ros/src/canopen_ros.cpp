@@ -199,7 +199,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         for (auto device : canopen::devices)
         {
 		
-            double pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
+            double pos = (double)device.second.getDesiredPos();// + joint_limits_->getOffsets()[counter];
             positions.push_back(pos);
 	    counter++;
         }
@@ -442,12 +442,15 @@ int main(int argc, char **argv)
     // iterate over all chains, get current pos and vel and publish as topics:
 	int counter = 0;
         std::vector <double> positions;
+        std::vector <double> desired_positions;
 
         for (auto device : canopen::devices)
         {
 		
             double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
+            double des_pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
             positions.push_back(pos);
+            desired_positions.push_back(des_pos);
 	    counter++;
         }
 
@@ -467,7 +470,7 @@ int main(int argc, char **argv)
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
-            jtcs.desired.positions = dg.second.getDesiredPos();
+            jtcs.desired.positions = desired_positions;//dg.second.getDesiredPos();
             jtcs.desired.velocities = dg.second.getDesiredVel();
             statePublishers[dg.first].publish(jtcs);
 
