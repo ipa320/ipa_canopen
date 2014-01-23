@@ -191,7 +191,10 @@ bool setPos(ipa_canopen_ros::PPModeRequest &req, ipa_canopen_ros::PPModeResponse
     req.position = 730000;
     req.velocity = 10000;
 
-    canopen::sendPosPPMode(req.position, req.velocity);
+    for (auto device : canopen::devices)
+    {
+    canopen::sendPosPPMode((uint16_t)device.second.getCANid(),req.position, req.velocity);
+    }
     res.target_reached = true;
 
     ROS_INFO("Position was set");
