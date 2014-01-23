@@ -188,11 +188,13 @@ bool setPos(ipa_canopen_ros::PPModeRequest &req, ipa_canopen_ros::PPModeResponse
 {
 
 
+    req.position = 730000;
+    req.velocity = 10000;
+
+    canopen::sendPosPPMode(req.position, req.velocity);
     res.target_reached = true;
 
-
-
-    ROS_INFO("Init concluded");
+    ROS_INFO("Position was set");
     return true;
 }
 
