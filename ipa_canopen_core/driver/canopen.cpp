@@ -1269,6 +1269,78 @@ namespace canopen{
                   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
+                  //////////////////// Ready to switch on
+                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.MSGTYPE = 0x00;
+                     m.LEN = 8;
+                     m.DATA[0] = 0x22;
+                     m.DATA[1] = 0x40;
+                     m.DATA[2] = 0x60;
+                     m.DATA[3] = 0x00;
+                     m.DATA[4] = 0x06;
+                     m.DATA[5] = 0x00;
+                     m.DATA[6] = 0x00;
+                     m.DATA[7] = 0x00;
+                     CAN_Write(canopen::h, &m);
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+                     /////////////////////////
+
+                     //////////////////// Read status
+                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                        m.MSGTYPE = 0x00;
+                        m.LEN = 8;
+                        m.DATA[0] = 0x40;
+                        m.DATA[1] = 0x41;
+                        m.DATA[2] = 0x60;
+                        m.DATA[3] = 0x00;
+                        m.DATA[4] = 0x00;
+                        m.DATA[5] = 0x00;
+                        m.DATA[6] = 0x00;
+                        m.DATA[7] = 0x00;
+                        CAN_Write(canopen::h, &m);
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+                        /////////////////////////
+
+                        //////////////////// Switch on
+                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                           m.MSGTYPE = 0x00;
+                           m.LEN = 8;
+                           m.DATA[0] = 0x22;
+                           m.DATA[1] = 0x40;
+                           m.DATA[2] = 0x60;
+                           m.DATA[3] = 0x00;
+                           m.DATA[4] = 0x07;
+                           m.DATA[5] = 0x00;
+                           m.DATA[6] = 0x00;
+                           m.DATA[7] = 0x00;
+                           CAN_Write(canopen::h, &m);
+
+                           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+                           /////////////////////////
+
+                           //////////////////// Read status
+                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                              m.MSGTYPE = 0x00;
+                              m.LEN = 8;
+                              m.DATA[0] = 0x40;
+                              m.DATA[1] = 0x41;
+                              m.DATA[2] = 0x60;
+                              m.DATA[3] = 0x00;
+                              m.DATA[4] = 0x00;
+                              m.DATA[5] = 0x00;
+                              m.DATA[6] = 0x00;
+                              m.DATA[7] = 0x00;
+                              CAN_Write(canopen::h, &m);
+
+                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                      m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
@@ -1303,6 +1375,9 @@ namespace canopen{
                      std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                      /////////////////////////
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(50000));
+
                      std::cout << "Target Reached " << (uint16_t)device.second.getCANid() << " is: " << devices[device.second.getCANid()].getTargetReached() << std::endl;
         }
 
