@@ -656,6 +656,23 @@ namespace canopen{
 
                                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+                                 //////////////////// Start mo=1
+                             m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                              m.MSGTYPE = 0x00;
+                              m.LEN = 8;
+                              m.DATA[0] = 0x22;
+                              m.DATA[1] = 0x40;
+                              m.DATA[2] = 0x60;
+                              m.DATA[3] = 0x00;
+                              m.DATA[4] = 0x0f;
+                              m.DATA[5] = 0x00;
+                              m.DATA[6] = 0x00;
+                              m.DATA[7] = 0x00;
+                              //CAN_Write(canopen::h, &m);
+
+                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
         }
 
 
@@ -1135,8 +1152,8 @@ namespace canopen{
                         canopen::halt_negative = device.second.getNegativeLimit();
                         if(operation_mode == MODES_OF_OPERATION_PROFILE_VELOCITY_MODE)
                             sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
-                        else if(operation_mode == MODES_OF_OPERATION_PROFILE_POSITION_MODE)
-                            sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+                        //else if(operation_mode == MODES_OF_OPERATION_PROFILE_POSITION_MODE)
+                         //   sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
                     }
                 }
                 canopen::sendSync();
@@ -1193,6 +1210,7 @@ namespace canopen{
     void posPDOOutgoing_elmo(uint16_t CANid, double positionValue, double velocity)
     {
 
+        std::cout << "Values" << positionValue << velocity << std::endl;
         TPCANMsg m;
         int32_t pos = positionValue;
         int32_t vel = velocity;
@@ -1349,7 +1367,7 @@ namespace canopen{
                      m.DATA[1] = 0x40;
                      m.DATA[2] = 0x60;
                      m.DATA[3] = 0x00;
-                     m.DATA[4] = 0x1f;
+                     m.DATA[4] = 0x0f;
                      m.DATA[5] = 0x00;
                      m.DATA[6] = 0x00;
                      m.DATA[7] = 0x00;
@@ -1366,7 +1384,7 @@ namespace canopen{
                      m.DATA[1] = 0x40;
                      m.DATA[2] = 0x60;
                      m.DATA[3] = 0x00;
-                     m.DATA[4] = 0x0f;
+                     m.DATA[4] = 0x1f;
                      m.DATA[5] = 0x00;
                      m.DATA[6] = 0x00;
                      m.DATA[7] = 0x00;
@@ -1376,7 +1394,8 @@ namespace canopen{
 
                      /////////////////////////
 
-                     std::this_thread::sleep_for(std::chrono::milliseconds(50000));
+
+                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
                      std::cout << "Target Reached " << (uint16_t)device.second.getCANid() << " is: " << devices[device.second.getCANid()].getTargetReached() << std::endl;
         }

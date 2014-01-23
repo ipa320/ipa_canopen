@@ -109,19 +109,21 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         {
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE);
         std::cout << "Setting Velocity mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE;
         }
         else if (canopen::operation_mode_param == "position")
         {
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE);
         std::cout << "Setting Position mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         canopen::operation_mode = canopen::MODES_OF_OPERATION_PROFILE_POSITION_MODE;
         }
+
+        canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     canopen::initDeviceManagerThread(canopen::deviceManager_elmo);
 
@@ -188,8 +190,7 @@ bool setPos(ipa_canopen_ros::PPModeRequest &req, ipa_canopen_ros::PPModeResponse
 {
 
 
-    req.position = 730000;
-    req.velocity = 10000;
+    std::cout << "Reqs" << req.position << "  " << req.velocity << std::endl;
 
     for (auto device : canopen::devices)
     {
@@ -301,7 +302,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
 
         XmlRpc::XmlRpcValue opmode_XMLRPC;
 
-        n.getParam("/" + chainName + "/operation_mode", opmode_XMLRPC);
+        n.getParam("/" + chainName + "/OperationMode", opmode_XMLRPC);
 
         std::vector<std::string> opMode;
 
@@ -309,7 +310,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             opMode.push_back(static_cast<std::string>(opmode_XMLRPC));
 
         std::cout << "Operation mode param" << opMode[0] << std::endl;
-        canopen::operation_mode_param =  "velocity"; //opMode[0];
+        canopen::operation_mode_param =  opMode[0];
 
         XmlRpc::XmlRpcValue factors_XMLRPC;
         n.getParam("/" + chainName + "/unit_conversion_factors", factors_XMLRPC);
@@ -324,7 +325,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             offsets_yaml.push_back(static_cast<double>(offsets_yaml_XMLRPC[i]));
 
 
-        std::cout << "Operation Mode" << (uint16_t)opMode[0] << std::endl;
+        std::cout << "Operation Mode" << opMode[0] << std::endl;
 
         XmlRpc::XmlRpcValue devices_XMLRPC;
         n.getParam("/" + chainName + "/devices", devices_XMLRPC);
