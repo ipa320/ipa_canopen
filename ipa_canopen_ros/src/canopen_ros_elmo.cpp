@@ -72,8 +72,10 @@
 #include <canopen.h>
 #include <XmlRpcValue.h>
 #include <JointLimits.h>
+#include "ipa_canopen_ros/PPMode.h"
 
 typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Response&)> TriggerType;
+typedef boost::function<bool(ipa_canopen_ros::PPMode::Request&, ipa_canopen_ros::PPMode::Response&)> PPModeType;
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
 typedef boost::function<bool(cob_srvs::SetOperationMode::Request&, cob_srvs::SetOperationMode::Response&)> SetOperationModeCallbackType;
 
@@ -102,7 +104,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     for (auto device : canopen::devices)
     {
-    
+
         if (canopen::operation_mode_param == "velocity")
         {
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_PROFILE_VELOCITY_MODE);
@@ -123,15 +125,23 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     canopen::initDeviceManagerThread(canopen::deviceManager_elmo);
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
     for (auto device : canopen::devices)
     {
+
+        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        canopen::devices[device.second.getCANid()].setDesiredVel(0);
+
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
         canopen::devices[(uint16_t)device.second.getCANid()].setInitialized(true);
 
        // if(device.second.getHomingError())
          //   return false;
 
     }
-
+    canopen::deviceGroups[chainName].setInitialized(true);
 
     res.success.data = true;
     res.error_message.data = "";
@@ -171,6 +181,18 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 bool setOperationModeCallback(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res, std::string chainName)
 {
     res.success.data = true;  // for now this service is just a dummy, not used elsewhere
+    return true;
+}
+
+bool setPos(ipa_canopen_ros::PPModeRequest &req, ipa_canopen_ros::PPModeResponse &res, std::string chainName)
+{
+
+
+    res.target_reached = true;
+
+
+
+    ROS_INFO("Init concluded");
     return true;
 }
 
@@ -280,8 +302,9 @@ void readParamsFromParameterServer(ros::NodeHandle n)
 
         //for (int i=0; i<opmode_XMLRPC.size(); i++)
             opMode.push_back(static_cast<std::string>(opmode_XMLRPC));
-        
-        canopen::operation_mode_param =  opMode[0];
+
+        std::cout << "Operation mode param" << opMode[0] << std::endl;
+        canopen::operation_mode_param =  "velocity"; //opMode[0];
 
         XmlRpc::XmlRpcValue factors_XMLRPC;
         n.getParam("/" + chainName + "/unit_conversion_factors", factors_XMLRPC);
@@ -438,7 +461,7 @@ int main(int argc, char **argv)
 
     // add custom PDOs:
     canopen::sendVel = canopen::defaultPDOOutgoing_elmo; //HERE::
-    canopen::sendPos = canopen::posPDOOutgoing_elmo;
+    canopen::sendPosPPMode = canopen::posPDOOutgoing_elmo;
 
     for (auto it : canopen::devices) {
         canopen::incomingPDOHandlers[ 0x180 + it.first] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( it.first, m ); };
@@ -449,6 +472,10 @@ int main(int argc, char **argv)
     // set up services, subscribers, and publishers for each of the chains:
     std::vector<TriggerType> initCallbacks;
     std::vector<ros::ServiceServer> initServices;
+
+    std::vector<PPModeType> positionCallbacks;
+    std::vector<ros::ServiceServer> positionServices;
+
     std::vector<TriggerType> recoverCallbacks;
     std::vector<ros::ServiceServer> recoverServices;
     std::vector<SetOperationModeCallbackType> setOperationModeCallbacks;
@@ -467,6 +494,10 @@ int main(int argc, char **argv)
 
         initCallbacks.push_back( boost::bind(CANopenInit, _1, _2, it.first) );
         initServices.push_back( n.advertiseService("/" + it.first + "/init", initCallbacks.back()) );
+
+        positionCallbacks.push_back( boost::bind(setPos, _1, _2, it.first) );
+        positionServices.push_back( n.advertiseService("/" + it.first + "/ppmode", positionCallbacks.back()) );
+
         recoverCallbacks.push_back( boost::bind(CANopenRecover, _1, _2, it.first) );
         recoverServices.push_back( n.advertiseService("/" + it.first + "/recover", recoverCallbacks.back()) );
         setOperationModeCallbacks.push_back( boost::bind(setOperationModeCallback, _1, _2, it.first) );
@@ -491,12 +522,15 @@ int main(int argc, char **argv)
         // iterate over all chains, get current pos and vel and publish as topics:
                int counter = 0;
                std::vector <double> positions;
+               std::vector <double> desired_positions;
 
         for (auto device : canopen::devices)
                 {
 
                     double pos = (double)device.second.getActualPos() - offset*c_factor; //+ joint_limits_->getOffsets()[counter];
                     positions.push_back(pos);
+                    double ds_pos = (double)device.second.getDesiredPos() - offset*c_factor;
+                    desired_positions.push_back(ds_pos);
                  counter++;
                 }
 
@@ -513,14 +547,17 @@ int main(int argc, char **argv)
             //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
+            bool initialized_ = dg.second.getInitialized();
+            if(initialized_)
             jointStatesPublisher.publish(js);
 
             pr2_controllers_msgs::JointTrajectoryControllerState jtcs;
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
-            jtcs.desired.positions = dg.second.getDesiredPos();
+            jtcs.desired.positions = desired_positions;//dg.second.getDesiredPos();
             jtcs.desired.velocities = dg.second.getDesiredVel();
+            if(initialized_)
             statePublishers[dg.first].publish(jtcs);
 
             std_msgs::String opmode;
@@ -637,4 +674,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

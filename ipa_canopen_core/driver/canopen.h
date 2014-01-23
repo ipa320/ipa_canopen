@@ -370,7 +370,7 @@ namespace canopen{
             void setDesiredPos(double pos){
                 desiredPos_ = pos;
             }
-            
+
 
             void setActualVel(double vel){
                 actualVel_ = vel;
@@ -524,6 +524,7 @@ namespace canopen{
 
             std::vector<uint8_t> CANids_;
             std::vector<std::string> names_;
+            bool initialized_;
 
         public:
 
@@ -534,7 +535,9 @@ namespace canopen{
 
             DeviceGroup(std::vector<uint8_t> CANids, std::vector<std::string> names):
                 CANids_(CANids),
-                names_(names) {};
+                names_(names),
+                initialized_(false) {};
+
 
             std::vector<uint8_t> getCANids(){
                 return CANids_;
@@ -543,6 +546,15 @@ namespace canopen{
             std::vector<std::string> getNames(){
                 return names_;
             }
+
+            void setInitialized(bool initialized){
+                initialized_ = initialized;
+            }
+
+            bool getInitialized(){
+                return initialized_;
+            }
+
 
             std::vector<double> getActualPos() {
                     std::vector<double> actualPos;
@@ -662,6 +674,7 @@ namespace canopen{
 
     extern bool atFirstInit;
     extern bool recover_active;
+    extern bool no_position;
     extern bool halt_active;
 
     extern bool halt_positive;
@@ -675,11 +688,12 @@ namespace canopen{
     void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();
     void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
-	void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void elmo_halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
+    extern std::function< void (uint16_t CANid, double positionValue, double velocityValue) > sendPosPPMode;
     extern std::function< void (uint16_t CANid, double velocityValue) > sendVel;
     extern std::function< void (uint16_t CANid) > geterrors;
 
@@ -828,7 +842,7 @@ namespace canopen{
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
     void defaultPDOOutgoing_elmo(uint16_t CANid, double velocityValue);
-    void posPDOOutgoing_elmo(uint16_t CANid, double positionValue);
+    void posPDOOutgoing_elmo(uint16_t CANid, double positionValue, double velocity);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m);
