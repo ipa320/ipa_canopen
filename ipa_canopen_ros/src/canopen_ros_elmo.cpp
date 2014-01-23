@@ -324,7 +324,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             offsets_yaml.push_back(static_cast<double>(offsets_yaml_XMLRPC[i]));
 
 
-        std::cout << "Operation Mode" << opMode[0] << std::endl;
+        std::cout << "Operation Mode" << (uint16_t)opMode[0] << std::endl;
 
         XmlRpc::XmlRpcValue devices_XMLRPC;
         n.getParam("/" + chainName + "/devices", devices_XMLRPC);
