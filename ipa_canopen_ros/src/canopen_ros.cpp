@@ -208,9 +208,14 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             velocities.push_back( it.value);
         }
 
+	int counter = 0;
+       
         for (auto device : canopen::devices)
         {
-            positions.push_back((double)device.second.getDesiredPos());
+		
+            double pos = (double)device.second.getDesiredPos();// + joint_limits_->getOffsets()[counter];
+            positions.push_back(pos);
+	    counter++;
         }
 
         joint_limits_->checkVelocityLimits(velocities);
@@ -449,12 +454,28 @@ int main(int argc, char **argv)
     {
 
     // iterate over all chains, get current pos and vel and publish as topics:
+	int counter = 0;
+        std::vector <double> positions;
+        std::vector <double> desired_positions;
+
+        for (auto device : canopen::devices)
+        {
+		
+            double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
+            double des_pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
+            positions.push_back(pos);
+            desired_positions.push_back(des_pos);
+	    counter++;
+        }
+
         for (auto dg : (canopen::deviceGroups))
         {
             sensor_msgs::JointState js;
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
-            js.position = dg.second.getActualPos();
+	    
+            js.position = positions;//dg.second.getActualPos();
+            //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
             jointStatesPublisher.publish(js);
@@ -463,13 +484,14 @@ int main(int argc, char **argv)
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
-            jtcs.desired.positions = dg.second.getDesiredPos();
+            jtcs.desired.positions = desired_positions;//dg.second.getDesiredPos();
             jtcs.desired.velocities = dg.second.getDesiredVel();
             statePublishers[dg.first].publish(jtcs);
 
             std_msgs::String opmode;
             opmode.data = "velocity";
             currentOperationModePublishers[dg.first].publish(opmode);
+	    counter++;
         }
 
         // publishing diagnostic messages
