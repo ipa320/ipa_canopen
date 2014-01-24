@@ -190,12 +190,13 @@ bool setPos(ipa_canopen_ros::PPModeRequest &req, ipa_canopen_ros::PPModeResponse
 {
 
 
-    std::cout << "Reqs" << req.position << "  " << req.velocity << std::endl;
+    std::cout << "Reqs" << req.position[0] << "  " << req.velocity[0] << std::endl;
 
-    for (auto device : canopen::devices)
+    for (auto id : req.id)
     {
-    canopen::sendPosPPMode((uint16_t)device.second.getCANid(),req.position, req.velocity);
-    }
+        canopen::sendPosPPMode((uint16_t)id,req.position[id-1], req.velocity[id-1]);
+   }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     res.target_reached = true;
 
     ROS_INFO("Position was set");

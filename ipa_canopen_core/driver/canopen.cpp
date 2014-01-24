@@ -1215,11 +1215,11 @@ namespace canopen{
         int32_t pos = positionValue;
         int32_t vel = velocity;
 
-        for (auto device : devices)
-        {
+        //for (auto device : devices)
+        //{
 
             //////////////////// pp mode
-               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+               m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                m.MSGTYPE = 0x00;
                m.LEN = 8;
                m.DATA[0] = 0x22;
@@ -1236,7 +1236,7 @@ namespace canopen{
 
 
                   //////////////////// get mode display
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x40;
@@ -1252,7 +1252,7 @@ namespace canopen{
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //////////////////// Set speed(10000)
-               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+               m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                m.MSGTYPE = 0x00;
                m.LEN = 8;
                m.DATA[0] = 0x22;
@@ -1271,7 +1271,7 @@ namespace canopen{
                /////////////////////////
 
                //////////////////// Set target position(3000)
-                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                  m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                   m.MSGTYPE = 0x00;
                   m.LEN = 8;
                   m.DATA[0] = 0x22;
@@ -1288,7 +1288,7 @@ namespace canopen{
 
 
                   //////////////////// Ready to switch on
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x22;
@@ -1307,7 +1307,7 @@ namespace canopen{
                      /////////////////////////
 
                      //////////////////// Read status
-                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                        m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                         m.MSGTYPE = 0x00;
                         m.LEN = 8;
                         m.DATA[0] = 0x40;
@@ -1326,7 +1326,7 @@ namespace canopen{
                         /////////////////////////
 
                         //////////////////// Switch on
-                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                           m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                            m.MSGTYPE = 0x00;
                            m.LEN = 8;
                            m.DATA[0] = 0x22;
@@ -1345,7 +1345,7 @@ namespace canopen{
                            /////////////////////////
 
                            //////////////////// Read status
-                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                              m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                               m.MSGTYPE = 0x00;
                               m.LEN = 8;
                               m.DATA[0] = 0x40;
@@ -1360,7 +1360,7 @@ namespace canopen{
 
                               std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x22;
@@ -1377,7 +1377,7 @@ namespace canopen{
                   /////////////////////////
 
                   //////////////////// Set point absolute
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
+                     m.ID = CANid + 0x600;//CANid + CANid + 0x600;
                      m.MSGTYPE = 0x00;
                      m.LEN = 8;
                      m.DATA[0] = 0x22;
@@ -1397,8 +1397,8 @@ namespace canopen{
 
                      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-                     std::cout << "Target Reached " << (uint16_t)device.second.getCANid() << " is: " << devices[device.second.getCANid()].getTargetReached() << std::endl;
-        }
+                     std::cout << "Target Reached " << (uint16_t)CANid << " is: " << devices[CANid].getTargetReached() << std::endl;
+       // }
 
     }
 

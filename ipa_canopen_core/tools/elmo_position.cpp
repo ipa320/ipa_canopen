@@ -197,9 +197,9 @@ canopen::sendNMT(0, canopen::NMT_START_REMOTE_NODE);
                 m.DATA[1] = 0x7a;
                 m.DATA[2] = 0x60;
                 m.DATA[3] = 0x00;
-                m.DATA[4] = 0x12;
-                m.DATA[5] = 0x2b;
-                m.DATA[6] = 0x6e;
+                m.DATA[4] = 0x8c;
+                m.DATA[5] = 0xa0;
+                m.DATA[6] = 0x00;
                 m.DATA[7] = 0x00;
                 CAN_Write(canopen::h, &m);
 
