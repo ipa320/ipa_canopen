@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 2.6)
+
+cmake_minimum_required(VERSION 2.8.3)
+project(ipa_canopen_core)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
@@ -15,17 +17,22 @@ else(CMAKE_COMPILER_IS_GNUCXX)
    add_definitions("-std=c++0x")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+###################################
+## catkin specific configuration ##
+###################################
 
-rosbuild_init()
+catkin_package(
+    DEPENDS orocos_kdl
+    CATKIN_DEPENDS roscpp libpcan
+    INCLUDE_DIRS # TODO include
+    LIBRARIES # TODO
+)
+
+###########
+## Build ##
+###########
 
 include_directories ("${PROJECT_SOURCE_DIR}/driver")
 
