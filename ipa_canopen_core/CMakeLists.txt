@@ -1,6 +1,7 @@
-
 cmake_minimum_required(VERSION 2.8.3)
 project(ipa_canopen_core)
+
+find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
@@ -17,31 +18,25 @@ else(CMAKE_COMPILER_IS_GNUCXX)
    add_definitions("-std=c++0x")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
-
-###################################
-## catkin specific configuration ##
-###################################
-
-catkin_package(
-    DEPENDS orocos_kdl
-    CATKIN_DEPENDS roscpp libpcan
-    INCLUDE_DIRS # TODO include
-    LIBRARIES # TODO
-)
 
 ###########
 ## Build ##
 ###########
-
-include_directories ("${PROJECT_SOURCE_DIR}/driver")
+include_directories ("${PROJECT_SOURCE_DIR}/driver" ${catkin_INCLUDE_DIRS})
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+set(LIBRARY_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/)
 
 add_subdirectory (driver)
 add_subdirectory (tools)
 
 list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+
+catkin_package(
+    DEPENDS roscpp libpcan
+    CATKIN_DEPENDS roscpp libpcan
+    INCLUDE_DIRS # TODO include
+    LIBRARIES canopen # TODO
+)
