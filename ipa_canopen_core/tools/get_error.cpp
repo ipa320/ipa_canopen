@@ -60,7 +60,7 @@
 #include <utility>
 #include <iostream>
 #include <iomanip>
-#include "canopen.h"
+#include "ipa_canopen_core/canopen.h"
 #include <sstream>
 
 int main(int argc, char *argv[])

@@ -14,7 +14,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>std_msgs</build_depend>
-  <build_depend>pr2_controllers_msgs</build_depend>
+  <build_depend>control_msgs</build_depend>
   <build_depend>brics_actuator</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>urdf</build_depend>
@@ -28,7 +28,7 @@
   <run_depend>cob_srvs</run_depend>
   <run_depend>brics_actuator</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>pr2_controllers_msgs</run_depend>
+  <run_depend>control_msgs</run_depend>
   <run_depend>ipa_canopen_core</run_depend>
 
   <export>

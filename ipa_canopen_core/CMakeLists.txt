@@ -22,14 +22,14 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 ###########
 ## Build ##
 ###########
-include_directories ("${PROJECT_SOURCE_DIR}/driver" ${catkin_INCLUDE_DIRS})
+include_directories (include ${catkin_INCLUDE_DIRS})
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/)
 
-add_subdirectory (driver)
+add_subdirectory (src)
 add_subdirectory (tools)
 
 list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
@@ -39,4 +39,8 @@ catkin_package(
     CATKIN_DEPENDS roscpp libpcan
     INCLUDE_DIRS # TODO include
     LIBRARIES canopen # TODO
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

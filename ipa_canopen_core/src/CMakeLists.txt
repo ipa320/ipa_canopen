@@ -3,6 +3,9 @@ add_library(canopen SHARED
   )
 set_target_properties(canopen PROPERTIES LINKER_LANGUAGE CXX)
 
+install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+    
 install (TARGETS canopen 
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
