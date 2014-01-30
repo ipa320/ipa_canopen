@@ -13,13 +13,14 @@ list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -
 ###################################
 
 catkin_package(
+    DEPENDS ipa_canopen_core
     CATKIN_DEPENDS roscpp brics_actuator ipa_canopen_core
     INCLUDE_DIRS # TODO include
     LIBRARIES # TODO
 )
 
-include_directories(include ipa_canopen_core ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(canopen_ros src/canopen_ros.cpp src/JointLimits.cpp)
 
-target_link_libraries(canopen_ros boost_system pthread canopen pcan ${catkin_LIBRARIES})
+target_link_libraries(canopen_ros boost_system pthread ipa_canopen_core pcan ${catkin_LIBRARIES})

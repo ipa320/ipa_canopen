@@ -18,6 +18,12 @@ else(CMAKE_COMPILER_IS_GNUCXX)
    add_definitions("-std=c++0x")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+catkin_package(
+    DEPENDS roscpp libpcan
+    CATKIN_DEPENDS roscpp libpcan
+    INCLUDE_DIRS include/${PROJECT_NAME}/
+    LIBRARIES ${PROJECT_NAME}
+)
 
 ###########
 ## Build ##
@@ -28,19 +34,37 @@ include_directories (include ${catkin_INCLUDE_DIRS})
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/)
+set(INCLUDE_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/)
+  
 
-add_subdirectory (src)
-add_subdirectory (tools)
 
-list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+###########
+## src ##
+###########
+add_library(${PROJECT_NAME}
+    src/canopen.cpp
+    include/ipa_canopen_core/canopen.h
+    include/ipa_canopen_core/schunkErrors.h
+  )
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+  
+add_executable(homing tools/homing.cpp)
+target_link_libraries(homing pthread canopen ${catkin_LIBRARIES})
 
-catkin_package(
-    DEPENDS roscpp libpcan
-    CATKIN_DEPENDS roscpp libpcan
-    INCLUDE_DIRS # TODO include
-    LIBRARIES canopen # TODO
-)
+add_executable(move_device tools/move_device.cpp)
+target_link_libraries(move_device pthread canopen ${catkin_LIBRARIES})
+
+add_executable(get_error tools/get_error.cpp)
+target_link_libraries(get_error pthread canopen ${catkin_LIBRARIES})
+
+#list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
 )
+
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
