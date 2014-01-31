@@ -21,7 +21,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 catkin_package(
     DEPENDS roscpp libpcan
     CATKIN_DEPENDS roscpp libpcan
-    INCLUDE_DIRS include/${PROJECT_NAME}/
+    INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
 )
 
