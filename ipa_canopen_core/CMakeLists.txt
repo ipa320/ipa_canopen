@@ -43,8 +43,6 @@ set(INCLUDE_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINAT
 ###########
 add_library(${PROJECT_NAME}
     src/canopen.cpp
-    include/ipa_canopen_core/canopen.h
-    include/ipa_canopen_core/schunkErrors.h
   )
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
