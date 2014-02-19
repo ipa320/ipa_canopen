@@ -1,0 +1,2 @@
+rosbuild_add_gtest(communication_test communication_test.cpp)
+target_link_libraries(communication_test pthread canopen pcan gtest)
