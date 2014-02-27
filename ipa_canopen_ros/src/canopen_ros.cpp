@@ -94,6 +94,16 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
+	for (auto device : canopen::devices)
+    {
+    	if (device.second.getInitialized())
+    	{
+    		res.success.data = true;
+    		res.error_message.data = "already initialized";
+    		ROS_INFO("already initialized");
+    		return true;
+    	}
+	}
 
     canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -129,23 +139,27 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
 
-
+	for (auto device : canopen::devices)
+    {
+    	if (not device.second.getInitialized())
+    	{
+    		res.success.data = false;
+    		res.error_message.data = "not initialized yet";
+    		ROS_INFO("not initialized yet");
+    		return true;
+    	}
+	}
 
     canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
-    {
+    {    
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
         std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
-
-    for (auto device : canopen::devices)
-    {
         canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
         canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
@@ -299,7 +313,7 @@ void setJointConstraints(ros::NodeHandle n)
           ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
           n.shutdown();
       }
-      ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+      //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
       /// Get urdf model out of robot_description
       urdf::Model model;
