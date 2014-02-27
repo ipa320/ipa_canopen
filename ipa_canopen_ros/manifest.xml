@@ -6,6 +6,8 @@
 
   </description>
   <author>Tobias Sing</author>
+  <author>Thiago de Freitas</author>
+  <maintainer email="tdf@ipa.fhg.de">Thiago de Freitas</maintainer>
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ipa_canopen_ros</url>
