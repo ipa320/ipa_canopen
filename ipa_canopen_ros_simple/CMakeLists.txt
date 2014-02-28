@@ -41,4 +41,5 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/src)
 rosbuild_add_executable(canopen_ros ros/src/canopen_ros_ros.cpp) 
 
 # protected region user Cmake macros on begin #
+list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs")
 # protected region user Cmake macros end #

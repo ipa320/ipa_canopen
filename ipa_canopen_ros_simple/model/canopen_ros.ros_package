@@ -21,4 +21,5 @@
   <depend>diagnostic_msgs</depend>
   <depend>cob_srvs</depend>
   <depend>urdf</depend>
+  <depend>ipa_canopen_core</depend>
 </ros:Package>

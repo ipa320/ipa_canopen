@@ -9,6 +9,7 @@
 #include <cob_srvs/Trigger.h>
 
 /* protected region user include files on begin */
+#include <canopen.h>
 #include <urdf/model.h>
 /* protected region user include files end */
 
@@ -127,7 +128,7 @@ public:
     	{
     		//TODO:
     		//send new vel to canopen
-    		std::cout << data.in_command_vel << std::endl;
+    		//std::cout << data.in_command_vel << std::endl;
     		//move(data.in_command_vel)
 
     		//get current joint states
@@ -154,7 +155,7 @@ public:
 		ROS_INFO("Initializing canopen...");
 		if (!is_initialized_)
 		{
-			is_initialized_ = true; // TODO: fill in canopen command
+			is_initialized_ = canopen::openConnection(config.can_device); // TODO: fill in canopen command
 			if (is_initialized_)
 			{
 			   res.success.data = true;
@@ -165,7 +166,7 @@ public:
 			{
 			  res.success.data = false;
 			  res.error_message.data = "dummy error message"; // TODO get error message from canopen
-			  ROS_INFO("...initializing canopen not successful. error: %s", res.error_message.data.c_str());
+			  ROS_ERROR("...initializing canopen not successful. error: %s", res.error_message.data.c_str());
 			}
 		}
 		else
