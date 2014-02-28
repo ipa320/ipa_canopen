@@ -84,19 +84,14 @@ int main(int argc, char *argv[]) {
 	double targetVel = std::stod(std::string(argv[4]));
 	double accel = std::stod(std::string(argv[5]));
 
-	//std::cout << deviceFile << std::endl;
-	//std::cout << CANid << std::endl;
-	//std::cout << canopen::syncInterval.count() << std::endl;
-	//std::cout << targetVel << std::endl;
-	//std::cout << accel << std::endl;
-
 	canopen::devices[ CANid ] = canopen::Device(CANid);
-    canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming( CANid, m ); };
-    canopen::sendPos = canopen::defaultPDOOutgoing;
+    canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
+    canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
+    canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 
 	canopen::init(deviceFile, canopen::syncInterval);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+    canopen::sendSync();
   	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -105,19 +100,6 @@ int main(int argc, char *argv[]) {
 	canopen::devices[CANid].setInitialized(true);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	//std::cout << "sending Statusword request" << std::endl;
-	//canopen::sendSDO(CANid, canopen::STATUSWORD);
-	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-	/*std::cout << "\t\t\t\tNMTState: " << canopen::devices[CANid].getNMTState() << std::endl;
-	std::cout << "\t\t\t\tMotorState: " << canopen::devices[CANid].getMotorState() << std::endl;
-	std::cout << "\t\t\t\tCANid: " << (uint16_t)canopen::devices[CANid].getCANid() << std::endl;
-	std::cout << "\t\t\t\tActualPos: " << canopen::devices[CANid].getActualPos() << std::endl;
-	std::cout << "\t\t\t\tDesiredPos: " << canopen::devices[CANid].getDesiredPos() << std::endl;
-	std::cout << "\t\t\t\tActualVel: " << canopen::devices[CANid].getActualVel() << std::endl;
-	std::cout << "\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;*/
-
-	// rest of the code is for moving the device:
 	if (accel != 0) {  // accel of 0 means "move at target vel immediately"
 	 	std::chrono::milliseconds accelerationTime( static_cast<int>(round( 1000.0 * targetVel / accel)) );
 		double vel = 0;
@@ -131,21 +113,12 @@ int main(int argc, char *argv[]) {
 			vel = accel * 0.000001 * std::chrono::duration_cast<std::chrono::microseconds>(tic-startTime).count();
 			canopen::devices[ CANid ].setDesiredVel(vel);
 			std::this_thread::sleep_for(canopen::syncInterval - (std::chrono::high_resolution_clock::now() - tic));
+            canopen::sendSync();
 		}
 	}
 
 	// constant velocity when target vel has been reached:
 	std::cout << "Target velocity reached!" << std::endl;
-
-	/*canopen::devices[ CANid ].setDesiredVel(targetVel);
-	std::cout << "\t\t\t\t\t\tNMTState: " << canopen::devices[CANid].getNMTState() << std::endl;
-	std::cout << "\t\t\t\t\t\tMotorState: " << canopen::devices[CANid].getMotorState() << std::endl;
-	std::cout << "\t\t\t\t\t\tCANid: " << (uint16_t)canopen::devices[CANid].getCANid() << std::endl;
-	std::cout << "\t\t\t\t\t\tActualPos: " << canopen::devices[CANid].getActualPos() << std::endl;
-	std::cout << "\t\t\t\t\t\tDesiredPos: " << canopen::devices[CANid].getDesiredPos() << std::endl;
-	std::cout << "\t\t\t\t\t\tActualVel: " << canopen::devices[CANid].getActualVel() << std::endl;
-	std::cout << "\t\t\t\t\t\tDesiredVel: " << canopen::devices[CANid].getDesiredVel() << std::endl;*/
-
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//std::cout << "sending Statusword request" << std::endl;
 	//canopen::sendSDO(CANid, canopen::STATUSWORD);
@@ -153,5 +126,6 @@ int main(int argc, char *argv[]) {
 
 	while (true) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
+        canopen::sendSync();
 	}
 }

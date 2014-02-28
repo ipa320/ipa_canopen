@@ -101,36 +101,59 @@ int main(int argc, char *argv[])
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    canopen::sendNMT(CANid, canopen::NMT_RESET_NODE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));;
     canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+    canopen::setObjects();
 
     TPCANMsg mes;
 
-   canopen::disableTPDO4(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "Initialized the PDO mapping" << std::endl;
 
-   canopen::clearTPDO4Mapping(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    for(int pdo_object=1;pdo_object<=4;pdo_object++)
+    {
+        canopen::disableTPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::makeTPDO4Mapping(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::clearTPDOMapping(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::disableTPDO4(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::disableRPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::clearTPDO4Mapping(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::clearRPDOMapping(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    if(canopen::use_limit_switch)
+        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
+    else
+        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x0);
 
-   canopen::makeTPDO4Mapping(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::enableTPDO4(&mes);
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    canopen::makeTPDOMapping(4, "606400", 0x20, "606C00", 0x20);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-   canopen::pdoChanged(&mes);
+    canopen::makeRPDOMapping(1, "604000", 0x10, "60C101", 0x20);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    canopen::makeRPDOMapping(2, "60C101", 0x20, "604000", 0x10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    for(int pdo_object=1;pdo_object<=4;pdo_object++)
+    {
+        canopen::enableTPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::enableRPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+
+   //canopen::pdoChanged();
    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 

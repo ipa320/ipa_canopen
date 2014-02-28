@@ -92,13 +92,13 @@ int main(int argc, char *argv[]) {
 	//std::cout << accel << std::endl;
 
 	canopen::devices[ CANid ] = canopen::Device(CANid);
-    canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos_elmo( CANid, m ); };
-    canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status_elmo( CANid, m ); };
+    canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
+    canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
     canopen::sendVel = canopen::defaultPDOOutgoing_elmo;
 
 
 
-    canopen::init_elmo(deviceFile, canopen::syncInterval);
+    canopen::init(deviceFile, canopen::syncInterval);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	

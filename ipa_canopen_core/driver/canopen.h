@@ -639,23 +639,19 @@ namespace canopen{
     /***************************************************************/
     //	define get errors functions
     /***************************************************************/
+    void makeRPDOMapping(int object,std::string index1, int index1_size, std::string index2, int index2_size );
+    void disableRPDO(int object);
+    void clearRPDOMapping(int object);
+    void enableRPDO(int object);
 
-    void makeTPDO4Mapping(TPCANMsg *mes);
-    void disableTPDO4(TPCANMsg *mes);
-    void clearTPDO4Mapping(TPCANMsg *mes);
-    void enableTPDO4(TPCANMsg *mes);
-    void makeRPDO4Mapping(TPCANMsg *mes);
-    void disableRPDO4(TPCANMsg *mes);
-    void clearRPDO4Mapping(TPCANMsg *mes);
-    void enableRPDO4(TPCANMsg *mes);
+    void setObjects();
 
-    void makeTPDO1Mapping(TPCANMsg *mes);
-    void disableTPDO1(TPCANMsg *mes);
-    void clearTPDO1Mapping(TPCANMsg *mes);
-    void enableTPDO1(TPCANMsg *mes);
+    void makeTPDOMapping(int object, std::string index1, int index1_size, std::string index2, int index2_size);
+    void disableTPDO(int object);
+    void clearTPDOMapping(int object);
+    void enableTPDO(int object);
 
-
-    void pdoChanged(TPCANMsg *mes);
+    void pdoChanged();
 
     void getErrors(uint16_t CANid);
     std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m);
@@ -679,6 +675,8 @@ namespace canopen{
 
     extern bool halt_positive;
     extern bool halt_negative;
+
+    extern bool use_limit_switch;
 
     extern uint8_t operation_mode;
     extern std::string operation_mode_param;
@@ -724,6 +722,12 @@ namespace canopen{
     extern TPCANMsg syncMsg;
 
     inline void sendSync() {
+        TPCANMsg syncMsg;
+        syncMsg.ID = 0x80;
+        syncMsg.MSGTYPE = 0x00;
+
+        syncMsg.LEN = 0x00;
+
         CAN_Write(h, &syncMsg);
     }
 
@@ -799,6 +803,83 @@ namespace canopen{
     const SDOkey FAULT(0x605E, 0x0);
     const SDOkey MODES(0x6060, 0x0);
 
+    /* Constants for the PDO mapping */
+    const int TPDO1_msg = 0x180;
+    const int TPDO2_msg = 0x280;
+    const int TPDO3_msg = 0x380;
+    const int TPDO4_msg = 0x480;
+
+    const int RPDO1_msg = 0x200;
+    const int RPDO2_msg = 0x300;
+    const int RPDO3_msg = 0x400;
+    const int RPDO4_msg = 0x500;
+
+    const int TSDO = 0x580;
+    const int RSDO = 0x600;
+
+    //TPDO PARAMETERS
+    const SDOkey TPDO1(0x1800, 0x0);
+    const SDOkey TPDO2(0x1801, 0x0);
+    const SDOkey TPDO3(0x1802, 0x0);
+    const SDOkey TPDO4(0x1803, 0x0);
+
+    const SDOkey TPDO1_sub1(0x1800, 0x1);
+    const SDOkey TPDO2_sub1(0x1801, 0x1);
+    const SDOkey TPDO3_sub1(0x1802, 0x1);
+    const SDOkey TPDO4_sub1(0x1803, 0x1);
+
+    const SDOkey TPDO1_sub2(0x1800, 0x2);
+    const SDOkey TPDO2_sub2(0x1801, 0x2);
+    const SDOkey TPDO3_sub2(0x1802, 0x2);
+    const SDOkey TPDO4_sub2(0x1803, 0x2);
+    //RPDO PARAMETERS
+    const SDOkey RPDO1(0x1400, 0x0);
+    const SDOkey RPDO2(0x1401, 0x0);
+    const SDOkey RPDO3(0x1402, 0x0);
+    const SDOkey RPDO4(0x1403, 0x0);
+
+    const SDOkey RPDO1_sub1(0x1400, 0x1);
+    const SDOkey RPDO2_sub1(0x1401, 0x1);
+    const SDOkey RPDO3_sub1(0x1402, 0x1);
+    const SDOkey RPDO4_sub1(0x1403, 0x1);
+
+    const SDOkey RPDO1_sub2(0x1400, 0x2);
+    const SDOkey RPDO2_sub2(0x1401, 0x2);
+    const SDOkey RPDO3_sub2(0x1402, 0x2);
+    const SDOkey RPDO4_sub2(0x1403, 0x2);
+
+    //TPDO MAPPING
+    const SDOkey TPDO1_map(0x1A00, 0x0);
+    const SDOkey TPDO2_map(0x1A01, 0x0);
+    const SDOkey TPDO3_map(0x1A02, 0x0);
+    const SDOkey TPDO4_map(0x1A03, 0x0);
+
+    const SDOkey TPDO1_map_sub1(0x1A00, 0x1);
+    const SDOkey TPDO2_map_sub1(0x1A01, 0x1);
+    const SDOkey TPDO3_map_sub1(0x1A02, 0x1);
+    const SDOkey TPDO4_map_sub1(0x1A03, 0x1);
+
+    const SDOkey TPDO1_map_sub2(0x1A00, 0x2);
+    const SDOkey TPDO2_map_sub2(0x1A01, 0x2);
+    const SDOkey TPDO3_map_sub2(0x1A02, 0x2);
+    const SDOkey TPDO4_map_sub2(0x1A03, 0x2);
+
+    //RPDO MAPPING
+    const SDOkey RPDO1_map(0x1600, 0x0);
+    const SDOkey RPDO2_map(0x1601, 0x0);
+    const SDOkey RPDO3_map(0x1602, 0x0);
+    const SDOkey RPDO4_map(0x1603, 0x0);
+
+    const SDOkey RPDO1_map_sub1(0x1600, 0x1);
+    const SDOkey RPDO2_map_sub1(0x1601, 0x1);
+    const SDOkey RPDO3_map_sub1(0x1602, 0x1);
+    const SDOkey RPDO4_map_sub1(0x1603, 0x1);
+
+    const SDOkey RPDO1_map_sub2(0x1600, 0x2);
+    const SDOkey RPDO2_map_sub2(0x1601, 0x2);
+    const SDOkey RPDO3_map_sub2(0x1602, 0x2);
+    const SDOkey RPDO4_map_sub2(0x1603, 0x2);
+
     const uint16_t CONTROLWORD_SHUTDOWN = 6;
     const uint16_t CONTROLWORD_QUICKSTOP = 2;
     const uint16_t CONTROLWORD_SWITCH_ON = 7;
@@ -822,13 +903,15 @@ namespace canopen{
     const int8_t IP_TIME_INDEX_HUNDREDMICROSECONDS = 0xFC;
     const uint8_t SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT = 0;
 
-    void sendSDO(uint8_t CANid, SDOkey sdo);
+    void uploadSDO(uint8_t CANid, SDOkey sdo);
+    void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2);
     void processSingleSDO(uint8_t CANid, TPCANRdMsg* message);
     void requestDataBlock1(uint8_t CANid);
     void requestDataBlock2(uint8_t CANid);
 
     void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value);
+    void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value);
 
@@ -841,11 +924,12 @@ namespace canopen{
     void deviceManager_elmo();
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
+    void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue);
     void defaultPDOOutgoing_elmo(uint16_t CANid, double velocityValue);
     void posPDOOutgoing_elmo(uint16_t CANid, double positionValue, double velocity);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
-    void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m);
-    void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m);
+    void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m);
     void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m);
 
     /***************************************************************/

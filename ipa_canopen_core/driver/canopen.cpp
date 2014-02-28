@@ -58,6 +58,7 @@
  ****************************************************************/
 
 #include "canopen.h"
+#include <sstream>
 
 namespace canopen{
 
@@ -79,6 +80,8 @@ namespace canopen{
 
     bool halt_positive;
     bool halt_negative;
+
+    bool use_limit_switch=false;
 
     uint8_t operation_mode;
     std::string operation_mode_param;
@@ -154,16 +157,8 @@ namespace canopen{
  void init(std::string deviceFile, std::chrono::milliseconds syncInterval){
         CAN_Close(h);
 
-        NMTmsg.ID = 0;
-        NMTmsg.MSGTYPE = 0x00;
-        NMTmsg.LEN = 2;
-
-        syncMsg.ID = 0x80;
-        syncMsg.MSGTYPE = 0x00;
-
-        syncMsg.LEN = 0x00;
-
         recover_active = false;
+
 
         if (!canopen::openConnection(deviceFile, canopen::baudRate)){
             std::cout << "Cannot open CAN device; aborting." << std::endl;
@@ -175,15 +170,66 @@ namespace canopen{
 
         if (atFirstInit){
             canopen::initListenerThread(canopen::defaultListener);
+
         }
 
-        for (auto device : devices){
+        for (auto device : devices)
+        {
+
+            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            std::cout << "Initialized the PDO mapping" << std::endl;
+
+            canopen::setObjects();
+
+            for(int pdo_object=1;pdo_object<=4;pdo_object++)
+            {
+                canopen::disableTPDO(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::clearTPDOMapping(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::disableRPDO(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::clearRPDOMapping(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            if(canopen::use_limit_switch)
+                canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
+            else
+                canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x0);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::makeTPDOMapping(4, "606400", 0x20, "606C00", 0x20);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::makeRPDOMapping(1, "604000", 0x10, "60C101", 0x20);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            canopen::makeRPDOMapping(2, "60C101", 0x20, "604000", 0x10);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            for(int pdo_object=1;pdo_object<=4;pdo_object++)
+            {
+                canopen::enableTPDO(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                canopen::enableRPDO(pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
             //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
-            getErrors(device.second.getCANid());
+            //getErrors(device.second.getCANid());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-           std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         for (auto device : devices)
         {
@@ -193,18 +239,10 @@ namespace canopen{
             }
             else
             {
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_RESET_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
+            std::cout << "Configuring node" << std::endl;
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+            std::cout << "Configuring node 2" << std::endl;
             canopen::setMotorState(device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -231,6 +269,8 @@ namespace canopen{
 
         if (atFirstInit)
             atFirstInit = false;
+
+        std::cout << "Concluded driver side init" << std::endl;
     }
 
 
@@ -284,7 +324,7 @@ namespace canopen{
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
                 canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-                canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
+                canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
                 canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
@@ -388,7 +428,7 @@ namespace canopen{
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
                 canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-                canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
+                canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
@@ -397,533 +437,6 @@ namespace canopen{
 
         }
     }
-
- void init_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval){
-        CAN_Close(h);
-
-        NMTmsg.ID = 0;
-        NMTmsg.MSGTYPE = 0x00;
-        NMTmsg.LEN = 2;
-
-        syncMsg.ID = 0x80;
-        syncMsg.MSGTYPE = 0x00;
-
-        syncMsg.LEN = 0x00;
-
-        recover_active = false;
-
-        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
-            std::cout << "Cannot open CAN device; aborting." << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        else{
-            //std::cout << "Connection to CAN bus established" << std::endl;
-        }
-
-        if (atFirstInit){
-            canopen::initListenerThread(canopen::defaultListener);
-        }
-
-        for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected" << std::endl;
-            getErrors(device.second.getCANid());
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-
-           std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-           TPCANMsg mes;
-
-          canopen::disableTPDO4(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::clearTPDO4Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::makeTPDO4Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::disableTPDO1(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::clearTPDO1Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::makeTPDO1Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::disableRPDO4(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::clearRPDO4Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          canopen::makeRPDO4Mapping(&mes);
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-        for (auto device : devices)
-        {
-            TPCANMsg m;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            //std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-
-
-            canopen::sendNMT((uint16_t)device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-          std::cout << "My operation mode is" << canopen::operation_mode << std::endl;
-
-           //canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::operation_mode);
-           //std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-//            //////////////////// QUICK STOP
-               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-               m.MSGTYPE = 0x00;
-               m.LEN = 8;
-               m.DATA[0] = 0x22;
-               m.DATA[1] = 0x85;
-               m.DATA[2] = 0x60;
-               m.DATA[3] = 0x00;
-               m.DATA[4] = 0x80;
-               m.DATA[5] = 0x84;
-               m.DATA[6] = 0x1E;
-               m.DATA[7] = 0x00;
-               CAN_Write(canopen::h, &m);
-
-               //////////////////// Ready to switch on
-                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                  m.MSGTYPE = 0x00;
-                  m.LEN = 8;
-                  m.DATA[0] = 0x22;
-                  m.DATA[1] = 0x40;
-                  m.DATA[2] = 0x60;
-                  m.DATA[3] = 0x00;
-                  m.DATA[4] = 0x06;
-                  m.DATA[5] = 0x00;
-                  m.DATA[6] = 0x00;
-                  m.DATA[7] = 0x00;
-                  CAN_Write(canopen::h, &m);
-
-                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                  /////////////////////////
-
-                  //////////////////// Read status
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                     m.MSGTYPE = 0x00;
-                     m.LEN = 8;
-                     m.DATA[0] = 0x40;
-                     m.DATA[1] = 0x41;
-                     m.DATA[2] = 0x60;
-                     m.DATA[3] = 0x00;
-                     m.DATA[4] = 0x00;
-                     m.DATA[5] = 0x00;
-                     m.DATA[6] = 0x00;
-                     m.DATA[7] = 0x00;
-                     CAN_Write(canopen::h, &m);
-
-                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                     /////////////////////////
-
-                     //////////////////// Switch on
-                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                        m.MSGTYPE = 0x00;
-                        m.LEN = 8;
-                        m.DATA[0] = 0x22;
-                        m.DATA[1] = 0x40;
-                        m.DATA[2] = 0x60;
-                        m.DATA[3] = 0x00;
-                        m.DATA[4] = 0x07;
-                        m.DATA[5] = 0x00;
-                        m.DATA[6] = 0x00;
-                        m.DATA[7] = 0x00;
-                        CAN_Write(canopen::h, &m);
-
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                        /////////////////////////
-
-                        //////////////////// Read status
-                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                           m.MSGTYPE = 0x00;
-                           m.LEN = 8;
-                           m.DATA[0] = 0x40;
-                           m.DATA[1] = 0x41;
-                           m.DATA[2] = 0x60;
-                           m.DATA[3] = 0x00;
-                           m.DATA[4] = 0x00;
-                           m.DATA[5] = 0x00;
-                           m.DATA[6] = 0x00;
-                           m.DATA[7] = 0x00;
-                           CAN_Write(canopen::h, &m);
-
-                           std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                            //////////////////// Set speed(0)
-             m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-             m.MSGTYPE = 0x00;
-             m.LEN = 8;
-             m.DATA[0] = 0x22;
-             m.DATA[1] = 0xff;
-             m.DATA[2] = 0x60;
-             m.DATA[3] = 0x00;
-             m.DATA[4] = 0x00;
-             m.DATA[5] = 0x00;
-             m.DATA[6] = 0x00;
-             m.DATA[7] = 0x00;
-             CAN_Write(canopen::h, &m);
-
-             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                           /////////////////////////
-                          std::cout << "Making the motor on" << std::endl;
-
-                           //////////////////// Start mo=1
-                             m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                              m.MSGTYPE = 0x00;
-                              m.LEN = 8;
-                              m.DATA[0] = 0x22;
-                              m.DATA[1] = 0x40;
-                              m.DATA[2] = 0x60;
-                              m.DATA[3] = 0x00;
-                              m.DATA[4] = 0x0f;
-                              m.DATA[5] = 0x00;
-                              m.DATA[6] = 0x00;
-                              m.DATA[7] = 0x00;
-                              //CAN_Write(canopen::h, &m);
-
-                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                              /////////////////////////
-
-                               //////////////////// Set speed(0)
-             m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-             m.MSGTYPE = 0x00;
-             m.LEN = 8;
-             m.DATA[0] = 0x22;
-             m.DATA[1] = 0xff;
-             m.DATA[2] = 0x60;
-             m.DATA[3] = 0x00;
-             m.DATA[4] = 0x00;
-             m.DATA[5] = 0x00;
-             m.DATA[6] = 0x00;
-             m.DATA[7] = 0x00;
-             CAN_Write(canopen::h, &m);
-             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                              //////////////////// Read status
-                                 m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                                 m.MSGTYPE = 0x00;
-                                 m.LEN = 8;
-                                 m.DATA[0] = 0x40;
-                                 m.DATA[1] = 0x41;
-                                 m.DATA[2] = 0x60;
-                                 m.DATA[3] = 0x00;
-                                 m.DATA[4] = 0x00;
-                                 m.DATA[5] = 0x00;
-                                 m.DATA[6] = 0x00;
-                                 m.DATA[7] = 0x00;
-                                 CAN_Write(canopen::h, &m);
-
-                                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                                 //////////////////// Start mo=1
-                             m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                              m.MSGTYPE = 0x00;
-                              m.LEN = 8;
-                              m.DATA[0] = 0x22;
-                              m.DATA[1] = 0x40;
-                              m.DATA[2] = 0x60;
-                              m.DATA[3] = 0x00;
-                              m.DATA[4] = 0x0f;
-                              m.DATA[5] = 0x00;
-                              m.DATA[6] = 0x00;
-                              m.DATA[7] = 0x00;
-                              //CAN_Write(canopen::h, &m);
-
-                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-        }
-
-
-
-        if (atFirstInit)
-            atFirstInit = false;
-
-        canopen::enableRPDO4(&mes);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::enableTPDO4(&mes);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::enableTPDO1(&mes);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::pdoChanged(&mes);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        std::cout << "Concluded driver side init" << std::endl;
-    }
-
-
-    void recover_elmo(std::string deviceFile, std::chrono::milliseconds syncInterval){
-        CAN_Close(h);
-
-
-        recover_active = true;
-
-        NMTmsg.ID = 0;
-        NMTmsg.MSGTYPE = 0x00;
-        NMTmsg.LEN = 2;
-
-        syncMsg.ID = 0x80;
-        syncMsg.MSGTYPE = 0x00;
-
-        syncMsg.LEN = 0x00;
-
-        if (!canopen::openConnection(deviceFile, canopen::baudRate)){
-            std::cout << "Cannot open CAN device; aborting." << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        else{
-           // std::cout << "Connection to CAN bus established (recover)" << std::endl;
-        }
-
-
-        for (auto device : devices){
-            //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
-        }
-
-        for (auto device : devices)
-        {
-            TPCANMsg m;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-
-
-            canopen::sendNMT(0, canopen::NMT_START_REMOTE_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-           canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, (uint8_t)canopen::operation_mode);
-           std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            canopen::sendSDO(device.second.getCANid(), canopen::STATUSWORD);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_1);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_FAULT_RESET_0);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-//            ////////////////////
-               m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-               m.MSGTYPE = 0x00;
-               m.LEN = 8;
-               m.DATA[0] = 0x22;
-               m.DATA[1] = 0x85;
-               m.DATA[2] = 0x60;
-               m.DATA[3] = 0x00;
-               m.DATA[4] = 0x80;
-               m.DATA[5] = 0x84;
-               m.DATA[6] = 0x1E;
-               m.DATA[7] = 0x00;
-               CAN_Write(canopen::h, &m);
-
-               //////////////////// Ready to switch on
-                  m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                  m.MSGTYPE = 0x00;
-                  m.LEN = 8;
-                  m.DATA[0] = 0x22;
-                  m.DATA[1] = 0x40;
-                  m.DATA[2] = 0x60;
-                  m.DATA[3] = 0x00;
-                  m.DATA[4] = 0x06;
-                  m.DATA[5] = 0x00;
-                  m.DATA[6] = 0x00;
-                  m.DATA[7] = 0x00;
-                  CAN_Write(canopen::h, &m);
-
-                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                  /////////////////////////
-
-                  //////////////////// Read status
-                     m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                     m.MSGTYPE = 0x00;
-                     m.LEN = 8;
-                     m.DATA[0] = 0x40;
-                     m.DATA[1] = 0x41;
-                     m.DATA[2] = 0x60;
-                     m.DATA[3] = 0x00;
-                     m.DATA[4] = 0x00;
-                     m.DATA[5] = 0x00;
-                     m.DATA[6] = 0x00;
-                     m.DATA[7] = 0x00;
-                     CAN_Write(canopen::h, &m);
-
-                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                     /////////////////////////
-
-                     //////////////////// Switch on
-                        m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                        m.MSGTYPE = 0x00;
-                        m.LEN = 8;
-                        m.DATA[0] = 0x22;
-                        m.DATA[1] = 0x40;
-                        m.DATA[2] = 0x60;
-                        m.DATA[3] = 0x00;
-                        m.DATA[4] = 0x07;
-                        m.DATA[5] = 0x00;
-                        m.DATA[6] = 0x00;
-                        m.DATA[7] = 0x00;
-                        CAN_Write(canopen::h, &m);
-
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                        /////////////////////////
-
-                        //////////////////// Read status
-                           m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                           m.MSGTYPE = 0x00;
-                           m.LEN = 8;
-                           m.DATA[0] = 0x40;
-                           m.DATA[1] = 0x41;
-                           m.DATA[2] = 0x60;
-                           m.DATA[3] = 0x00;
-                           m.DATA[4] = 0x00;
-                           m.DATA[5] = 0x00;
-                           m.DATA[6] = 0x00;
-                           m.DATA[7] = 0x00;
-                           CAN_Write(canopen::h, &m);
-
-                           std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                           /////////////////////////
-                          //////////////////// Start mo=0
-                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                              m.MSGTYPE = 0x00;
-                              m.LEN = 8;
-                              m.DATA[0] = 0x22;
-                              m.DATA[1] = 0x40;
-                              m.DATA[2] = 0x60;
-                              m.DATA[3] = 0x00;
-                              m.DATA[4] = 0x0f;
-                              m.DATA[5] = 0x01;
-                              m.DATA[6] = 0x00;
-                              m.DATA[7] = 0x00;
-                              CAN_Write(canopen::h, &m);
-
-                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                           //////////////////// Start mo=1
-                              m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                              m.MSGTYPE = 0x00;
-                              m.LEN = 8;
-                              m.DATA[0] = 0x22;
-                              m.DATA[1] = 0x40;
-                              m.DATA[2] = 0x60;
-                              m.DATA[3] = 0x00;
-                              m.DATA[4] = 0x0f;
-                              m.DATA[5] = 0x00;
-                              m.DATA[6] = 0x00;
-                              m.DATA[7] = 0x00;
-                              CAN_Write(canopen::h, &m);
-
-                              std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-                              /////////////////////////
-
-                              //////////////////// Read status
-                                 m.ID = device.second.getCANid() + 0x600;//CANid + CANid + 0x600;
-                                 m.MSGTYPE = 0x00;
-                                 m.LEN = 8;
-                                 m.DATA[0] = 0x40;
-                                 m.DATA[1] = 0x41;
-                                 m.DATA[2] = 0x60;
-                                 m.DATA[3] = 0x00;
-                                 m.DATA[4] = 0x00;
-                                 m.DATA[5] = 0x00;
-                                 m.DATA[6] = 0x00;
-                                 m.DATA[7] = 0x00;
-                                 CAN_Write(canopen::h, &m);
-
-                                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-
-                                        /////////////////////////
-
-
-
-            devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-            devices[device.second.getCANid()].setDesiredVel(0);
-
-            canopen::sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
-            canopen::sendVel((uint16_t)device.second.getCANid(), (double)device.second.getDesiredVel());
-
-
-
-        }
-        recover_active = false;
-
-    }
-
-
 
     /***************************************************************/
     //		define state machine functions
@@ -935,10 +448,10 @@ namespace canopen{
 
     void setMotorState(uint16_t CANid, std::string targetState){
         while (devices[CANid].getMotorState() != targetState){
-                    canopen::sendSDO(CANid, canopen::STATUSWORD);
+                    canopen::uploadSDO(CANid, canopen::STATUSWORD);
         if (devices[CANid].getMotorState() == MS_FAULT)
     {
-        canopen::sendSDO(CANid, canopen::STATUSWORD);
+        canopen::uploadSDO(CANid, canopen::STATUSWORD);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         if(!devices[CANid].getFault())
@@ -964,17 +477,20 @@ namespace canopen{
         }
 
         if (devices[CANid].getMotorState() == MS_NOT_READY_TO_SWITCH_ON){
-            canopen::sendSDO(CANid, canopen::STATUSWORD);
+            canopen::uploadSDO(CANid, canopen::STATUSWORD);
         }
 
         if (devices[CANid].getMotorState() == MS_SWITCHED_ON_DISABLED){
-            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
+            //canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SHUTDOWN);
+            canopen::controlPDO(CANid, canopen::CONTROLWORD_SHUTDOWN, 0x00);
         }
         if (devices[CANid].getMotorState() == MS_READY_TO_SWITCH_ON){
-            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SWITCH_ON);
+            //canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_SWITCH_ON);
+            canopen::controlPDO(CANid, canopen::CONTROLWORD_SWITCH_ON, 0x00);
         }
         if (devices[CANid].getMotorState() == MS_SWITCHED_ON){
-            canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
+            //canopen::sendSDO(CANid, canopen::CONTROLWORD, canopen::CONTROLWORD_ENABLE_OPERATION);
+            canopen::controlPDO(CANid, canopen::CONTROLWORD_ENABLE_OPERATION, 0x00);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -1028,7 +544,17 @@ namespace canopen{
         CAN_Write(h, &msg);
     }
 
-    void sendSDO(uint8_t CANid, SDOkey sdo){
+    void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2){
+        TPCANMsg msg;
+        msg.ID = CANid + 0x200;
+        msg.MSGTYPE = 0x00;
+        msg.LEN = 2;
+        msg.DATA[0] = control1;
+        msg.DATA[1] = control2;
+        CAN_Write(h, &msg);
+    }
+
+    void uploadSDO(uint8_t CANid, SDOkey sdo){
         TPCANMsg msg;
         msg.ID = CANid + 0x600;
         msg.MSGTYPE = 0x00;
@@ -1064,6 +590,21 @@ namespace canopen{
         msg.ID = CANid + 0x600;
         msg.LEN = 8;
         msg.DATA[0] = 0x23;
+        msg.DATA[1] = sdo.index & 0xFF;
+        msg.DATA[2] = (sdo.index >> 8) & 0xFF;
+        msg.DATA[3] = sdo.subindex;
+        msg.DATA[4] = value & 0xFF;
+        msg.DATA[5] = (value >> 8) & 0xFF;
+        msg.DATA[6] = (value >> 16) & 0xFF;
+        msg.DATA[7] = (value >> 24) & 0xFF;
+        CAN_Write(h, &msg);
+    }
+
+    void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value){
+        TPCANMsg msg;
+        msg.ID = CANid + 0x600;
+        msg.LEN = 8;
+        msg.DATA[0] = 0x22;
         msg.DATA[1] = sdo.index & 0xFF;
         msg.DATA[2] = (sdo.index >> 8) & 0xFF;
         msg.DATA[3] = sdo.subindex;
@@ -1168,6 +709,20 @@ namespace canopen{
     std::function< void (uint16_t CANid, double positionValue) > sendPos;
     std::function< void (uint16_t CANid, double positionValue, double velocityValue) > sendPosPPMode;
 
+    void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue) {
+    static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
+    TPCANMsg msg;
+    msg.ID = 0x300 + CANid;
+    msg.MSGTYPE = 0x00;
+    msg.LEN = 4;
+    int32_t mdegPos = rad2mdeg(positionValue);
+    msg.DATA[0] = mdegPos & 0xFF;
+    msg.DATA[1] = (mdegPos >> 8) & 0xFF;
+    msg.DATA[2] = (mdegPos >> 16) & 0xFF;
+    msg.DATA[3] = (mdegPos >> 24) & 0xFF;
+    CAN_Write(h, &msg);
+}
+
         void defaultPDOOutgoing(uint16_t CANid, double positionValue) {
         static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
         TPCANMsg msg;
@@ -1176,8 +731,8 @@ namespace canopen{
         msg.LEN = 8;
         msg.DATA[0] = myControlword & 0xFF;
         msg.DATA[1] = (myControlword >> 8) & 0xFF;
-        msg.DATA[2] = 0;
-        msg.DATA[3] = 0;
+        msg.DATA[2] = 0x00;
+        msg.DATA[3] = 0x00;
         int32_t mdegPos = rad2mdeg(positionValue);
         msg.DATA[4] = mdegPos & 0xFF;
         msg.DATA[5] = (mdegPos >> 8) & 0xFF;
@@ -1413,16 +968,24 @@ namespace canopen{
 
     }
 
-     void defaultPDO_incoming_status_elmo(uint16_t CANid, const TPCANRdMsg m)
+     void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
      {
 
          uint16_t mydata_low = m.Msg.DATA[0];
          uint16_t mydata_high = m.Msg.DATA[1];
 
+         if(canopen::use_limit_switch)
+         {
+
+
          uint16_t limit_switch_ = m.Msg.DATA[2];
 
          bool hardware_limit_positive = limit_switch_ & 0x02;
          bool hardware_limit_negative = limit_switch_ & 0x01;
+
+         devices[CANid].setNegativeLimit(hardware_limit_negative);
+         devices[CANid].setPositiveLimit(hardware_limit_positive);
+         }
 
          bool ready_switch_on = mydata_low & 0x01;
          bool switched_on = mydata_low & 0x02;
@@ -1507,20 +1070,19 @@ namespace canopen{
          devices[CANid].setReadySwitchON(ready_switch_on);
          devices[CANid].setSwitchON(switched_on);
 
-         devices[CANid].setNegativeLimit(hardware_limit_negative);
-         devices[CANid].setPositiveLimit(hardware_limit_positive);
+
 
         // std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
      }
 
-     void defaultPDO_incoming_pos_elmo(uint16_t CANid, const TPCANRdMsg m) {
+     void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m) {
          double newPos = m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24);
          double newVel = m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24);
 
          //std::cout << "Received POs"<< newPos << std::endl;
 
-         newPos = devices[CANid].getConversionFactor()*newPos; //TODO: conversion from yaml file
-         newVel = devices[CANid].getConversionFactor()*newVel;
+         //newPos = devices[CANid].getConversionFactor()*newPos; //TODO: conversion from yaml file
+         //newVel = devices[CANid].getConversionFactor()*newVel;
 
              devices[CANid].setActualPos(newPos);
              devices[CANid].setActualVel(newVel);
@@ -1712,7 +1274,7 @@ namespace canopen{
  *****************************************************************************/
     void getErrors(uint16_t CANid)
     {
-   canopen::sendSDO(CANid, canopen::ERRORWORD);
+   canopen::uploadSDO(CANid, canopen::ERRORWORD);
     }
 
     void errorword_incoming(uint8_t CANid, BYTE data[1])
@@ -1724,7 +1286,7 @@ namespace canopen{
     void readManErrReg(uint16_t CANid, TPCANRdMsg *m)
     {
 
-        canopen::sendSDO(CANid, canopen::MANUFACTURER);
+        canopen::uploadSDO(CANid, canopen::MANUFACTURER);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         canopen::processSingleSDO(CANid, m);
@@ -1749,11 +1311,11 @@ namespace canopen{
 
     void readErrorsRegister(uint16_t CANid, TPCANRdMsg *m)
     {
-        canopen::sendSDO(CANid, canopen::STATUSWORD);
+        canopen::uploadSDO(CANid, canopen::STATUSWORD);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         canopen::processSingleSDO(CANid, m);
 
-        canopen::sendSDO(CANid, canopen::ERRORWORD);
+        canopen::uploadSDO(CANid, canopen::ERRORWORD);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         canopen::processSingleSDO(CANid, m);
 
@@ -1783,7 +1345,7 @@ namespace canopen{
 
     std::vector<uint16_t> obtainVendorID(uint16_t CANid, TPCANRdMsg *m)
     {
-        canopen::sendSDO(CANid, canopen::IDENTITYVENDORID);
+        canopen::uploadSDO(CANid, canopen::IDENTITYVENDORID);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::vector<uint16_t> vendor_id;
@@ -1805,7 +1367,7 @@ namespace canopen{
 
     std::vector<uint16_t> obtainProdCode(uint16_t CANid, TPCANRdMsg *m)
     {
-        canopen::sendSDO(CANid, canopen::IDENTITYPRODUCTCODE);
+        canopen::uploadSDO(CANid, canopen::IDENTITYPRODUCTCODE);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::vector<uint16_t> product_code;
@@ -1828,7 +1390,7 @@ namespace canopen{
 
     uint16_t obtainRevNr(uint16_t CANid, TPCANRdMsg* m)
     {
-        canopen::sendSDO(CANid, canopen::IDENTITYREVNUMBER);
+        canopen::uploadSDO(CANid, canopen::IDENTITYREVNUMBER);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
@@ -1842,7 +1404,7 @@ namespace canopen{
 
     std::vector<char> obtainManDevName(uint16_t CANid, TPCANRdMsg* m)
     {
-        canopen::sendSDO(CANid, canopen::MANUFACTURERDEVICENAME);
+        canopen::uploadSDO(CANid, canopen::MANUFACTURERDEVICENAME);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::vector<char> manufacturer_device_name;
@@ -1885,7 +1447,7 @@ namespace canopen{
 
      std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m)
      {
-         canopen::sendSDO(CANid, canopen::MANUFACTURERHWVERSION);
+         canopen::uploadSDO(CANid, canopen::MANUFACTURERHWVERSION);
          std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
          std::vector<char> manufacturer_hw_version;
@@ -1926,7 +1488,7 @@ namespace canopen{
     {
         std::vector<char> manufacturer_sw_version;
 
-        canopen::sendSDO(CANid, canopen::MANUFACTURERSOFTWAREVERSION);
+        canopen::uploadSDO(CANid, canopen::MANUFACTURERSOFTWAREVERSION);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         canopen::processSingleSDO(CANid, m);
@@ -2092,164 +1654,11 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
         }
     }
 
-   void disableTPDO4(TPCANMsg *mes)
+   void pdoChanged()
    {
        for (auto device : devices)
        {
-          //////////////////// Disable tpdo4
-             mes->ID =device.second.getCANid() + 0x600;
-             mes->MSGTYPE = 0x00;
-             mes->LEN = 8;
-             mes->DATA[0] = 0x22;
-             mes->DATA[1] = 0x03;
-             mes->DATA[2] = 0x18;
-             mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x80 + device.second.getCANid();
-             mes->DATA[5] = 0x04;
-             mes->DATA[6] = 0x00;
-             mes->DATA[7] = 0x80;
-             CAN_Write(canopen::h, mes);
-
-             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-             /////////////////////////
-    }
-
-   }
-
-   void clearTPDO4Mapping(TPCANMsg *mes)
-   {
-       for (auto device : devices)
-       {
-       //////////////////// clear mapping
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x1A;
-          mes->DATA[3] = 0x00;
-          mes->DATA[4] = 0x00;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
-
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
-       }
-   }
-
-   void makeTPDO4Mapping(TPCANMsg *mes)
-   {
-       for (auto device : devices)
-       {
-       /////////////////////////
-
-       //////////////////// sub ind1=63
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x1A;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x20;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x63;//0x63; 0x64
-          mes->DATA[7] = 0x60;
-          CAN_Write(canopen::h, mes);
-
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-          /////////////////////////
-
-
-          //////////////////// sub ind2=69
-             mes->ID =device.second.getCANid() + 0x600;
-             mes->MSGTYPE = 0x00;
-             mes->LEN = 8;
-             mes->DATA[0] = 0x2F;
-             mes->DATA[1] = 0x03;
-             mes->DATA[2] = 0x1A;
-             mes->DATA[3] = 0x02;
-             mes->DATA[4] = 0x20;
-             mes->DATA[5] = 0x00;
-             mes->DATA[6] = 0x69;//0x69; 0x6C
-             mes->DATA[7] = 0x60;
-             CAN_Write(canopen::h,mes);
-
-             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-             /////////////////////////
-
-
-             //////////////////// ASync
-                mes->ID =device.second.getCANid() + 0x600;
-                mes->MSGTYPE = 0x00;
-                mes->LEN = 8;
-                mes->DATA[0] = 0x2F;
-                mes->DATA[1] = 0x03;
-                mes->DATA[2] = 0x18;
-                mes->DATA[3] = 0x02;
-                mes->DATA[4] = 0x01;
-                mes->DATA[5] = 0x00;
-                mes->DATA[6] = 0x00;
-                mes->DATA[7] = 0x00;
-                CAN_Write(canopen::h, mes);
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                //////////////////////
-                ///
-                ///
-                /////////////////////// Mapping 2 objects
-                      mes->ID =device.second.getCANid() + 0x600;
-                      mes->MSGTYPE = 0x00;
-                      mes->LEN = 8;
-                      mes->DATA[0] = 0x2F;
-                      mes->DATA[1] = 0x03;
-                      mes->DATA[2] = 0x1A;
-                      mes->DATA[3] = 0x00;
-                      mes->DATA[4] = 0x02;
-                      mes->DATA[5] = 0x00;
-                      mes->DATA[6] = 0x00;
-                      mes->DATA[7] = 0x00;
-                      CAN_Write(canopen::h, mes);
-
-                      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                      /////////////////////////
-        }
-   }
-
-   void enableTPDO4(TPCANMsg *mes)
-   {
-       for (auto device : devices)
-       {
-       //////////////////// Enable tpdo4
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x22;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x18;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x80 + device.second.getCANid();
-          mes->DATA[5] = 0x04;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
-
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-          /////////////////////////
-       }
-   }
-
-   void pdoChanged(TPCANMsg *mes)
-   {
-       for (auto device : devices)
-       {
+           TPCANMsg* mes;
        //////////////////// Enable tpdo4
           mes->ID =device.second.getCANid() + 0x600;
           mes->MSGTYPE = 0x00;
@@ -2268,23 +1677,35 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
        }
    }
 
-   void disableRPDO4(TPCANMsg *mes)
+   void disableRPDO(int object)
    {
        for (auto device : devices)
        {
-          //////////////////// Disable tpdo4
-             mes->ID =device.second.getCANid() + 0x600;
-             mes->MSGTYPE = 0x00;
-             mes->LEN = 8;
-             mes->DATA[0] = 0x22;
-             mes->DATA[1] = 0x03;
-             mes->DATA[2] = 0x14;
-             mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x00 + device.second.getCANid();
-             mes->DATA[5] = 0x05;
-             mes->DATA[6] = 0x00;
-             mes->DATA[7] = 0x80;
-             CAN_Write(canopen::h, mes);
+           if(object == 1)
+           {
+            int32_t data = (canopen::RPDO1_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+            sendSDO(device.second.getCANid(), RPDO1_sub1, data);
+           }
+
+           else if(object == 2)
+           {
+            int32_t data = (canopen::RPDO2_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+            sendSDO(device.second.getCANid(), RPDO2_sub1, data);
+           }
+           else if(object == 3)
+           {
+            int32_t data = (canopen::RPDO3_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+            sendSDO(device.second.getCANid(), RPDO3_sub1, data);
+           }
+           else if(object == 4)
+           {
+            int32_t data = (canopen::RPDO4_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+            sendSDO(device.second.getCANid(), RPDO4_sub1, data);
+           }
 
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -2293,108 +1714,215 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
         }
    }
 
-   void clearRPDO4Mapping(TPCANMsg *mes)
+   void setObjects()
    {
        for (auto device : devices)
        {
-       //////////////////// clear mapping
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x16;
-          mes->DATA[3] = 0x00;
-          mes->DATA[4] = 0x00;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
+           int32_t data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x6081,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x607f,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x6083,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x60c5,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x60c6,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           data = 0x1388 + (0x00 << 16) + (0x00 << 24);
+           sendSDO_unknown(device.second.getCANid(), SDOkey(0x6082,0x00), data);
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+       }
+   }
+
+   void clearRPDOMapping(int object)
+   {
+       for (auto device : devices)
+       {
+           int32_t data = (0x00 << 16) + (0x80 << 24);
+           if(object ==1)
+           sendSDO_unknown(device.second.getCANid(), RPDO1_map, data);
+           else if(object == 2)
+           sendSDO_unknown(device.second.getCANid(), RPDO2_map, data);
+           else if(object == 3)
+               sendSDO_unknown(device.second.getCANid(), RPDO3_map, data);
+           else if(object == 4)
+               sendSDO_unknown(device.second.getCANid(), RPDO4_map, data);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
        }
    }
 
-   void makeRPDO4Mapping(TPCANMsg *mes)
+   void makeRPDOMapping(int object,std::string index1, int index1_size, std::string index2, int index2_size)
    {
        for (auto device : devices)
        {
        /////////////////////////
+       int index1_data;
+       int index2_data;
 
-       //////////////////// sub ind1=63
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x16;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x20;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0xff;
-          mes->DATA[7] = 0x60;
-          CAN_Write(canopen::h, mes);
+       std::stringstream str_stream;
+       str_stream << index1;
+       str_stream >> std::hex >> index1_data;
 
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       str_stream.str( std::string() );
+       str_stream.clear();
 
-          /////////////////////////
+       str_stream << index2;
 
-             //////////////////// ASync
-                mes->ID =device.second.getCANid() + 0x600;
-                mes->MSGTYPE = 0x00;
-                mes->LEN = 8;
-                mes->DATA[0] = 0x2F;
-                mes->DATA[1] = 0x03;
-                mes->DATA[2] = 0x16;
-                mes->DATA[3] = 0x02;
-                mes->DATA[4] = 0x01;
-                mes->DATA[5] = 0x00;
-                mes->DATA[6] = 0x00;
-                mes->DATA[7] = 0x00;
-                CAN_Write(canopen::h, mes);
+       str_stream >> std::hex >> index2_data;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       if(object == 1)
+       {
+           int32_t data = (index1_size) + (index1_data << 8);
 
-                //////////////////////
-                ///
-                ///
-                /////////////////////// Mapping 2 objects
-                      mes->ID =device.second.getCANid() + 0x600;
-                      mes->MSGTYPE = 0x00;
-                      mes->LEN = 8;
-                      mes->DATA[0] = 0x2F;
-                      mes->DATA[1] = 0x03;
-                      mes->DATA[2] = 0x16;
-                      mes->DATA[3] = 0x00;
-                      mes->DATA[4] = 0x01;
-                      mes->DATA[5] = 0x00;
-                      mes->DATA[6] = 0x00;
-                      mes->DATA[7] = 0x00;
-                      CAN_Write(canopen::h, mes);
+           sendSDO(device.second.getCANid(), RPDO1_map_sub1, data);
 
-                      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                      /////////////////////////
+           /////////////////////////
+
+           //////////////////// ASync
+
+           sendSDO(device.second.getCANid(), RPDO1_sub2, u_int8_t(0xff));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           //////////////////////
+           ///
+           ///
+           /////////////////////// Mapping 1 object
+           sendSDO(device.second.getCANid(), RPDO1_map, u_int8_t(0x01));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           /////////////////////////
+       }
+
+        else if(object == 2)
+        {
+            int32_t data = (index1_size) + (index1_data << 8);
+
+            sendSDO(device.second.getCANid(), RPDO2_map_sub1, data);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            /////////////////////////
+
+            //////////////////// ASync
+
+            sendSDO(device.second.getCANid(), RPDO2_sub2, u_int8_t(0xff));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            //////////////////////
+            ///
+            ///
+            /////////////////////// Mapping 1 object
+            sendSDO(device.second.getCANid(), RPDO2_map, u_int8_t(0x01));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            /////////////////////////
+        }
+
+       else if(object == 3)
+       {
+           int32_t data = (index1_size) + (index1_data << 8);
+
+           sendSDO(device.second.getCANid(), RPDO3_map_sub1, data);
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           /////////////////////////
+
+           //////////////////// ASync
+
+           sendSDO(device.second.getCANid(), RPDO3_sub2, u_int8_t(0xff));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           //////////////////////
+           ///
+           ///
+           /////////////////////// Mapping 1 object
+           sendSDO(device.second.getCANid(), RPDO3_map, u_int8_t(0x01));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           /////////////////////////
+       }
+
+       else if(object == 4)
+       {
+           int32_t data = (index1_size) + (index1_data << 8);
+
+           sendSDO(device.second.getCANid(), RPDO4_map_sub1, data);
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           /////////////////////////
+
+           //////////////////// ASync
+
+           sendSDO(device.second.getCANid(), RPDO4_sub2, u_int8_t(0xff));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           //////////////////////
+           ///
+           ///
+           /////////////////////// Mapping 1 object
+           sendSDO(device.second.getCANid(), RPDO4_map, u_int8_t(0x01));
+
+           std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+           /////////////////////////
+       }
+
         }
    }
 
-   void enableRPDO4(TPCANMsg *mes)
+   void enableRPDO(int object)
    {
        for (auto device : devices)
        {
-       //////////////////// Enable tpdo4
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x22;
-          mes->DATA[1] = 0x03;
-          mes->DATA[2] = 0x14;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x00 + device.second.getCANid();
-          mes->DATA[5] = 0x05;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
+           if(object ==1)
+           {
+              int32_t data = (canopen::RPDO1_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+            sendSDO(device.second.getCANid(), RPDO1_sub1, data);
+           }
+           else if(object == 2)
+           {
+               int32_t data = (canopen::RPDO2_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+             sendSDO(device.second.getCANid(), RPDO2_sub1, data);
+           }
+           else if(object == 3)
+           {
+               int32_t data = (canopen::RPDO3_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+             sendSDO(device.second.getCANid(), RPDO3_sub1, data);
+           }
+
+           else if(object == 4)
+           {
+               int32_t data = (canopen::RPDO4_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+             sendSDO(device.second.getCANid(), RPDO4_sub1, data);
+           }
+
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -2408,26 +1936,47 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
  * Mapping for PDO1
  **/
 
-   void disableTPDO1(TPCANMsg *mes)
+   void disableTPDO(int object)
    {
 
        for(auto device : devices)
        {
-          //////////////////// Disable tpdo4
-             mes->ID =device.second.getCANid() + 0x600;
-             mes->MSGTYPE = 0x00;
-             mes->LEN = 8;
-             mes->DATA[0] = 0x22;
-             mes->DATA[1] = 0x00;
-             mes->DATA[2] = 0x18;
-             mes->DATA[3] = 0x01;
-             mes->DATA[4] = 0x80 + device.second.getCANid();
-             mes->DATA[5] = 0x01;
-             mes->DATA[6] = 0x00;
-             mes->DATA[7] = 0x80;
-             CAN_Write(canopen::h, mes);
 
-             std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          //////////////////// Disable tpdo4
+
+           if(object == 1)
+           {
+            int32_t data = (canopen::TPDO1_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+            sendSDO(device.second.getCANid(), TPDO1_sub1, data);
+           }
+           else if(object == 2)
+           {
+               int32_t data = (canopen::TPDO2_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+               sendSDO(device.second.getCANid(), TPDO2_sub1, data);
+
+           }
+
+           else if(object == 3)
+           {
+               int32_t data = (canopen::TPDO3_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+               sendSDO(device.second.getCANid(), TPDO3_sub1, data);
+           }
+
+           else if(object == 4)
+
+           {
+               int32_t data = (canopen::TPDO4_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+
+               sendSDO(device.second.getCANid(), TPDO4_sub1, data);
+           }
+
+           else
+               std::cout << "Incorrect object for mapping" << std::endl;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
              /////////////////////////
        }
@@ -2435,84 +1984,73 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 
    }
 
-   void clearTPDO1Mapping(TPCANMsg *mes)
+   void clearTPDOMapping(int object)
    {
        for (auto device : devices)
        {
        //////////////////// clear mapping
-          mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x00;
-          mes->DATA[2] = 0x1A;
-          mes->DATA[3] = 0x00;
-          mes->DATA[4] = 0x00;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
+       ///
+        //int32_t data = (0x00 << 16) + (0x00 << 24);
+        if(object ==1)
+        sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x00));
+        else if(object == 2)
+            sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x00));
+        else if(object == 3)
+            sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x00));
+        else if(object == 4)
+            sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x00));
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
        }
    }
 
-   void makeTPDO1Mapping(TPCANMsg *mes)
+   void makeTPDOMapping(int object, std::string index1, int index1_size, std::string index2, int index2_size)
    {
        for (auto device : devices){
        /////////////////////////
+       int index1_data;
+       int index2_data;
+
+       std::stringstream str_stream;
+       str_stream << index1;
+       str_stream >> std::hex >> index1_data;
+
+       str_stream.str( std::string() );
+       str_stream.clear();
+
+       str_stream << index2;
+
+       str_stream >> std::hex >> index2_data;
+
 
        //////////////////// sub ind1=63
-           mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x2F;
-          mes->DATA[1] = 0x00;
-          mes->DATA[2] = 0x1A;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x10;
-          mes->DATA[5] = 0x00;
-          mes->DATA[6] = 0x41;
-          mes->DATA[7] = 0x60;
-          CAN_Write(canopen::h, mes);
+       ///
+
+       if(object == 1)
+       {
+       int32_t data = (index1_size) + (index1_data << 8);
+
+       sendSDO(device.second.getCANid(), TPDO1_map_sub1, data);
 
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
           /////////////////////////
 
-
+           if(index2_size != 0x0)
+           {
           //////////////////// sub ind2=69
-             mes->ID =device.second.getCANid() + 0x600;
-             mes->MSGTYPE = 0x00;
-             mes->LEN = 8;
-             mes->DATA[0] = 0x2F;
-             mes->DATA[1] = 0x00;
-             mes->DATA[2] = 0x1A;
-             mes->DATA[3] = 0x02;
-             mes->DATA[4] = 0x20;
-             mes->DATA[5] = 0x00;
-             mes->DATA[6] = 0xFD;
-             mes->DATA[7] = 0x60;
-             CAN_Write(canopen::h,mes);
+          data = (index2_size) + (index2_data << 8);
 
+          sendSDO(device.second.getCANid(), TPDO1_map_sub2, data);
+            }
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
              /////////////////////////
 
 
              //////////////////// ASync
-                mes->ID =device.second.getCANid() + 0x600;
-                mes->MSGTYPE = 0x00;
-                mes->LEN = 8;
-                mes->DATA[0] = 0x2F;
-                mes->DATA[1] = 0x00;
-                mes->DATA[2] = 0x18;
-                mes->DATA[3] = 0x02;
-                mes->DATA[4] = 0x01;
-                mes->DATA[5] = 0x00;
-                mes->DATA[6] = 0x00;
-                mes->DATA[7] = 0x00;
-                CAN_Write(canopen::h, mes);
+
+             sendSDO(device.second.getCANid(), TPDO1_sub2, u_int8_t(0x01));
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -2520,44 +2058,184 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
                 ///
                 ///
                 /////////////////////// Mapping 2 objects
-                      mes->ID =device.second.getCANid() + 0x600;
-                      mes->MSGTYPE = 0x00;
-                      mes->LEN = 8;
-                      mes->DATA[0] = 0x2F;
-                      mes->DATA[1] = 0x00;
-                      mes->DATA[2] = 0x1A;
-                      mes->DATA[3] = 0x00;
-                      mes->DATA[4] = 0x02;
-                      mes->DATA[5] = 0x00;
-                      mes->DATA[6] = 0x00;
-                      mes->DATA[7] = 0x00;
-                      CAN_Write(canopen::h, mes);
+                if(index2_size != 0x0)
+                    sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x02));
+                else
+                    sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x01));
 
-                      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                       /////////////////////////
        }
 
+       else
+           if(object == 2)
+           {
+           int32_t data = (index1_size) + (index1_data << 8);
+
+           sendSDO(device.second.getCANid(), TPDO2_map_sub1, data);
+
+              std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+              /////////////////////////
+
+               if(index2_size != 0x0)
+               {
+              //////////////////// sub ind2=69
+              data = (index2_size) + (index2_data << 8);
+
+              sendSDO(device.second.getCANid(), TPDO2_map_sub2, data);
+                }
+                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                 /////////////////////////
+
+
+                 //////////////////// ASync
+
+                 sendSDO(device.second.getCANid(), TPDO2_sub2, u_int8_t(0x01));
+
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                    //////////////////////
+                    ///
+                    ///
+                    /////////////////////// Mapping 2 objects
+                    if(index2_size != 0x0)
+                    sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x02));
+                    else
+                        sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x01));
+
+                                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                          /////////////////////////
+           }
+
+       else
+
+               if(object == 3)
+               {
+               int32_t data = (index1_size) + (index1_data << 8);
+
+               sendSDO(device.second.getCANid(), TPDO3_map_sub1, data);
+
+                  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                  /////////////////////////
+
+                   if(index2_size != 0x0)
+                   {
+                  //////////////////// sub ind2=69
+                  data = (index2_size) + (index2_data << 8);
+
+                  sendSDO(device.second.getCANid(), TPDO3_map_sub2, data);
+                    }
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                     /////////////////////////
+
+
+                     //////////////////// ASync
+
+                     sendSDO(device.second.getCANid(), TPDO3_sub2, u_int8_t(0x01));
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                        //////////////////////
+                        ///
+                        ///
+                        /////////////////////// Mapping 2 objects
+                        if(index2_size != 0x0)
+                        sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x02));
+                        else
+                            sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x01));
+
+                                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                              /////////////////////////
+               }
+
+       else
+
+                   if(object == 4)
+                   {
+                   int32_t data = (index1_size) + (index1_data << 8);
+
+                   sendSDO(device.second.getCANid(), TPDO4_map_sub1, data);
+
+                      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                      /////////////////////////
+
+                       if(index2_size != 0x0)
+                       {
+                      //////////////////// sub ind2=69
+                      data = (index2_size) + (index2_data << 8);
+
+                      sendSDO(device.second.getCANid(), TPDO4_map_sub2, data);
+                        }
+                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                         /////////////////////////
+
+
+                         //////////////////// ASync
+
+                         sendSDO(device.second.getCANid(), TPDO4_sub2, u_int8_t(0x01));
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                            //////////////////////
+                            ///
+                            ///
+                            /////////////////////// Mapping 2 objects
+                            if(index2_size != 0x0)
+                            sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x02));
+                            else
+                                sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x01));
+
+                                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                                  /////////////////////////
+                   }
+
+       }
+
    }
 
-   void enableTPDO1(TPCANMsg *mes)
+   void enableTPDO(int object)
    {
        for (auto device : devices){
        //////////////////// Enable tpdo4
-           mes->ID =device.second.getCANid() + 0x600;
-          mes->MSGTYPE = 0x00;
-          mes->LEN = 8;
-          mes->DATA[0] = 0x22;
-          mes->DATA[1] = 0x00;
-          mes->DATA[2] = 0x18;
-          mes->DATA[3] = 0x01;
-          mes->DATA[4] = 0x80 + device.second.getCANid();
-          mes->DATA[5] = 0x01;
-          mes->DATA[6] = 0x00;
-          mes->DATA[7] = 0x00;
-          CAN_Write(canopen::h, mes);
+       ///
+       ///
+        if(object ==1)
+        {
+           int32_t data = (canopen::TPDO1_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+         sendSDO(device.second.getCANid(), TPDO1_sub1, data);
+        }
+        else if(object == 2)
+        {
+            int32_t data = (canopen::TPDO2_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+          sendSDO(device.second.getCANid(), TPDO2_sub1, data);
+        }
+        else if(object == 3)
+        {
+            int32_t data = (canopen::TPDO3_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+          sendSDO(device.second.getCANid(), TPDO3_sub1, data);
+        }
+        else if(object == 4)
+        {
+            int32_t data = (canopen::TPDO4_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
+
+          sendSDO(device.second.getCANid(), TPDO4_sub1, data);
+        }
+
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
     }
           /////////////////////////
    }
