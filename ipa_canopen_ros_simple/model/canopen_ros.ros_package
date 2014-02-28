@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="ipa_canopen_ros_simple" author="Thiago de Freitas" description="A simple version for the ros canopen node supporting only one chain on one can device." license="LGPL" rosdep="">
-  <node name="canopen_ros" loopRate="0.5" args="" paramSource="" namespace="torso_controller">
+  <node name="canopen_ros" loopRate="100.0" args="" paramSource="" namespace="torso_controller">
     <publisher name="state" msg="control_msgs::JointTrajectoryControllerState"/>
     <publisher name="joint_states" msg="sensor_msgs::JointState"/>
     <publisher name="diagnostics" msg="diagnostic_msgs::DiagnosticArray"/>
@@ -22,4 +22,5 @@
   <depend>cob_srvs</depend>
   <depend>urdf</depend>
   <depend>ipa_canopen_core</depend>
+  <depend>ipa_canopen_ros</depend>
 </ros:Package>

@@ -114,7 +114,7 @@ int main(int argc, char** argv)
     node.configure();
 
 	
- 	ros::Rate loop_rate(0.5); // Hz
+ 	ros::Rate loop_rate(100.0); // Hz
 
 	while(node.n_.ok())
 	{

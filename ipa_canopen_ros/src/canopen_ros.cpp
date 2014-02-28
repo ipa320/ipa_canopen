@@ -72,7 +72,7 @@
 #include <boost/filesystem.hpp>
 #include <canopen.h>
 #include <XmlRpcValue.h>
-#include <JointLimits.h>
+#include <ipa_canopen_ros/JointLimits.h>
 
 typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Response&)> TriggerType;
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;

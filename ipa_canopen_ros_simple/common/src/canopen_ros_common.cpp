@@ -10,6 +10,7 @@
 
 /* protected region user include files on begin */
 #include <canopen.h>
+#include <ipa_canopen_ros/JointLimits.h>
 #include <urdf/model.h>
 /* protected region user include files end */
 
@@ -45,8 +46,11 @@ class canopen_ros_impl
 {
 	/* protected region user member variables on begin */
 	bool is_initialized_;
+	std::string chain_name_; // FIXME: get from parameter server
 	int dof_;
 	std::vector<std::string> joint_names_; // HACK: does not work yet because BRIDE doesn't support list parameters
+	std::vector<uint8_t> modul_ids_; // HACK: does not work yet because BRIDE doesn't support list parameters
+	JointLimits* joint_limits_;
 	/* protected region user member variables end */
 
 public:
@@ -54,10 +58,14 @@ public:
     {
         /* protected region user constructor on begin */
     	is_initialized_ = false;
-    	dof_ = 0;
+
+    	chain_name_ = "arm_controller"; // FIXME: get from parameter server
     	joint_names_.push_back("arm_1_joint"); // HACK: does not work yet because BRIDE doesn't support list parameters
-    	joint_names_.push_back("arm_2_joint"); // HACK: does not work yet because BRIDE doesn't support list parameters
-    	joint_names_.push_back("arm_3_joint"); // HACK: does not work yet because BRIDE doesn't support list parameters
+    	//joint_names_.push_back("arm_2_joint"); // HACK: does not work yet because BRIDE doesn't support list parameters
+    	//joint_names_.push_back("arm_3_joint"); // HACK: does not work yet because BRIDE doesn't support list parameters
+    	modul_ids_.push_back(uint16_t(1)); // HACK: does not work yet because BRIDE doesn't support list parameters
+
+    	joint_limits_ = new JointLimits();
 		/* protected region user constructor end */
     }
     void configure(canopen_ros_config config) 
@@ -68,6 +76,7 @@ public:
     	// dof_ = config.joint_names.size();
     	dof_ = joint_names_.size(); // HACK: does not work yet because BRIDE doesn't support list parameters
     	ROS_INFO("DOF: %d", dof_);
+    	joint_limits_->setDOF(dof_);
 
     	if (config.robot_description.size() == 0)
     	{
@@ -92,6 +101,7 @@ public:
 			MaxVelocities[i] = model.getJoint(joint_names_[i].c_str())->limits->velocity; // HACK: does not work yet because BRIDE doesn't support list parameters
 			std::cout << "MaxVelocities[" << joint_names_[i].c_str() <<"]: " << MaxVelocities[i] << std::endl;
 		}
+		joint_limits_->setMaxVelocities(MaxVelocities);
 
 		/// Get lower limits out of urdf model
 		std::vector<double> LowerLimits(dof_);
@@ -101,6 +111,7 @@ public:
 			LowerLimits[i] = model.getJoint(joint_names_[i].c_str())->limits->lower; // HACK: does not work yet because BRIDE doesn't support list parameters
 			std::cout << "LowerLimits[" << joint_names_[i].c_str() <<"]: " << LowerLimits[i] << std::endl;
 		}
+		joint_limits_->setLowerLimits(LowerLimits);
 
 		// Get upper limits out of urdf model
 		std::vector<double> UpperLimits(dof_);
@@ -108,7 +119,9 @@ public:
 		{
 			//UpperLimits[i] = model.getJoint(config.joint_names[i][i].c_str())->limits->upper;
 			UpperLimits[i] = model.getJoint(joint_names_[i].c_str())->limits->upper; // HACK: does not work yet because BRIDE doesn't support list parameters
+			std::cout << "UpperLimits[" << joint_names_[i].c_str() <<"]: " << UpperLimits[i] << std::endl;
 		}
+		joint_limits_->setUpperLimits(UpperLimits);
 
 		/// Get offsets out of urdf model
 		std::vector<double> Offsets(dof_);
@@ -116,20 +129,77 @@ public:
 		{
 			//Offsets[i] = model.getJoint(config.joint_names[i][i].c_str())->calibration->rising.get()[0];
 			Offsets[i] = model.getJoint(joint_names_[i].c_str())->calibration->rising.get()[0]; // HACK: does not work yet because BRIDE doesn't support list parameters
+			std::cout << "Offsets[" << joint_names_[i].c_str() <<"]: " << Offsets[i] << std::endl;
 		}
+		joint_limits_->setOffsets(Offsets);
+
+		// create device groups
+        std::vector<std::string> devices;
+        devices.push_back(static_cast<std::string>(config.can_device));
+
+        for (unsigned int i=0; i<dof_; i++)
+        {
+        	canopen::devices[ modul_ids_[i] ] = canopen::Device(modul_ids_[i], joint_names_[i], chain_name_, devices[i]);
+        }
+
+        canopen::deviceGroups[ chain_name_ ] = canopen::DeviceGroup(modul_ids_, joint_names_);
 
     	/* protected region user configure end */
     }
     void update(canopen_ros_data &data, canopen_ros_config config)
     {
         /* protected region user update on begin */
-    	ROS_WARN("update start");
+    	//ROS_WARN("update start");
     	if (is_initialized_)
     	{
     		//TODO:
     		//send new vel to canopen
     		//std::cout << data.in_command_vel << std::endl;
     		//move(data.in_command_vel)
+
+    		std::vector<double> velocities;
+    		for (int i=0; i<data.in_command_vel.velocities.size(); i++ )
+    		{
+    			velocities.push_back(data.in_command_vel.velocities[i].value);
+    		}
+
+    		canopen::deviceGroups[chain_name_].setVel(velocities);
+
+
+
+    		int counter = 0;
+			std::vector <double> positions;
+			std::vector <double> desired_positions;
+
+			for (auto device : canopen::devices)
+			{
+				double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
+				double des_pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
+				positions.push_back(pos);
+				desired_positions.push_back(des_pos);
+				counter++;
+			}
+
+			for (auto dg : (canopen::deviceGroups))
+			{
+				// joint state
+				data.out_joint_states.name = dg.second.getNames();
+				data.out_joint_states.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
+
+				data.out_joint_states.position = positions;
+				data.out_joint_states.velocity = dg.second.getActualVel();
+				data.out_joint_states.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
+
+				// controller state
+				data.out_state.header.stamp = data.out_joint_states.header.stamp;
+				data.out_state.actual.positions = data.out_joint_states.position;
+				data.out_state.actual.velocities = data.out_joint_states.velocity;
+				data.out_state.desired.positions = desired_positions;//dg.second.getDesiredPos();
+				data.out_state.desired.velocities = dg.second.getDesiredVel();
+
+				// operation mode
+				data.out_current_operationmode.data = "velocity";
+			}
 
     		//get current joint states
     		//joint_pos = ...
@@ -155,7 +225,39 @@ public:
 		ROS_INFO("Initializing canopen...");
 		if (!is_initialized_)
 		{
-			is_initialized_ = canopen::openConnection(config.can_device); // TODO: fill in canopen command
+			// open device
+			ROS_WARN("open device");
+			is_initialized_ = canopen::openConnection(config.can_device); // TODO: add feature for different baudrates, // TODO: check for return value
+
+
+			// default PDO mapping
+			ROS_WARN("default PDO mapping");
+		    canopen::sendPos = canopen::defaultPDOOutgoing;
+		    for (auto it : canopen::devices) {
+		        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming( it.first, m ); };
+		        canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
+		    }
+
+		    // init device
+		    ROS_WARN("init device");
+		    canopen::init(config.can_device, canopen::syncInterval); // TODO: check for return value
+		    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		    // init modules
+		    ROS_WARN("init modules");
+		    for (auto device : canopen::devices)
+		    {
+		        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE); // TODO: check for return value
+		        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+		        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		    }
+
+		    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		    // init device thread
+		    ROS_WARN("init device thread");
+		    canopen::initDeviceManagerThread(canopen::deviceManager); // TODO: check for return value
+
 			if (is_initialized_)
 			{
 			   res.success.data = true;
@@ -185,7 +287,25 @@ public:
 		ROS_INFO("Recovering canopen...");
 		if (is_initialized_)
 		{
-			bool is_recovered = false; // TODO: fill in canopen command
+			bool is_recovered = true; // TODO: fill in canopen command
+			canopen::recover(config.can_device, canopen::syncInterval);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			for (auto device : canopen::devices)
+			{
+				canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+				std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+				canopen::devices[device.second.getCANid()].setDesiredVel(0);
+
+				canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+				canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+
+			}
+
+
 			if (is_recovered)
 			{
 				res.success.data = true;

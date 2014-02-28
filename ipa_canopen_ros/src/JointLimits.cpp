@@ -58,7 +58,7 @@
  ****************************************************************/
 
 #include <ros/ros.h>
-#include "JointLimits.h"
+#include "ipa_canopen_ros/JointLimits.h"
 
 
 bool JointLimits::checkVelocityLimits(std::vector<double> velocities)
