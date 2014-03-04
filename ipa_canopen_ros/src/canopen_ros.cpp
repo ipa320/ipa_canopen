@@ -115,11 +115,19 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
         std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 
     canopen::initDeviceManagerThread(canopen::deviceManager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+
 
     for (auto device : canopen::devices)
     {
@@ -438,7 +446,7 @@ int main(int argc, char **argv)
     deviceFile = buses.begin()->first;
     std::cout << "Opening device: " << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
-
+    std::cout << "Baud Rate" << canopen::baudRate << std::endl;
     if (!canopen::openConnection(deviceFile, canopen::baudRate )) // TODO: do not access hardware here. there should be no hardware access before calling the init service
     {
         ROS_ERROR("Cannot open CAN device, shutting down...");
@@ -456,7 +464,8 @@ int main(int argc, char **argv)
     // add custom PDOs:
     canopen::sendPos = canopen::defaultPDOOutgoing;
     for (auto it : canopen::devices) {
-        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming( it.first, m ); };
+        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg mS) { canopen::defaultPDO_incoming_status( it.first, mS ); };
+        canopen::incomingPDOHandlers[ 0x480 + it.first ] = [it](const TPCANRdMsg mP) { canopen::defaultPDO_incoming_pos( it.first, mP ); };
         canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
     }
 
@@ -502,7 +511,7 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(lr);
 
-    setJointConstraints(n);
+    //setJointConstraints(n);
 
     while (ros::ok())
     {
