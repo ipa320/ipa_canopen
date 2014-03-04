@@ -6,12 +6,15 @@
 
   </description>
   <author>Tobias Sing</author>
+  <author>Thiago de Freitas</author>
+  <maintainer email="tdf@ipa.fhg.de">Thiago de Freitas</maintainer>
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ipa_canopen_ros</url>
   <depend package="std_msgs"/>
   <!-- <depend package="control_msgs"/> -->
   <depend package="pr2_controllers_msgs"/>
+  <depend package="diagnostic_msgs"/>
   <depend package="brics_actuator"/>
   <depend package="rospy"/>
   <depend package="urdf"/>
@@ -22,5 +25,9 @@
   <depend package="ipa_canopen_core"/>
   
   <rosdep name="yaml-cpp"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
 
 </package>

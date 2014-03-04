@@ -1,0 +1,7 @@
+*~
+*.cfgc
+.cproject
+.project
+bin/
+build/
+lib/
