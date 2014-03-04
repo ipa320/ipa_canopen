@@ -120,6 +120,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
         canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+
     }
 
 
@@ -131,6 +133,12 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
     for (auto device : canopen::devices)
     {
+        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        canopen::devices[device.second.getCANid()].setDesiredVel(0);
+
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+
         device.second.setInitialized(true);
        // if(device.second.getHomingError())
          //   return false;
@@ -167,6 +175,10 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
         std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 
     }
     //canopen::initDeviceManagerThread(canopen::deviceManager);
@@ -457,12 +469,12 @@ int main(int argc, char **argv)
         std::cout << "CAN device openend." << std::endl;
     }
 
-    canopen::pre_init();
+    //canopen::pre_init();
 
     /********************************************/
 
     // add custom PDOs:
-    canopen::sendPos = canopen::defaultPDOOutgoing;
+    canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
     for (auto it : canopen::devices) {
         canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg mS) { canopen::defaultPDO_incoming_status( it.first, mS ); };
         canopen::incomingPDOHandlers[ 0x480 + it.first ] = [it](const TPCANRdMsg mP) { canopen::defaultPDO_incoming_pos( it.first, mP ); };
@@ -511,7 +523,7 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(lr);
 
-    //setJointConstraints(n);
+    setJointConstraints(n);
 
     while (ros::ok())
     {
