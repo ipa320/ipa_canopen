@@ -70,9 +70,9 @@
 #include <map>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <canopen.h>
+#include <ipa_canopen_core/canopen.h>
 #include <XmlRpcValue.h>
-#include <JointLimits.h>
+#include <ipa_canopen_ros/JointLimits.h>
 
 typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Response&)> TriggerType;
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
@@ -252,9 +252,11 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         BusParams busParam;
         auto name = static_cast<std::string>(busParams[i]["name"]);
         busParam.baudrate = static_cast<std::string>(busParams[i]["baudrate"]);
+        canopen::baudRate = busParam.baudrate;
         busParam.syncInterval = static_cast<int>(busParams[i]["sync_interval"]);
         buses[name] = busParam;
     }
+
 
     param = "chains";
     XmlRpc::XmlRpcValue chainNames_XMLRPC;
@@ -437,7 +439,7 @@ int main(int argc, char **argv)
     std::cout << "Opening device: " << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
 
-    if (!canopen::openConnection(deviceFile)) // TODO: do not access hardware here. there should be no hardware access before calling the init service
+    if (!canopen::openConnection(deviceFile, canopen::baudRate )) // TODO: do not access hardware here. there should be no hardware access before calling the init service
     {
         ROS_ERROR("Cannot open CAN device, shutting down...");
         n.shutdown();

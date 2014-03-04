@@ -58,7 +58,7 @@
  ****************************************************************/
 
 #include <utility>
-#include "canopen.h"
+#include "ipa_canopen_core/canopen.h"
 
 int main(int argc, char *argv[]) {
 
