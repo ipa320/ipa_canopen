@@ -173,7 +173,7 @@ namespace canopen{
 
             std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
             canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000));
             canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 

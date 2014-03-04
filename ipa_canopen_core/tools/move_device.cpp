@@ -87,13 +87,12 @@ int main(int argc, char *argv[]) {
 	canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
     canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
     canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
     canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
+
+	canopen::init(deviceFile, canopen::syncInterval);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     canopen::sendSync();
   	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
