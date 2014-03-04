@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
         canopen::clearRPDOMapping(pdo_object);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
     if(canopen::use_limit_switch)
         canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
     else
@@ -152,9 +153,6 @@ int main(int argc, char *argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-
-   //canopen::pdoChanged();
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 }

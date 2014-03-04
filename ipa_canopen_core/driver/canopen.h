@@ -709,6 +709,10 @@ namespace canopen{
     extern TPCANMsg NMTmsg;
 
     inline void sendNMT(uint8_t CANid, uint8_t command){
+        NMTmsg.ID = 0;
+        NMTmsg.MSGTYPE = 0x00;
+        NMTmsg.LEN = 2;
+
         //std::cout << "Sending NMT. CANid: " << (uint16_t)CANid << "\tcommand: " << (uint16_t)command << std::endl;
         NMTmsg.DATA[0] = command;
         NMTmsg.DATA[1] = CANid;
@@ -884,6 +888,7 @@ namespace canopen{
     const uint16_t CONTROLWORD_QUICKSTOP = 2;
     const uint16_t CONTROLWORD_SWITCH_ON = 7;
     const uint16_t CONTROLWORD_ENABLE_OPERATION = 15;
+    const uint16_t CONTROLWORD_ENABLE_MOVEMENT = 31;
     const uint16_t CONTROLWORD_START_HOMING = 16;
     const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
     const uint16_t CONTROLWORD_DISABLE_INTERPOLATED = 7;

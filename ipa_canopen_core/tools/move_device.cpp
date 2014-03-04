@@ -79,26 +79,36 @@ int main(int argc, char *argv[]) {
 	std::cout << "Interrupt motion with Ctrl-C" << std::endl;
 	std::string deviceFile = std::string(argv[1]);
 	uint16_t CANid = std::stoi(std::string(argv[2]));
-	canopen::syncInterval = std::chrono::milliseconds(std::stoi(std::string(argv[3])));
+    canopen::syncInterval = std::chrono::milliseconds(std::stoi(std::string(argv[4])));
     canopen::baudRate = std::string(argv[3]);
-	double targetVel = std::stod(std::string(argv[4]));
-	double accel = std::stod(std::string(argv[5]));
+    double targetVel = std::stod(std::string(argv[5]));
+    double accel = std::stod(std::string(argv[6]));
 
 	canopen::devices[ CANid ] = canopen::Device(CANid);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	canopen::init(deviceFile, canopen::syncInterval);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+
     canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
     canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
     canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 
-	canopen::init(deviceFile, canopen::syncInterval);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
     canopen::sendSync();
   	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    canopen::controlPDO(CANid, canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	canopen::initDeviceManagerThread(canopen::deviceManager);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	canopen::devices[CANid].setInitialized(true);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    canopen::devices[CANid].setDesiredPos((double)canopen::devices[CANid].getActualPos());
+    canopen::devices[CANid].setDesiredVel(0);
 
 	if (accel != 0) {  // accel of 0 means "move at target vel immediately"
 	 	std::chrono::milliseconds accelerationTime( static_cast<int>(round( 1000.0 * targetVel / accel)) );
@@ -112,6 +122,7 @@ int main(int argc, char *argv[]) {
 			tic = std::chrono::high_resolution_clock::now();
 			vel = accel * 0.000001 * std::chrono::duration_cast<std::chrono::microseconds>(tic-startTime).count();
 			canopen::devices[ CANid ].setDesiredVel(vel);
+            std::cout << "Actual Pos" << canopen::devices[ CANid ].getActualPos() << std::endl;
 			std::this_thread::sleep_for(canopen::syncInterval - (std::chrono::high_resolution_clock::now() - tic));
             canopen::sendSync();
 		}
