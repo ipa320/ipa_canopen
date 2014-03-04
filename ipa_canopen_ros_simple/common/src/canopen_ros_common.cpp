@@ -9,7 +9,7 @@
 #include <cob_srvs/Trigger.h>
 
 /* protected region user include files on begin */
-#include <canopen.h>
+#include <ipa_canopen_core/canopen.h>
 #include <ipa_canopen_ros/JointLimits.h>
 #include <urdf/model.h>
 /* protected region user include files end */
@@ -18,7 +18,7 @@ class canopen_ros_config
 {
 public:
 		std::string can_device;
-		int can_baudrate;
+		std::string can_baudrate;
 		std::string modul_ids;
 		std::string joint_names;
 		std::string robot_description;
@@ -227,14 +227,15 @@ public:
 		{
 			// open device
 			ROS_WARN("open device");
-			is_initialized_ = canopen::openConnection(config.can_device); // TODO: add feature for different baudrates, // TODO: check for return value
+			is_initialized_ = canopen::openConnection(config.can_device, config.can_baudrate); // TODO: add feature for different baudrates, // TODO: check for return value
 
 
 			// default PDO mapping
 			ROS_WARN("default PDO mapping");
-		    canopen::sendPos = canopen::defaultPDOOutgoing;
+			canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 		    for (auto it : canopen::devices) {
-		        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming( it.first, m ); };
+		    	canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg mS) { canopen::defaultPDO_incoming_status( it.first, mS ); };
+				canopen::incomingPDOHandlers[ 0x480 + it.first ] = [it](const TPCANRdMsg mP) { canopen::defaultPDO_incoming_pos( it.first, mP ); };
 		        canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
 		    }
 

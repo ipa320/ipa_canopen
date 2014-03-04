@@ -64,7 +64,7 @@ class canopen_ros_ros
   	
 
 				n_.param("can_device", component_config_.can_device, (std::string)"");
-				n_.param("can_baudrate", component_config_.can_baudrate, (int)1000);
+				n_.param("can_baudrate", component_config_.can_baudrate, (std::string)"500K");
 				n_.param("modul_ids", component_config_.modul_ids, (std::string)"");
 				n_.param("joint_names", component_config_.joint_names, (std::string)"[torso_1_joint, torso_2_joint, torso_3_joint]");
 				n_.param("robot_description", component_config_.robot_description, (std::string)"");

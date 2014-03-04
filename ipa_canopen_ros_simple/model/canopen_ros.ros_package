@@ -9,7 +9,7 @@
     <serviceServer name="init" msg="cob_srvs::Trigger"/>
     <serviceServer name="recover" msg="cob_srvs::Trigger"/>
     <parameter name="can_device" type="string"/>
-    <parameter name="can_baudrate" value="1000"/>
+    <parameter name="can_baudrate" value="1000" type="string"/>
     <parameter name="modul_ids" type="string"/>
     <parameter name="joint_names" value="[torso_1_joint, torso_2_joint, torso_3_joint]" type="string"/>
     <parameter name="robot_description" type="string"/>
