@@ -94,6 +94,16 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
+	for (auto device : canopen::devices)
+    {
+    	if (device.second.getInitialized())
+    	{
+    		res.success.data = true;
+    		res.error_message.data = "already initialized";
+    		ROS_INFO("already initialized");
+    		return true;
+    	}
+	}
 
     canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -129,23 +139,27 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
 
-
+	for (auto device : canopen::devices)
+    {
+    	if (not device.second.getInitialized())
+    	{
+    		res.success.data = false;
+    		res.error_message.data = "not initialized yet";
+    		ROS_INFO("not initialized yet");
+    		return true;
+    	}
+	}
 
     canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
-    {
+    {    
         canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
         std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
-
-    for (auto device : canopen::devices)
-    {
         canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
         canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
@@ -213,16 +227,21 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
 
 void readParamsFromParameterServer(ros::NodeHandle n)
 {
-    XmlRpc::XmlRpcValue busParams;
+	std::string param;
 
-    if (!n.hasParam("devices") || !n.hasParam("chains"))
+	param = "devices";
+	XmlRpc::XmlRpcValue busParams;
+    if (n.hasParam(param))
+	{
+    	n.getParam(param, busParams);
+	}
+    else
     {
-        ROS_ERROR("Missing parameters on parameter server; shutting down node.");
-        ROS_ERROR("Please consult the user manual for necessary parameter settings.");
-        n.shutdown();
+    	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+    	n.shutdown();
     }
 
-    n.getParam("devices", busParams);
+    // TODO: check for content of busParams
     for (int i=0; i<busParams.size(); i++)
     {
         BusParams busParam;
@@ -232,27 +251,69 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         buses[name] = busParam;
     }
 
+    param = "chains";
     XmlRpc::XmlRpcValue chainNames_XMLRPC;
-    n.getParam("chains", chainNames_XMLRPC);
+    if (n.hasParam(param))
+	{
+    	n.getParam(param, chainNames_XMLRPC);
+	}
+    else
+    {
+    	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+    	n.shutdown();
+    }
 
+    // TODO: check for content of chainNames_XMLRPC
     for (int i=0; i<chainNames_XMLRPC.size(); i++)
         chainNames.push_back(static_cast<std::string>(chainNames_XMLRPC[i]));
 
     for (auto chainName : chainNames) {
+        param = "/" + chainName + "/joint_names";
         XmlRpc::XmlRpcValue jointNames_XMLRPC;
-        n.getParam("/" + chainName + "/joint_names", jointNames_XMLRPC);
+        if (n.hasParam(param))
+    	{
+        	n.getParam(param, jointNames_XMLRPC);
+    	}
+        else
+        {
+        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+        	n.shutdown();
+        }
 
+        // TODO: check for content of jointNames_XMLRPC
         for (int i=0; i<jointNames_XMLRPC.size(); i++)
             jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
+        param = "/" + chainName + "/module_ids";
         XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
-        n.getParam("/" + chainName + "/module_ids", moduleIDs_XMLRPC);
+        if (n.hasParam(param))
+    	{
+        	n.getParam(param, moduleIDs_XMLRPC);
+    	}
+        else
+        {
+        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+        	n.shutdown();
+        }
+
+        // TODO: check for content of muduleIDs
         std::vector<uint8_t> moduleIDs;
         for (int i=0; i<moduleIDs_XMLRPC.size(); i++)
             moduleIDs.push_back(static_cast<int>(moduleIDs_XMLRPC[i]));
 
+        param = "/" + chainName + "/devices";
         XmlRpc::XmlRpcValue devices_XMLRPC;
-        n.getParam("/" + chainName + "/devices", devices_XMLRPC);
+        if (n.hasParam(param))
+    	{
+        	n.getParam(param, devices_XMLRPC);
+    	}
+        else
+        {
+        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+        	n.shutdown();
+        }
+
+        // TODO: check for content of devices_XMLRPC
         std::vector<std::string> devices;
         for (int i=0; i<devices_XMLRPC.size(); i++)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
@@ -299,7 +360,7 @@ void setJointConstraints(ros::NodeHandle n)
           ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
           n.shutdown();
       }
-      ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+      //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
       /// Get urdf model out of robot_description
       urdf::Model model;
@@ -368,17 +429,17 @@ int main(int argc, char **argv)
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
     // ^ todo: this only works with a single CAN bus; add support for more buses!
     deviceFile = buses.begin()->first;
-    std::cout << "Opening device..." << deviceFile << std::endl;
+    std::cout << "Opening device: " << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
 
-    if (!canopen::openConnection(deviceFile))
+    if (!canopen::openConnection(deviceFile)) // TODO: do not access hardware here. there should be no hardware access before calling the init service
     {
-        ROS_ERROR("Cannot open CAN device; aborting.");
-        exit(EXIT_FAILURE);
+        ROS_ERROR("Cannot open CAN device, shutting down...");
+        n.shutdown();
     }
     else
     {
-        std::cout << "Connection to CAN bus established" << std::endl;
+        std::cout << "CAN device openend." << std::endl;
     }
 
     canopen::pre_init();
