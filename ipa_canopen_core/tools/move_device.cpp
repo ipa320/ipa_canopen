@@ -95,6 +95,10 @@ int main(int argc, char *argv[]) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     canopen::sendSync();
+
+    canopen::devices[CANid].setDesiredPos((double)canopen::devices[CANid].getActualPos());
+    canopen::devices[CANid].setDesiredVel(0);
+
   	canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -106,8 +110,7 @@ int main(int argc, char *argv[]) {
 	canopen::devices[CANid].setInitialized(true);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    canopen::devices[CANid].setDesiredPos((double)canopen::devices[CANid].getActualPos());
-    canopen::devices[CANid].setDesiredVel(0);
+
 
 	if (accel != 0) {  // accel of 0 means "move at target vel immediately"
 	 	std::chrono::milliseconds accelerationTime( static_cast<int>(round( 1000.0 * targetVel / accel)) );

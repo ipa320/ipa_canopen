@@ -243,10 +243,9 @@ namespace canopen{
             }
             else
             {
-            std::cout << "Configuring node" << std::endl;
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            std::cout << "Configuring node 2" << std::endl;
+
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -811,8 +810,6 @@ namespace canopen{
      void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m) {
          double newPos = mdeg2rad(m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
          double newVel = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
-
-         std::cout << "Received POs"<< newPos << std::endl;
 
          //newPos = devices[CANid].getConversionFactor()*newPos; //TODO: conversion from yaml file
          //newVel = devices[CANid].getConversionFactor()*newVel;

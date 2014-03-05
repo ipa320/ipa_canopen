@@ -136,8 +136,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
         canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+       // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+       // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
 
         device.second.setInitialized(true);
        // if(device.second.getHomingError())
