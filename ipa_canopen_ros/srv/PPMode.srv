@@ -1,5 +1,0 @@
-float64[] velocity
-float64[] position
-uint16[]  id
----
-bool target_reached
