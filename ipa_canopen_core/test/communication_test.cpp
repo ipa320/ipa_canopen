@@ -60,7 +60,7 @@
 #include <utility>
 #include <iostream>
 #include <iomanip>
-#include "canopen.h"
+#include "ipa_canopen_core/canopen.h"
 #include <sstream>
 
 #include <gtest/gtest.h>
@@ -82,8 +82,9 @@ TEST(IPAcanopen, communicationTest)
     canopen::syncMsg.LEN = 0x00;
 
     std::string deviceFile = "/dev/pcan32";//std::string(argv[1]);
+    canopen::baudRate = "500K";
 
-    if (!canopen::openConnection(deviceFile)){
+    if (!canopen::openConnection(deviceFile, canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
         call_success = false;
         //exit(EXIT_FAILURE);

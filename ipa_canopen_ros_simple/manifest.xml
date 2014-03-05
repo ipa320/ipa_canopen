@@ -16,6 +16,7 @@
   	<depend package="cob_srvs"/>
   	<depend package="urdf"/>
   	<depend package="ipa_canopen_core"/>
+  	<depend package="ipa_canopen_ros"/>
   /* protected region additional manifest statements on begin */
   /* protected region additional manifest statements end */
   
