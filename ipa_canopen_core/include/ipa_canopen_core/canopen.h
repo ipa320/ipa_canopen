@@ -654,14 +654,14 @@ namespace canopen{
     void pdoChanged();
 
     void getErrors(uint16_t CANid);
-    std::vector<char> obtainManSWVersion(uint16_t CANid, TPCANRdMsg* m);
-    std::vector<char> obtainManHWVersion(uint16_t CANid, TPCANRdMsg* m);
-    std::vector<char> obtainManDevName(uint16_t CANid, TPCANRdMsg* m);
-    std::vector<uint16_t> obtainVendorID(uint16_t CANid, TPCANRdMsg* m);
-    uint16_t obtainRevNr(uint16_t CANid, TPCANRdMsg* m);
-    std::vector<uint16_t> obtainProdCode(uint16_t CANid, TPCANRdMsg* m);
-    void readErrorsRegister(uint16_t CANid, TPCANRdMsg *m);
-    void readManErrReg(uint16_t CANid, TPCANRdMsg *m);
+    std::vector<char> obtainManSWVersion(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    std::vector<char> obtainManHWVersion(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    std::vector<char> obtainManDevName(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    std::vector<uint16_t> obtainVendorID(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    uint16_t obtainRevNr(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    std::vector<uint16_t> obtainProdCode(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    void readErrorsRegister(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    void readManErrReg(uint16_t CANid, std::shared_ptr<TPCANRdMsg>  m);
 
 
     /***************************************************************/
@@ -907,7 +907,7 @@ namespace canopen{
 
     void uploadSDO(uint8_t CANid, SDOkey sdo);
     void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2);
-    void processSingleSDO(uint8_t CANid, TPCANRdMsg* message);
+    void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message);
     void requestDataBlock1(uint8_t CANid);
     void requestDataBlock2(uint8_t CANid);
 

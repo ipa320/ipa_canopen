@@ -68,10 +68,10 @@ int main(int argc, char *argv[])
 
     if (argc != 4) {
         std::cout << "Arguments:" << std::endl
-        << "(1) device file" << std::endl
-        << "(2) CAN deviceID" << std::endl
-        << "(3) Baud Rate" << std::endl
-        << "Example: ./elmo_mapping /dev/pcan32 12 500K" << std::endl;
+                  << "(1) device file" << std::endl
+                  << "(2) CAN deviceID" << std::endl
+                  << "(3) Baud Rate" << std::endl
+                  << "Example: ./elmo_mapping /dev/pcan32 12 500K" << std::endl;
         return -1;
     }
 
