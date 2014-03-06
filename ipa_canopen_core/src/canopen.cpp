@@ -59,6 +59,7 @@
 
 #include <ipa_canopen_core/canopen.h>
 #include <sstream>
+#include <cstring>
 
 namespace canopen
 {
@@ -513,6 +514,7 @@ TPCANMsg syncMsg;
 void requestDataBlock1(uint8_t CANid)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -530,6 +532,7 @@ void requestDataBlock1(uint8_t CANid)
 void requestDataBlock2(uint8_t CANid)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -547,6 +550,7 @@ void requestDataBlock2(uint8_t CANid)
 void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x200;
     msg.MSGTYPE = 0x00;
     msg.LEN = 2;
@@ -558,6 +562,7 @@ void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2)
 void uploadSDO(uint8_t CANid, SDOkey sdo)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -575,6 +580,7 @@ void uploadSDO(uint8_t CANid, SDOkey sdo)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
@@ -591,6 +597,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
@@ -607,6 +614,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value)
 void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x22;
@@ -623,6 +631,7 @@ void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x2F;
@@ -641,6 +650,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x2B;
@@ -697,6 +707,7 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x300 + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 4;
@@ -712,6 +723,7 @@ void defaultPDOOutgoing(uint16_t CANid, double positionValue)
 {
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x200 + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;

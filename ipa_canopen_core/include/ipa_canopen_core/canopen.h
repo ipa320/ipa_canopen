@@ -64,6 +64,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <chrono>
 #include <unordered_map>
 #include <functional>
@@ -705,7 +706,10 @@ namespace canopen{
 
     extern TPCANMsg NMTmsg;
 
-    inline void sendNMT(uint8_t CANid, uint8_t command){
+    inline void sendNMT(uint8_t CANid, uint8_t command)
+    {
+        TPCANMsg NMTmsg;
+        std::memset(&NMTmsg, 0, sizeof(NMTmsg));
         NMTmsg.ID = 0;
         NMTmsg.MSGTYPE = 0x00;
         NMTmsg.LEN = 2;
@@ -724,6 +728,7 @@ namespace canopen{
 
     inline void sendSync() {
         TPCANMsg syncMsg;
+        std::memset(&syncMsg, 0, sizeof(syncMsg));
         syncMsg.ID = 0x80;
         syncMsg.MSGTYPE = 0x00;
 
