@@ -138,17 +138,24 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
         // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
         // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        if(device.second.getIPMode())
+        {
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly initialized";
+            ROS_INFO("The device was sucessfuly initialized");
+            device.second.setInitialized(true);
+            return true;
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be initialized";
+            ROS_INFO("Module could not be initialized. Check for possible errors and try to initialize it again.");
+            return false;
+        }
 
-        device.second.setInitialized(true);
-        // if(device.second.getHomingError())
-        //   return false;
 
     }
-
-    res.success.data = true;
-    res.error_message.data = "";
-
-    return true;
 }
 
 
@@ -181,22 +188,30 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
 
 
     }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
 
     for (auto device : canopen::devices)
     {
         canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
         canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        if(device.second.getIPMode())
+        {
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly recovered";
+            ROS_INFO("The device was sucessfuly recovered");
+            device.second.setInitialized(true);
+            return true;
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be recovered";
+            ROS_INFO("Module could not be recovered. Check for possible errors and try to initialize it again.");
+            return false;
+        }
 
-        device.second.setInitialized(true);
     }
 
-    res.success.data = true;
-    res.error_message.data = "";
-    return true;
 }
 
 

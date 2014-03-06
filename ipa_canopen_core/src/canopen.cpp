@@ -335,22 +335,6 @@ void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_QUICKSTOP, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
-
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
-
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
-
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            //                canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -432,10 +416,6 @@ void halt(std::string deviceFile, std::chrono::milliseconds syncInterval)
         canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-
-
-
-
     }
 }
 
@@ -450,6 +430,7 @@ void setNMTState(uint16_t CANid, std::string targetState)
 
 void setMotorState(uint16_t CANid, std::string targetState)
 {
+
     while (devices[CANid].getMotorState() != targetState)
     {
         canopen::uploadSDO(CANid, canopen::STATUSWORD);
@@ -792,7 +773,7 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;
 
 
     if(!ready_switch_on)
@@ -937,7 +918,7 @@ void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;;
 
 
     if(!ready_switch_on)
@@ -1394,7 +1375,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
     bool man_specific2 = mydata_high & 0x80;
 
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;;
 
 
     if(!ready_switch_on)
