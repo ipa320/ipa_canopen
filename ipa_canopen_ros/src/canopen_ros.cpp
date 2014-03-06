@@ -105,55 +105,28 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         }
     }
 
-    canopen::init(deviceFile, canopen::syncInterval);
+    bool init_success = canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
     {
-
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-    }
-
-
-
-    canopen::initDeviceManagerThread(canopen::deviceManager);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-
-    for (auto device : canopen::devices)
-    {
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
-
-        // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        if(device.second.getIPMode())
+        if(init_success)
         {
             res.success.data = true;
             res.error_message.data = "Sucessfuly initialized";
             ROS_INFO("The device was sucessfuly initialized");
-            device.second.setInitialized(true);
-            return true;
+
         }
         else
         {
             res.success.data = false;
             res.error_message.data = "Module could not be initialized";
-            ROS_INFO("Module could not be initialized. Check for possible errors and try to initialize it again.");
-            return false;
+            ROS_WARN("Module could not be initialized. Check for possible errors and try to initialize it again.");
         }
 
+
+    return true;
 
     }
 }
@@ -173,41 +146,27 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
         }
     }
 
-    canopen::recover(deviceFile, canopen::syncInterval);
+    bool recover_success = canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
     {
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-    }
-
-    for (auto device : canopen::devices)
-    {
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
-
-        if(device.second.getIPMode())
+        if(recover_success)
         {
+
             res.success.data = true;
             res.error_message.data = "Sucessfuly recovered";
             ROS_INFO("The device was sucessfuly recovered");
-            device.second.setInitialized(true);
             return true;
         }
         else
         {
             res.success.data = false;
             res.error_message.data = "Module could not be recovered";
-            ROS_INFO("Module could not be recovered. Check for possible errors and try to initialize it again.");
-            return false;
+            ROS_WARN("Module could not be recovered. Check for possible errors and try to recover it again.");
+            return true;
         }
 
     }
@@ -481,7 +440,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        std::cout << "CAN device openend." << std::endl;
+        std::cout << "CAN device opened" << std::endl;
     }
 
     //canopen::pre_init();

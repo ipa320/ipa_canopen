@@ -683,9 +683,9 @@ namespace canopen{
     extern std::string operation_mode_param;
 
     bool openConnection(std::string devName, std::string baudrate);
-    void init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    bool init(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void pre_init();
-    void recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;

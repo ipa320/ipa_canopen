@@ -96,22 +96,6 @@ int main(int argc, char *argv[]) {
 
     canopen::sendSync();
 
-    canopen::devices[CANid].setDesiredPos((double)canopen::devices[CANid].getActualPos());
-    canopen::devices[CANid].setDesiredVel(0);
-
-    canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    canopen::controlPDO(CANid, canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    canopen::initDeviceManagerThread(canopen::deviceManager);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    canopen::devices[CANid].setInitialized(true);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-
     if (accel != 0) {  // accel of 0 means "move at target vel immediately"
         std::chrono::milliseconds accelerationTime( static_cast<int>(round( 1000.0 * targetVel / accel)) );
         double vel = 0;
@@ -124,7 +108,6 @@ int main(int argc, char *argv[]) {
             tic = std::chrono::high_resolution_clock::now();
             vel = accel * 0.000001 * std::chrono::duration_cast<std::chrono::microseconds>(tic-startTime).count();
             canopen::devices[ CANid ].setDesiredVel(vel);
-            std::cout << "Actual Pos" << canopen::devices[ CANid ].getActualPos() << std::endl;
             std::this_thread::sleep_for(canopen::syncInterval - (std::chrono::high_resolution_clock::now() - tic));
             canopen::sendSync();
         }
