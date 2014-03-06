@@ -255,6 +255,11 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
+            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -273,6 +278,9 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
 
         devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
@@ -298,12 +306,6 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         {
             std::cout << "Concluded driver side init succesfully" << std::endl;
             canopen::devices[device.second.getCANid()].setInitialized(true);
-
-            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else
         {
@@ -328,20 +330,6 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     recover_active = true;
 
-
-//    if (!canopen::openConnection(deviceFile, canopen::baudRate))
-//    {
-//        std::cout << "Cannot open CAN device; aborting." << std::endl;
-//        exit(EXIT_FAILURE);
-//    }
-//    else
-//    {
-//        //std::cout << "Connection to CAN bus established (recover)" << std::endl;
-//    }
-
-
-
-
     for (auto device : devices)
     {
 
@@ -351,6 +339,7 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
+
             canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_HALT, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -361,6 +350,11 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_QUICKSTOP, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
@@ -382,6 +376,12 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         }
 
 
@@ -393,15 +393,10 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     for (auto device : devices)
     {
+
         if(device.second.getIPMode())
         {
             std::cout << "Concluded driver side recover succesfully" << std::endl;
-
-            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else
         {
@@ -830,7 +825,7 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)
@@ -973,7 +968,7 @@ void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)
@@ -1430,7 +1425,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
     bool man_specific2 = mydata_high & 0x80;
 
 
-    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable & quick_stop;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)
