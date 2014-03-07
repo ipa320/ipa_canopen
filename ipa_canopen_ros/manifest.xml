@@ -12,8 +12,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ipa_canopen_ros</url>
   <depend package="std_msgs"/>
-  <!-- <depend package="control_msgs"/> -->
-  <depend package="pr2_controllers_msgs"/>
+  <depend package="control_msgs"/>
   <depend package="diagnostic_msgs"/>
   <depend package="brics_actuator"/>
   <depend package="rospy"/>

@@ -59,6 +59,7 @@
 
 #include <ipa_canopen_core/canopen.h>
 #include <sstream>
+#include <cstring>
 
 namespace canopen
 {
@@ -86,6 +87,10 @@ bool use_limit_switch=false;
 
 uint8_t operation_mode;
 std::string operation_mode_param;
+
+std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+
+std::chrono::duration<double> elapsed_seconds;
 
 
 /***************************************************************/
@@ -156,31 +161,31 @@ void pre_init()
     }
 }
 
-void init(std::string deviceFile, std::chrono::milliseconds syncInterval)
+bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 {
-    CAN_Close(h);
 
-    recover_active = false;
-
-
-    if (!canopen::openConnection(deviceFile, canopen::baudRate))
+    if(atFirstInit)
     {
-        std::cout << "Cannot open CAN device; aborting." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        //std::cout << "Connection to CAN bus established" << std::endl;
+        CAN_Close(h);
+        if (!canopen::openConnection(deviceFile, canopen::baudRate))
+        {
+            std::cout << "Cannot open CAN device; aborting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            canopen::sendNMT(0x0, canopen::NMT_RESET_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            //std::cout << "Connection to CAN bus established" << std::endl;
+        }
     }
 
+     recover_active = false;
     for (auto device : devices)
     {
 
-        std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-        canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -249,6 +254,11 @@ void init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
+            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -267,6 +277,9 @@ void init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
 
         devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
@@ -274,44 +287,47 @@ void init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     }
 
-    for (auto device : devices)
+    if (atFirstInit)
     {
-        getErrors(device.second.getCANid());
+        canopen::initDeviceManagerThread(canopen::deviceManager);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    for (auto device : devices)
+    {
+        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        canopen::devices[device.second.getCANid()].setDesiredVel(0);
+
+        getErrors(device.second.getCANid());
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        if(device.second.getIPMode())
+        {
+            std::cout << "Concluded driver side init succesfully" << std::endl;
+            canopen::devices[device.second.getCANid()].setInitialized(true);
+        }
+        else
+        {
+            std::cout << "Problems occured during driver side init" << std::endl;
+            canopen::devices[device.second.getCANid()].setInitialized(false);
+            return false;
+        }
+
+    }
+
 
     if (atFirstInit)
         atFirstInit = false;
 
-    std::cout << "Concluded driver side init" << std::endl;
-
+    return true;
 
 }
 
 
-void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
+bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
 {
-    CAN_Close(h);
-
 
     recover_active = true;
-
-
-    if (!canopen::openConnection(deviceFile, canopen::baudRate))
-    {
-        std::cout << "Cannot open CAN device; aborting." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        //std::cout << "Connection to CAN bus established (recover)" << std::endl;
-    }
-
-
-    for (auto device : devices)
-    {
-        //std::cout << "Module with CAN-id " << (uint16_t)device.second.getCANid() << " connected (recover)" << std::endl;
-    }
 
     for (auto device : devices)
     {
@@ -322,6 +338,7 @@ void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
+
             canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_HALT, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -334,21 +351,10 @@ void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_QUICKSTOP, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
+            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
-
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
-
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            //                canopen::sendSDO(device.second.getCANid(), canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            //                canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
-            //                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState(device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -369,6 +375,12 @@ void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         }
 
 
@@ -377,6 +389,22 @@ void recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     }
     recover_active = false;
+
+    for (auto device : devices)
+    {
+
+        if(device.second.getIPMode())
+        {
+            std::cout << "Concluded driver side recover succesfully" << std::endl;
+        }
+        else
+        {
+            std::cout << "Problems occured during driver side recover" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
 
 }
 
@@ -431,10 +459,6 @@ void halt(std::string deviceFile, std::chrono::milliseconds syncInterval)
         canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-
-
-
-
     }
 }
 
@@ -449,8 +473,16 @@ void setNMTState(uint16_t CANid, std::string targetState)
 
 void setMotorState(uint16_t CANid, std::string targetState)
 {
+
+    start = std::chrono::high_resolution_clock::now();
+
     while (devices[CANid].getMotorState() != targetState)
     {
+        end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end-start;
+
+        if(elapsed_seconds.count() > 3)
+            return;
         canopen::uploadSDO(CANid, canopen::STATUSWORD);
         if (devices[CANid].getMotorState() == MS_FAULT)
         {
@@ -491,6 +523,7 @@ void setMotorState(uint16_t CANid, std::string targetState)
             canopen::controlPDO(CANid, canopen::CONTROLWORD_ENABLE_OPERATION, 0x00);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     }
 }
 
@@ -513,6 +546,7 @@ TPCANMsg syncMsg;
 void requestDataBlock1(uint8_t CANid)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -530,6 +564,7 @@ void requestDataBlock1(uint8_t CANid)
 void requestDataBlock2(uint8_t CANid)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -547,6 +582,7 @@ void requestDataBlock2(uint8_t CANid)
 void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x200;
     msg.MSGTYPE = 0x00;
     msg.LEN = 2;
@@ -558,6 +594,7 @@ void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2)
 void uploadSDO(uint8_t CANid, SDOkey sdo)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -575,6 +612,7 @@ void uploadSDO(uint8_t CANid, SDOkey sdo)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
@@ -591,6 +629,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
@@ -607,6 +646,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value)
 void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x22;
@@ -623,6 +663,7 @@ void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x2F;
@@ -641,6 +682,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
 void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value)
 {
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = CANid + 0x600;
     msg.LEN = 8;
     msg.DATA[0] = 0x2B;
@@ -697,6 +739,7 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x300 + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 4;
@@ -712,6 +755,7 @@ void defaultPDOOutgoing(uint16_t CANid, double positionValue)
 {
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
+    std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x200 + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
@@ -780,7 +824,7 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)
@@ -867,7 +911,6 @@ void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m)
         if (! devices[CANid].getInitialized())
         {
             devices[CANid].setDesiredPos(newPos);
-            devices[CANid].setInitialized(true);
         }
         //std::cout << "actualPos: " << devices[CANid].getActualPos() << "  desiredPos: " << devices[CANid].getDesiredPos() << std::endl;
     }
@@ -893,7 +936,6 @@ void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m)
         if (! devices[CANid].getInitialized())
         {
             devices[CANid].setDesiredPos(newPos);
-            devices[CANid].setInitialized(true);
         }
         //std::cout << "actualPos: " << devices[CANid].getActualPos() << "  desiredPos: " << devices[CANid].getDesiredPos() << std::endl;
     }
@@ -925,7 +967,7 @@ void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m)
     bool man_specific1 = mydata_high & 0x40;
     bool man_specific2 = mydata_high & 0x80;
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)
@@ -1023,12 +1065,12 @@ void defaultListener()
         }
 
         // incoming EMCY
-        else if (m.Msg.ID >= 0x081 && m.Msg.ID <= 0x0FF)
-        {
-            std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
-            if (incomingEMCYHandlers.find(m.Msg.ID) != incomingEMCYHandlers.end())
-                incomingEMCYHandlers[m.Msg.ID](m);
-        }
+        //else if (m.Msg.ID >= 0x081 && m.Msg.ID <= 0x0FF)
+        //{
+         //   std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
+          //  if (incomingEMCYHandlers.find(m.Msg.ID) != incomingEMCYHandlers.end())
+           //     incomingEMCYHandlers[m.Msg.ID](m);
+        //}
 
         // incoming TIME
         else if (m.Msg.ID == 0x100)
@@ -1070,7 +1112,7 @@ void defaultListener()
         }
         else
         {
-            std::cout << "Received unknown message" << std::endl;
+            //std::cout << "Received unknown message" << std::endl;
         }
     }
 }
@@ -1382,7 +1424,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
     bool man_specific2 = mydata_high & 0x80;
 
 
-    bool ip_mode = op_specific & volt_enable;
+    bool ip_mode = ready_switch_on & switched_on & op_enable & volt_enable;
 
 
     if(!ready_switch_on)

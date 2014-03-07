@@ -61,7 +61,7 @@
 #include <urdf/model.h>
 #include "std_msgs/String.h"
 #include "sensor_msgs/JointState.h"
-#include "pr2_controllers_msgs/JointTrajectoryControllerState.h"
+#include "control_msgs/JointTrajectoryControllerState.h"
 #include "brics_actuator/JointVelocities.h"
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
@@ -105,50 +105,30 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         }
     }
 
-    canopen::init(deviceFile, canopen::syncInterval);
+    bool init_success = canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
     {
+        if(init_success)
+        {
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly initialized";
+            ROS_INFO("The device was sucessfuly initialized");
 
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be initialized";
+            ROS_WARN("Module could not be initialized. Check for possible errors and try to initialize it again.");
+        }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-    }
-
-
-
-    canopen::initDeviceManagerThread(canopen::deviceManager);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-
-    for (auto device : canopen::devices)
-    {
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
-
-        // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        // canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-
-        device.second.setInitialized(true);
-        // if(device.second.getHomingError())
-        //   return false;
-
-    }
-
-    res.success.data = true;
-    res.error_message.data = "";
 
     return true;
+
+    }
 }
 
 
@@ -166,37 +146,31 @@ bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response
         }
     }
 
-    canopen::recover(deviceFile, canopen::syncInterval);
+    bool recover_success = canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
     {
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        canopen::controlPDO(device.second.getCANid(),canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if(recover_success)
+        {
 
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly recovered";
+            ROS_INFO("The device was sucessfuly recovered");
+            return true;
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be recovered";
+            ROS_WARN("Module could not be recovered. Check for possible errors and try to recover it again.");
+            return true;
+        }
 
     }
-    //canopen::initDeviceManagerThread(canopen::deviceManager);
 
-    for (auto device : canopen::devices)
-    {
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
-
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-
-        device.second.setInitialized(true);
-    }
-
-    res.success.data = true;
-    res.error_message.data = "";
-    return true;
 }
 
 
@@ -466,7 +440,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        std::cout << "CAN device openend." << std::endl;
+        std::cout << "CAN device opened" << std::endl;
     }
 
     //canopen::pre_init();
@@ -516,7 +490,7 @@ int main(int argc, char **argv)
 
         currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1);
 
-        statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
+        statePublishers[it.first] = n.advertise<control_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
     }
 
     double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();
@@ -555,7 +529,7 @@ int main(int argc, char **argv)
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
             jointStatesPublisher.publish(js);
 
-            pr2_controllers_msgs::JointTrajectoryControllerState jtcs;
+            control_msgs::JointTrajectoryControllerState jtcs;
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
