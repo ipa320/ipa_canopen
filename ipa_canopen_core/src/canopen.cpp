@@ -174,6 +174,8 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
+            canopen::sendNMT(0x0, canopen::NMT_RESET_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             //std::cout << "Connection to CAN bus established" << std::endl;
         }
     }
@@ -182,11 +184,8 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
     for (auto device : devices)
     {
 
-        std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-        canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
