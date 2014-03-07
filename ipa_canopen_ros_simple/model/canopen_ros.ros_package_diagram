@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notation:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:ros="http://ros/1.0" xmi:id="_N9H3QKBNEeOBN7e_rajcrg" type="RosPackage" name="canopen_ros.ros_package_diagram" measurementUnit="Pixel">
+  <children xmi:type="notation:Shape" xmi:id="_tpdtMKBNEeOBN7e_rajcrg" type="2001" fontName="Ubuntu">
+    <children xmi:type="notation:DecorationNode" xmi:id="_tpgJcKBNEeOBN7e_rajcrg" type="5008"/>
+    <children xmi:type="notation:BasicCompartment" xmi:id="_tpgwgKBNEeOBN7e_rajcrg" type="7001">
+      <children xmi:type="notation:Node" xmi:id="_v2gk0KBTEeOBN7e_rajcrg" type="3001">
+        <element xmi:type="ros:Parameter" href="canopen_ros.ros_package#//@node.0/@parameter.0"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_v2gk0aBTEeOBN7e_rajcrg"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_4b34IKBTEeOBN7e_rajcrg" type="3001">
+        <element xmi:type="ros:Parameter" href="canopen_ros.ros_package#//@node.0/@parameter.1"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_4b34IaBTEeOBN7e_rajcrg"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_8xvFIKBTEeOBN7e_rajcrg" type="3001">
+        <element xmi:type="ros:Parameter" href="canopen_ros.ros_package#//@node.0/@parameter.2"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_8xvFIaBTEeOBN7e_rajcrg"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_w1sUcKBUEeOBN7e_rajcrg" type="3001">
+        <element xmi:type="ros:Parameter" href="canopen_ros.ros_package#//@node.0/@parameter.3"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_w1sUcaBUEeOBN7e_rajcrg"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_z418YKBUEeOBN7e_rajcrg" type="3001">
+        <element xmi:type="ros:Parameter" href="canopen_ros.ros_package#//@node.0/@parameter.4"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_z418YaBUEeOBN7e_rajcrg"/>
+      </children>
+      <styles xmi:type="notation:TitleStyle" xmi:id="_tphXkKBNEeOBN7e_rajcrg" showTitle="true"/>
+      <styles xmi:type="notation:SortingStyle" xmi:id="_tphXkaBNEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FilteringStyle" xmi:id="_tphXkqBNEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_xH-bcKBNEeOBN7e_rajcrg" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_xH-bdKBNEeOBN7e_rajcrg" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_xH-bcaBNEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_xH-bcqBNEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="canopen_ros.ros_package#//@node.0/@publisher.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_xH-bc6BNEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_ykyXsKBNEeOBN7e_rajcrg" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_yky-wKBNEeOBN7e_rajcrg" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_ykyXsaBNEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_ykyXsqBNEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="canopen_ros.ros_package#//@node.0/@publisher.1"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_ykyXs6BNEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_3AqtIKBNEeOBN7e_rajcrg" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_3ArUMKBNEeOBN7e_rajcrg" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_3AqtIaBNEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_3AqtIqBNEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="canopen_ros.ros_package#//@node.0/@publisher.2"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_3AqtI6BNEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_i3j0YKBOEeOBN7e_rajcrg" type="3007">
+      <children xmi:type="notation:DecorationNode" xmi:id="_i3kbcaBOEeOBN7e_rajcrg" type="5007"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_i3j0YaBOEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_i3j0YqBOEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <element xmi:type="ros:Subscriber" href="canopen_ros.ros_package#//@node.0/@subscriber.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_i3kbcKBOEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_lgK1YKBOEeOBN7e_rajcrg" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_lgK1ZKBOEeOBN7e_rajcrg" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_lgK1YaBOEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_lgK1YqBOEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="canopen_ros.ros_package#//@node.0/@publisher.3"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_lgK1Y6BOEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_sJvKYKBOEeOBN7e_rajcrg" type="3002">
+      <children xmi:type="notation:DecorationNode" xmi:id="_sJvxcKBOEeOBN7e_rajcrg" type="5002"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_sJvKYaBOEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_sJvKYqBOEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <styles xmi:type="notation:LineStyle" xmi:id="_sJvKY6BOEeOBN7e_rajcrg"/>
+      <element xmi:type="ros:ServiceServer" href="canopen_ros.ros_package#//@node.0/@serviceServer.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_sJvKZKBOEeOBN7e_rajcrg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_s34p0KBOEeOBN7e_rajcrg" type="3002">
+      <children xmi:type="notation:DecorationNode" xmi:id="_s35Q4KBOEeOBN7e_rajcrg" type="5002"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_s34p0aBOEeOBN7e_rajcrg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_s34p0qBOEeOBN7e_rajcrg" fontName="Ubuntu"/>
+      <styles xmi:type="notation:LineStyle" xmi:id="_s34p06BOEeOBN7e_rajcrg"/>
+      <element xmi:type="ros:ServiceServer" href="canopen_ros.ros_package#//@node.0/@serviceServer.1"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_s34p1KBOEeOBN7e_rajcrg"/>
+    </children>
+    <element xmi:type="ros:Node" href="canopen_ros.ros_package#//@node.0"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_tpeUQKBNEeOBN7e_rajcrg" x="204" y="108"/>
+  </children>
+  <styles xmi:type="notation:DiagramStyle" xmi:id="_N9H3QaBNEeOBN7e_rajcrg"/>
+  <element xmi:type="ros:Package" href="canopen_ros.ros_package#/"/>
+</notation:Diagram>
