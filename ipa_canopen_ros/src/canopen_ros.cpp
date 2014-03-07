@@ -61,7 +61,7 @@
 #include <urdf/model.h>
 #include "std_msgs/String.h"
 #include "sensor_msgs/JointState.h"
-#include "pr2_controllers_msgs/JointTrajectoryControllerState.h"
+#include "control_msgs/JointTrajectoryControllerState.h"
 #include "brics_actuator/JointVelocities.h"
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
 
         currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1);
 
-        statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
+        statePublishers[it.first] = n.advertise<control_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
     }
 
     double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();
@@ -529,7 +529,7 @@ int main(int argc, char **argv)
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
             jointStatesPublisher.publish(js);
 
-            pr2_controllers_msgs::JointTrajectoryControllerState jtcs;
+            control_msgs::JointTrajectoryControllerState jtcs;
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
