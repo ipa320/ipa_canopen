@@ -167,14 +167,37 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
     if(atFirstInit)
     {
         CAN_Close(h);
-        if (!canopen::openConnection(deviceFile, canopen::baudRate))
+        
+        bool connection_success;
+        connection_success = canopen::openConnection(deviceFile, canopen::baudRate);
+        
+        if (!connection_success)
         {
             std::cout << "Cannot open CAN device; aborting." << std::endl;
             exit(EXIT_FAILURE);
         }
         else
         {
-            //std::cout << "Connection to CAN bus established" << std::endl;
+                canopen::initListenerThread(canopen::defaultListener);
+                
+                std::cout << "Resetting devices " << std::endl;
+                canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+                
+                for(auto device : devices)
+                {
+                    bool nmt_init = devices[device.second.getCANid()].getNMTInit();
+                    std::cout << "Waiting for Node: " << (uint16_t)device.second.getCANid() << " to become available" << std::endl;
+                    
+                    while(!nmt_init)
+                    {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        nmt_init = devices[device.second.getCANid()].getNMTInit();
+                    }
+                    std::cout << "Node: " << (uint16_t)device.second.getCANid() << " is now available" << std::endl;
+                }
+                
+                canopen::sendNMT(0x00, canopen::NMT_START_REMOTE_NODE);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
@@ -182,19 +205,11 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
     for (auto device : devices)
     {
 
-        std::cout << "Resetting CAN-device with CAN-ID " << (uint16_t)device.second.getCANid() << std::endl;
-        canopen::sendNMT(device.second.getCANid(), canopen::NMT_RESET_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-        canopen::sendNMT(device.second.getCANid(), canopen::NMT_START_REMOTE_NODE);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
         canopen::setObjects();
 
         TPCANMsg mes;
 
-        std::cout << "Initialized the PDO mapping" << std::endl;
+        std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)device.second.getCANid() << std::endl;
 
         for(int pdo_object=1; pdo_object<=4; pdo_object++)
         {
@@ -236,12 +251,6 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    }
-
-    if (atFirstInit)
-    {
-        canopen::initListenerThread(canopen::defaultListener);
 
     }
 
@@ -304,12 +313,12 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
         if(device.second.getIPMode())
         {
-            std::cout << "Concluded driver side init succesfully" << std::endl;
+            std::cout << "Concluded driver side init succesfully for Node" << (uint16_t)device.second.getCANid() << std::endl;
             canopen::devices[device.second.getCANid()].setInitialized(true);
         }
         else
         {
-            std::cout << "Problems occured during driver side init" << std::endl;
+            std::cout << "Problems occured during driver side init for Node" << (uint16_t)device.second.getCANid()  << std::endl;
             canopen::devices[device.second.getCANid()].setInitialized(false);
             return false;
         }
@@ -1102,9 +1111,12 @@ void defaultListener()
         // incoming NMT error control
         else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF)
         {
+            uint16_t CANid = (uint16_t)(m.Msg.ID - 0x700);
+            
             if (m.Msg.DATA[0] == 0x00)
-            {
-                std::cout << "Bootup received. Node-ID =  " << (uint16_t)(m.Msg.ID - 0x700) << std::endl;
+            {          
+                std::cout << "Bootup received. Node-ID =  " << CANid << std::endl;
+                devices[CANid].setNMTInit(true);
             }
             else
             {

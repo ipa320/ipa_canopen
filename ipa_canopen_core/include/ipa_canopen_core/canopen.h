@@ -127,6 +127,7 @@ namespace canopen{
             uint16_t revision_number_;
 
             bool initialized_;
+            bool nmt_init_;
             bool driveReferenced_;
             bool ip_mode_active_;
             bool homingError_;
@@ -173,7 +174,8 @@ namespace canopen{
                 actualPos_(0),
                 initialized_(false),
                 NMTState_("START_UP"),
-                motorState_("START_UP") {};
+                motorState_("START_UP"),
+                nmt_init_(false) {};
 
             Device(uint8_t CANid, std::string name, std::string group, std::string bus):
                 CANid_(CANid),
@@ -184,7 +186,8 @@ namespace canopen{
                 actualVel_(0),
                 desiredPos_(0),
                 actualPos_(0),
-                initialized_(false) {};
+                initialized_(false),
+                nmt_init_(false) {};
 
             Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
                 CANid_(CANid),
@@ -197,11 +200,17 @@ namespace canopen{
                 actualVel_(0),
                 desiredPos_(0),
                 actualPos_(0),
-                initialized_(false) {};
+                initialized_(false),
+                nmt_init_(false) {};
 
+            bool getNMTInit(){
+                return nmt_init_;
+            }
+            
             std::string getNMTState(){
                 return NMTState_;
             }
+            
             std::string getMotorState(){
                 return motorState_;
             }
@@ -486,6 +495,11 @@ namespace canopen{
 
             void setNegativeLimit(bool neg_limit){
                 hardware_limit_negative_ = neg_limit;
+            }
+            
+            void setNMTInit(bool nmt_limit)
+            {
+                nmt_init_ = nmt_limit;
             }
 
             void setFault(bool fault){
