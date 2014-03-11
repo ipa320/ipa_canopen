@@ -61,7 +61,7 @@
 #include <urdf/model.h>
 #include "std_msgs/String.h"
 #include "sensor_msgs/JointState.h"
-#include "pr2_controllers_msgs/JointTrajectoryControllerState.h"
+#include "control_msgs/JointTrajectoryControllerState.h"
 #include "brics_actuator/JointVelocities.h"
 #include "cob_srvs/Trigger.h"
 #include "cob_srvs/SetOperationMode.h"
@@ -70,9 +70,9 @@
 #include <map>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <canopen.h>
+#include <ipa_canopen_core/canopen.h>
 #include <XmlRpcValue.h>
-#include <JointLimits.h>
+#include <ipa_canopen_ros/JointLimits.h>
 
 typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Response&)> TriggerType;
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
@@ -94,84 +94,83 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
-	for (auto device : canopen::devices)
+    for (auto device : canopen::devices)
     {
-    	if (device.second.getInitialized())
-    	{
-    		res.success.data = true;
-    		res.error_message.data = "already initialized";
-    		ROS_INFO("already initialized");
-    		return true;
-    	}
-	}
+        if (device.second.getInitialized())
+        {
+            res.success.data = true;
+            res.error_message.data = "already initialized";
+            ROS_INFO("already initialized");
+            return true;
+        }
+    }
 
-    canopen::init(deviceFile, canopen::syncInterval);
+    bool init_success = canopen::init(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
     {
+        if(init_success)
+        {
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly initialized";
+            ROS_INFO("The device was sucessfuly initialized");
 
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be initialized";
+            ROS_WARN("Module could not be initialized. Check for possible errors and try to initialize it again.");
+        }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    canopen::initDeviceManagerThread(canopen::deviceManager);
-
-    for (auto device : canopen::devices)
-    {
-        device.second.setInitialized(true);
-       // if(device.second.getHomingError())
-         //   return false;
-
-    }
-
-    res.success.data = true;
-    res.error_message.data = "";
 
     return true;
+
+    }
 }
 
 
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
 
-	for (auto device : canopen::devices)
+    for (auto device : canopen::devices)
     {
-    	if (not device.second.getInitialized())
-    	{
-    		res.success.data = false;
-    		res.error_message.data = "not initialized yet";
-    		ROS_INFO("not initialized yet");
-    		return true;
-    	}
-	}
+        if (not device.second.getInitialized())
+        {
+            res.success.data = false;
+            res.error_message.data = "not initialized yet";
+            ROS_INFO("not initialized yet");
+            return true;
+        }
+    }
 
-    canopen::recover(deviceFile, canopen::syncInterval);
+    bool recover_success = canopen::recover(deviceFile, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     for (auto device : canopen::devices)
-    {    
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-        std::cout << "Setting IP mode for: " << (uint16_t)device.second.getCANid() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    {
 
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
+        if(recover_success)
+        {
 
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-        canopen::sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+            res.success.data = true;
+            res.error_message.data = "Sucessfuly recovered";
+            ROS_INFO("The device was sucessfuly recovered");
+            return true;
+        }
+        else
+        {
+            res.success.data = false;
+            res.error_message.data = "Module could not be recovered";
+            ROS_WARN("Module could not be recovered. Check for possible errors and try to recover it again.");
+            return true;
+        }
 
-        device.second.setInitialized(true);
     }
 
-    res.success.data = true;
-    res.error_message.data = "";
-    return true;
 }
 
 
@@ -208,14 +207,14 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             velocities.push_back( it.value);
         }
 
-	int counter = 0;
-       
+        int counter = 0;
+
         for (auto device : canopen::devices)
         {
-		
+
             double pos = (double)device.second.getDesiredPos();// + joint_limits_->getOffsets()[counter];
             positions.push_back(pos);
-	    counter++;
+            counter++;
         }
 
         joint_limits_->checkVelocityLimits(velocities);
@@ -227,18 +226,18 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
 
 void readParamsFromParameterServer(ros::NodeHandle n)
 {
-	std::string param;
+    std::string param;
 
-	param = "devices";
-	XmlRpc::XmlRpcValue busParams;
+    param = "devices";
+    XmlRpc::XmlRpcValue busParams;
     if (n.hasParam(param))
-	{
-    	n.getParam(param, busParams);
-	}
+    {
+        n.getParam(param, busParams);
+    }
     else
     {
-    	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-    	n.shutdown();
+        ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+        n.shutdown();
     }
 
     // TODO: check for content of busParams
@@ -247,20 +246,22 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         BusParams busParam;
         auto name = static_cast<std::string>(busParams[i]["name"]);
         busParam.baudrate = static_cast<std::string>(busParams[i]["baudrate"]);
+        canopen::baudRate = busParam.baudrate;
         busParam.syncInterval = static_cast<int>(busParams[i]["sync_interval"]);
         buses[name] = busParam;
     }
 
+
     param = "chains";
     XmlRpc::XmlRpcValue chainNames_XMLRPC;
     if (n.hasParam(param))
-	{
-    	n.getParam(param, chainNames_XMLRPC);
-	}
+    {
+        n.getParam(param, chainNames_XMLRPC);
+    }
     else
     {
-    	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-    	n.shutdown();
+        ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+        n.shutdown();
     }
 
     // TODO: check for content of chainNames_XMLRPC
@@ -271,13 +272,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         param = "/" + chainName + "/joint_names";
         XmlRpc::XmlRpcValue jointNames_XMLRPC;
         if (n.hasParam(param))
-    	{
-        	n.getParam(param, jointNames_XMLRPC);
-    	}
+        {
+            n.getParam(param, jointNames_XMLRPC);
+        }
         else
         {
-        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-        	n.shutdown();
+            ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+            n.shutdown();
         }
 
         // TODO: check for content of jointNames_XMLRPC
@@ -287,13 +288,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         param = "/" + chainName + "/module_ids";
         XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
         if (n.hasParam(param))
-    	{
-        	n.getParam(param, moduleIDs_XMLRPC);
-    	}
+        {
+            n.getParam(param, moduleIDs_XMLRPC);
+        }
         else
         {
-        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-        	n.shutdown();
+            ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+            n.shutdown();
         }
 
         // TODO: check for content of muduleIDs
@@ -304,13 +305,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         param = "/" + chainName + "/devices";
         XmlRpc::XmlRpcValue devices_XMLRPC;
         if (n.hasParam(param))
-    	{
-        	n.getParam(param, devices_XMLRPC);
-    	}
+        {
+            n.getParam(param, devices_XMLRPC);
+        }
         else
         {
-        	ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-        	n.shutdown();
+            ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+            n.shutdown();
         }
 
         // TODO: check for content of devices_XMLRPC
@@ -336,79 +337,79 @@ void setJointConstraints(ros::NodeHandle n)
      */
 
     /// Get robot_description from ROS parameter server
-      joint_limits_ = new JointLimits();
-      int DOF = jointNames.size();
+    joint_limits_ = new JointLimits();
+    int DOF = jointNames.size();
 
-      std::string param_name = "/robot_description";
-      std::string full_param_name;
-      std::string xml_string;
+    std::string param_name = "/robot_description";
+    std::string full_param_name;
+    std::string xml_string;
 
-      n.searchParam(param_name, full_param_name);
-      if (n.hasParam(full_param_name))
-      {
-          n.getParam(full_param_name.c_str(), xml_string);
-      }
+    n.searchParam(param_name, full_param_name);
+    if (n.hasParam(full_param_name))
+    {
+        n.getParam(full_param_name.c_str(), xml_string);
+    }
 
-      else
-      {
-          ROS_ERROR("Parameter %s not set, shutting down node...", full_param_name.c_str());
-          n.shutdown();
-      }
+    else
+    {
+        ROS_ERROR("Parameter %s not set, shutting down node...", full_param_name.c_str());
+        n.shutdown();
+    }
 
-      if (xml_string.size() == 0)
-      {
-          ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
-          n.shutdown();
-      }
-      //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+    if (xml_string.size() == 0)
+    {
+        ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
+        n.shutdown();
+    }
+    //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
-      /// Get urdf model out of robot_description
-      urdf::Model model;
+    /// Get urdf model out of robot_description
+    urdf::Model model;
 
-      if (!model.initString(xml_string))
-      {
-          ROS_ERROR("Failed to parse urdf file");
-          n.shutdown();
-      }
-      ROS_INFO("Successfully parsed urdf file");
+    if (!model.initString(xml_string))
+    {
+        ROS_ERROR("Failed to parse urdf file");
+        n.shutdown();
+    }
+    ROS_INFO("Successfully parsed urdf file");
 
-      /// Get max velocities out of urdf model
-      std::vector<double> MaxVelocities(DOF);
-      for (int i = 0; i < DOF; i++)
-      {
-          MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
-      }
+    /// Get max velocities out of urdf model
+    std::vector<double> MaxVelocities(DOF);
+    for (int i = 0; i < DOF; i++)
+    {
+        MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
+    }
 
-      /// Get lower limits out of urdf model
-      std::vector<double> LowerLimits(DOF);
-      for (int i = 0; i < DOF; i++)
-      {
-          LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
-      }
+    /// Get lower limits out of urdf model
+    std::vector<double> LowerLimits(DOF);
+    for (int i = 0; i < DOF; i++)
+    {
+        LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
+    }
 
-      // Get upper limits out of urdf model
-      std::vector<double> UpperLimits(DOF);
-      for (int i = 0; i < DOF; i++)
-      {
-          UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
-      }
+    // Get upper limits out of urdf model
+    std::vector<double> UpperLimits(DOF);
+    for (int i = 0; i < DOF; i++)
+    {
+        UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
+    }
 
-      /// Get offsets out of urdf model
-      std::vector<double> Offsets(DOF);
-      for (int i = 0; i < DOF; i++)
-      {
-          Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
-      }
+    /// Get offsets out of urdf model
+    std::vector<double> Offsets(DOF);
+    for (int i = 0; i < DOF; i++)
+    {
+        Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
+    }
 
-      /// Set parameters
+    /// Set parameters
 
-      joint_limits_->setDOF(DOF);
-      joint_limits_->setUpperLimits(UpperLimits);
-      joint_limits_->setLowerLimits(LowerLimits);
-      joint_limits_->setMaxVelocities(MaxVelocities);
-      joint_limits_->setOffsets(Offsets);
+    joint_limits_->setDOF(DOF);
+    joint_limits_->setUpperLimits(UpperLimits);
+    joint_limits_->setLowerLimits(LowerLimits);
+    joint_limits_->setMaxVelocities(MaxVelocities);
+    joint_limits_->setOffsets(Offsets);
 
-     /********************************************
+    /********************************************
      *
      *
      ********************************************/
@@ -431,25 +432,26 @@ int main(int argc, char **argv)
     deviceFile = buses.begin()->first;
     std::cout << "Opening device: " << deviceFile << std::endl;
     // ^ todo: this only works with a single CAN bus; add support for more buses!
-
-    if (!canopen::openConnection(deviceFile)) // TODO: do not access hardware here. there should be no hardware access before calling the init service
+    std::cout << "Baud Rate" << canopen::baudRate << std::endl;
+    if (!canopen::openConnection(deviceFile, canopen::baudRate )) // TODO: do not access hardware here. there should be no hardware access before calling the init service
     {
         ROS_ERROR("Cannot open CAN device, shutting down...");
         n.shutdown();
     }
     else
     {
-        std::cout << "CAN device openend." << std::endl;
+        std::cout << "CAN device opened" << std::endl;
     }
 
-    canopen::pre_init();
+    //canopen::pre_init();
 
     /********************************************/
 
     // add custom PDOs:
-    canopen::sendPos = canopen::defaultPDOOutgoing;
+    canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
     for (auto it : canopen::devices) {
-        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg m) { canopen::defaultPDO_incoming( it.first, m ); };
+        canopen::incomingPDOHandlers[ 0x180 + it.first ] = [it](const TPCANRdMsg mS) { canopen::defaultPDO_incoming_status( it.first, mS ); };
+        canopen::incomingPDOHandlers[ 0x480 + it.first ] = [it](const TPCANRdMsg mP) { canopen::defaultPDO_incoming_pos( it.first, mP ); };
         canopen::incomingEMCYHandlers[ 0x081 + it.first ] = [it](const TPCANRdMsg mE) { canopen::defaultEMCY_incoming( it.first, mE ); };
     }
 
@@ -488,7 +490,7 @@ int main(int argc, char **argv)
 
         currentOperationModePublishers[it.first] = n.advertise<std_msgs::String>("/" + it.first + "/current_operationmode", 1);
 
-        statePublishers[it.first] = n.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
+        statePublishers[it.first] = n.advertise<control_msgs::JointTrajectoryControllerState>("/" + it.first + "/state", 1);
     }
 
     double lr = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(canopen::syncInterval).count();
@@ -500,19 +502,19 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
 
-    // iterate over all chains, get current pos and vel and publish as topics:
-	int counter = 0;
+        // iterate over all chains, get current pos and vel and publish as topics:
+        int counter = 0;
         std::vector <double> positions;
         std::vector <double> desired_positions;
 
         for (auto device : canopen::devices)
         {
-		
+
             double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
             double des_pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
             positions.push_back(pos);
             desired_positions.push_back(des_pos);
-	    counter++;
+            counter++;
         }
 
         for (auto dg : (canopen::deviceGroups))
@@ -520,14 +522,14 @@ int main(int argc, char **argv)
             sensor_msgs::JointState js;
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
-	    
+
             js.position = positions;//dg.second.getActualPos();
             //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
             jointStatesPublisher.publish(js);
 
-            pr2_controllers_msgs::JointTrajectoryControllerState jtcs;
+            control_msgs::JointTrajectoryControllerState jtcs;
             jtcs.header.stamp = js.header.stamp;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
@@ -538,7 +540,7 @@ int main(int argc, char **argv)
             std_msgs::String opmode;
             opmode.data = "velocity";
             currentOperationModePublishers[dg.first].publish(opmode);
-	    counter++;
+            counter++;
         }
 
         // publishing diagnostic messages
@@ -553,91 +555,91 @@ int main(int argc, char **argv)
 
         diagnostics.status.resize(1);
 
-    for (auto dg : (canopen::devices))
-    {
-        std::string name = dg.second.getName();
-        //ROS_INFO("Name %s", name.c_str() );
-
-        keyval.key = "Node ID";
-        uint16_t node_id = dg.second.getCANid();
-        std::stringstream result;
-        result << node_id;
-        keyval.value = result.str().c_str();
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Hardware Version";
-        std::vector<char> manhw = dg.second.getManufacturerHWVersion();
-        keyval.value = std::string(manhw.begin(), manhw.end());
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Software Version";
-        std::vector<char> mansw = dg.second.getManufacturerSWVersion();
-        keyval.value = std::string(mansw.begin(), mansw.end());
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Device Name";
-        std::vector<char> dev_name = dg.second.getManufacturerDevName();
-        keyval.value = std::string(dev_name.begin(), dev_name.end());
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Vendor ID";
-        std::vector<uint16_t> vendor_id = dg.second.getVendorID();
-        std::stringstream result1;
-        for (auto it : vendor_id)
+        for (auto dg : (canopen::devices))
         {
-           result1 <<  std::hex << it;
+            std::string name = dg.second.getName();
+            //ROS_INFO("Name %s", name.c_str() );
+
+            keyval.key = "Node ID";
+            uint16_t node_id = dg.second.getCANid();
+            std::stringstream result;
+            result << node_id;
+            keyval.value = result.str().c_str();
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Hardware Version";
+            std::vector<char> manhw = dg.second.getManufacturerHWVersion();
+            keyval.value = std::string(manhw.begin(), manhw.end());
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Software Version";
+            std::vector<char> mansw = dg.second.getManufacturerSWVersion();
+            keyval.value = std::string(mansw.begin(), mansw.end());
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Device Name";
+            std::vector<char> dev_name = dg.second.getManufacturerDevName();
+            keyval.value = std::string(dev_name.begin(), dev_name.end());
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Vendor ID";
+            std::vector<uint16_t> vendor_id = dg.second.getVendorID();
+            std::stringstream result1;
+            for (auto it : vendor_id)
+            {
+                result1 <<  std::hex << it;
+            }
+            keyval.value = result1.str().c_str();
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Revision Number";
+            uint16_t rev_number = dg.second.getRevNumber();
+            std::stringstream result2;
+            result2 << rev_number;
+            keyval.value = result2.str().c_str();
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Product Code";
+            std::vector<uint16_t> prod_code = dg.second.getProdCode();
+            std::stringstream result3;
+            std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
+            keyval.value = result3.str().c_str();
+            keyvalues.push_back(keyval);
+
+            bool error_ = dg.second.getFault();
+            bool initialized_ = dg.second.getInitialized();
+
+            //ROS_INFO("Fault: %d", error_);
+            //ROS_INFO("Referenced: %d", initialized_);
+
+            // set data to diagnostics
+            if(error_)
+            {
+                diagstatus.level = 2;
+                diagstatus.name = chainNames[0];
+                diagstatus.message = "Fault occured.";
+                diagstatus.values = keyvalues;
+                break;
+            }
+            else
+            {
+                if (initialized_)
+                {
+                    diagstatus.level = 0;
+                    diagstatus.name = chainNames[0];
+                    diagstatus.message = "canopen chain initialized and running";
+                    diagstatus.values = keyvalues;
+                }
+                else
+                {
+                    diagstatus.level = 1;
+                    diagstatus.name = chainNames[0];
+                    diagstatus.message = "canopen chain not initialized";
+                    diagstatus.values = keyvalues;
+                    break;
+                }
+            }
         }
-        keyval.value = result1.str().c_str();
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Revision Number";
-        uint16_t rev_number = dg.second.getRevNumber();
-        std::stringstream result2;
-        result2 << rev_number;
-        keyval.value = result2.str().c_str();
-        keyvalues.push_back(keyval);
-
-        keyval.key = "Product Code";
-        std::vector<uint16_t> prod_code = dg.second.getProdCode();
-        std::stringstream result3;
-        std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
-        keyval.value = result3.str().c_str();
-        keyvalues.push_back(keyval);
-
-        bool error_ = dg.second.getFault();
-        bool initialized_ = dg.second.getInitialized();
-
-        //ROS_INFO("Fault: %d", error_);
-        //ROS_INFO("Referenced: %d", initialized_);
-
-        // set data to diagnostics
-        if(error_)
-        {
-          diagstatus.level = 2;
-          diagstatus.name = chainNames[0];
-          diagstatus.message = "Fault occured.";
-          diagstatus.values = keyvalues;
-          break;
-        }
-        else
-        {
-          if (initialized_)
-          {
-            diagstatus.level = 0;
-            diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain initialized and running";
-            diagstatus.values = keyvalues;
-          }
-          else
-          {
-            diagstatus.level = 1;
-            diagstatus.name = chainNames[0];
-            diagstatus.message = "powerball chain not initialized";
-            diagstatus.values = keyvalues;
-            break;
-          }
-        }
-    }
         diagstatus_msg.push_back(diagstatus);
         // publish diagnostic message
         diagnostics.status = diagstatus_msg;

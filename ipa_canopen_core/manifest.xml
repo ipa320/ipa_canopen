@@ -16,7 +16,7 @@
   <depend package="libpcan"/>
 
   <export>
-    <cpp cflags="-I${prefix}/driver" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcanopen"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lipa_canopen_core"/>
   </export>
 
 </package>

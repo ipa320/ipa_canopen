@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="ipa_canopen_ros_simple" author="Thiago de Freitas" description="A simple version for the ros canopen node supporting only one chain on one can device." license="LGPL" rosdep="">
+  <node name="canopen_ros" loopRate="100.0" args="" paramSource="" namespace="torso_controller">
+    <publisher name="state" msg="control_msgs::JointTrajectoryControllerState"/>
+    <publisher name="joint_states" msg="sensor_msgs::JointState"/>
+    <publisher name="diagnostics" msg="diagnostic_msgs::DiagnosticArray"/>
+    <publisher name="current_operationmode" msg="std_msgs::String"/>
+    <subscriber name="command_vel" eventHandler="" msg="brics_actuator::JointVelocities"/>
+    <serviceServer name="init" msg="cob_srvs::Trigger"/>
+    <serviceServer name="recover" msg="cob_srvs::Trigger"/>
+    <parameter name="can_device" type="string"/>
+    <parameter name="can_baudrate" value="1000" type="string"/>
+    <parameter name="modul_ids" type="string"/>
+    <parameter name="joint_names" value="[torso_1_joint, torso_2_joint, torso_3_joint]" type="string"/>
+    <parameter name="robot_description" type="string"/>
+  </node>
+  <depend>brics_actuator</depend>
+  <depend>sensor_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>diagnostic_msgs</depend>
+  <depend>cob_srvs</depend>
+  <depend>urdf</depend>
+  <depend>ipa_canopen_core</depend>
+  <depend>ipa_canopen_ros</depend>
+</ros:Package>

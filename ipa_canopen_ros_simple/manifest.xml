@@ -1,0 +1,26 @@
+<package>
+  <description brief="ipa_canopen_ros_simple">A simple version for the ros canopen node supporting only one chain on one can device.</description>
+  <author>Thiago de Freitas</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url></url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="rospy"/>
+  <depend package="dynamic_reconfigure"/>
+  	<depend package="brics_actuator"/>
+  	<depend package="sensor_msgs"/>
+  	<depend package="control_msgs"/>
+  	<depend package="std_msgs"/>
+  	<depend package="diagnostic_msgs"/>
+  	<depend package="cob_srvs"/>
+  	<depend package="urdf"/>
+  	<depend package="ipa_canopen_core"/>
+  	<depend package="ipa_canopen_ros"/>
+  /* protected region additional manifest statements on begin */
+  /* protected region additional manifest statements end */
+  
+  
+</package>
+
+

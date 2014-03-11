@@ -1,0 +1,11 @@
+\subsubsection usage Usage
+\verbatim
+<node name="ipa_canopen_ros_simple" pkg="ipa_canopen_ros_simple" type="ipa_canopen_ros_simple">
+  <param name="can_device" type="str" value="" />
+  <param name="can_baudrate" type="str" value="1000" />
+  <param name="modul_ids" type="str" value="" />
+  <param name="joint_names" type="str" value="[torso_1_joint, torso_2_joint, torso_3_joint]" />
+  <param name="robot_description" type="str" value="" />
+</node>
+\endverbatim
+

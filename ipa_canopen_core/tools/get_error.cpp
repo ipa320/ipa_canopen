@@ -60,17 +60,18 @@
 #include <utility>
 #include <iostream>
 #include <iomanip>
-#include "canopen.h"
+#include "ipa_canopen_core/canopen.h"
 #include <sstream>
 
 int main(int argc, char *argv[])
 {
 
-    if (argc != 3) {
+    if (argc != 4) {
         std::cout << "Arguments:" << std::endl
         << "(1) device file" << std::endl
         << "(2) CAN deviceID" << std::endl
-        << "Example: ./get_error /dev/pcan32 12" << std::endl;
+           << "(3) Baud Rate" << std::endl
+        << "Example: ./get_error /dev/pcan32 12 500K" << std::endl;
         return -1;
     }
 
@@ -84,13 +85,16 @@ int main(int argc, char *argv[])
     canopen::syncMsg.LEN = 0x00;
 
     std::string deviceFile = std::string(argv[1]);
+    canopen::baudRate = std::string(argv[3]);
 
-    if (!canopen::openConnection(deviceFile)){
+    if (!canopen::openConnection(deviceFile, canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
+
         exit(EXIT_FAILURE);
     }
     else{
         std::cout << "Connection to CAN bus established" << std::endl;
+        std::cout << "Baud Rate:" << canopen::baudRate << std::endl;
     }
 
     uint16_t CANid = std::stoi(std::string(argv[2]));
@@ -103,26 +107,26 @@ int main(int argc, char *argv[])
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
-    TPCANRdMsg m;
+    std::shared_ptr<TPCANRdMsg> m;
 
 
-    canopen::readErrorsRegister(CANid, &m);
+    canopen::readErrorsRegister(CANid, m);
 
     /***************************************************************/
     //		Manufacturer specific errors register
     /***************************************************************/
-    canopen::readManErrReg(CANid, &m);
+    canopen::readManErrReg(CANid, m);
 
     /**************************
      * Hardware and Software Information
     *************************/
 
-    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, &m);
-    uint16_t rev_number = canopen::obtainRevNr(CANid, &m);
-    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, &m);
-    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,&m);
-    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, &m);
-    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, &m);
+    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, m);
+    uint16_t rev_number = canopen::obtainRevNr(CANid, m);
+    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, m);
+    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,m);
+    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, m);
+    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, m);
 
         /****
          *Printing the data

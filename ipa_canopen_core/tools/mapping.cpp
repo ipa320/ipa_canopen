@@ -3,7 +3,7 @@
  * \file
  *
  * \note
- *   Copyright (c) 2014 \n
+ *   Copyright (c) 2013 \n
  *   Fraunhofer Institute for Manufacturing Engineering
  *   and Automation (IPA) \n\n
  *
@@ -21,10 +21,10 @@
  * \author
  *   Supervised by: Thiago de Freitas Oliveira Araujo, email:tdf@ipa.fhg.de
  *
- * \date Date of creation: February 2014
+ * \date Date of creation: September 2013
  *
  * \brief
- *   Tests for a canopen device
+ *   This executable maps the Elmo 6063 e 6069h
  *
  *****************************************************************
  *
@@ -63,13 +63,18 @@
 #include "ipa_canopen_core/canopen.h"
 #include <sstream>
 
-#include <gtest/gtest.h>
-
-
-TEST(IPAcanopen, communicationTest)
+int main(int argc, char *argv[])
 {
 
-    bool call_success = true;
+    if (argc != 4) {
+        std::cout << "Arguments:" << std::endl
+                  << "(1) device file" << std::endl
+                  << "(2) CAN deviceID" << std::endl
+                  << "(3) Baud Rate" << std::endl
+                  << "Example: ./elmo_mapping /dev/pcan32 12 500K" << std::endl;
+        return -1;
+    }
+
 
 
     canopen::NMTmsg.ID = 0;
@@ -81,98 +86,73 @@ TEST(IPAcanopen, communicationTest)
 
     canopen::syncMsg.LEN = 0x00;
 
-    std::string deviceFile = "/dev/pcan32";//std::string(argv[1]);
-    canopen::baudRate = "500K";
+    std::string deviceFile = std::string(argv[1]);
+    canopen::baudRate = std::string(argv[3]);
 
-    if (!canopen::openConnection(deviceFile, canopen::baudRate)){
+    if (!canopen::openConnection(deviceFile,canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
-        call_success = false;
-        //exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
     else{
         std::cout << "Connection to CAN bus established" << std::endl;
     }
-    
-    EXPECT_TRUE(call_success);
 
-    uint16_t CANid = 1;//std::stoi(std::string(argv[2]));
+    uint16_t CANid = std::stoi(std::string(argv[2]));
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    canopen::sendNMT(CANid, canopen::NMT_RESET_NODE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));;
     canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+    canopen::setObjects();
 
-    std::shared_ptr<TPCANRdMsg> m;
+    TPCANMsg mes;
 
+    std::cout << "Initialized the PDO mapping" << std::endl;
 
-    canopen::readErrorsRegister(CANid, m);
-
-    /***************************************************************/
-    //		Manufacturer specific errors register
-    /***************************************************************/
-    canopen::readManErrReg(CANid, m);
-
-    /**************************
-     * Hardware and Software Information
-    *************************/
-
-    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, m);
-    uint16_t rev_number = canopen::obtainRevNr(CANid, m);
-    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, m);
-    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,m);
-    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, m);
-    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, m);
-
-    /****
-     *Printing the data
-     */
-
-    std::cout << "vendor_id=0x";
-
-    for (auto it : vendor_id)
+    for(int pdo_object=1;pdo_object<=4;pdo_object++)
     {
-       std::cout <<  std::hex << it;
+        canopen::disableTPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::clearTPDOMapping(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::disableRPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::clearRPDOMapping(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    std::cout << std::endl;
+    if(canopen::use_limit_switch)
+        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
+    else
+        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x0);
 
-    std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
-    std::cout << "device_name:";
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    for (auto it : manufacturer_device_name)
+    canopen::makeTPDOMapping(4, "606400", 0x20, "606C00", 0x20);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    canopen::makeRPDOMapping(1, "604000", 0x10, "60C101", 0x20);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    canopen::makeRPDOMapping(2, "60C101", 0x20, "604000", 0x10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    for(int pdo_object=1;pdo_object<=4;pdo_object++)
     {
-       std::cout << it;
+        canopen::enableTPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        canopen::enableRPDO(pdo_object);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    std::cout << std::endl;
-
-    std::cout << "hardware_version:";
-
-    for (auto it : manufacturer_hw_version)
-    {
-       std::cout << it;
-    }
-
-    std::cout << std::endl;
-
-    std::cout << "software_version:";
-
-    for (auto it : manufacturer_sw_version)
-    {
-       std::cout << it;
-    }
-
-    std::cout << std::endl;
-}
-        
-int main(int argc, char *argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-  
-    return RUN_ALL_TESTS();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 }
-
