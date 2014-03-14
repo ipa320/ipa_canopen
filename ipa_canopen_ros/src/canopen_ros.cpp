@@ -218,7 +218,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         }
 
         joint_limits_->checkVelocityLimits(velocities);
-        joint_limits_->checkPositionLimits(velocities, positions);
+        joint_limits_->checkPositionLimits(positions, velocities);
 
         canopen::deviceGroups[chainName].setVel(velocities);
     }
