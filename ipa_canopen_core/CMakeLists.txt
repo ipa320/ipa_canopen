@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.3)
+project(ipa_canopen_core)
+
+find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
@@ -15,26 +18,51 @@ else(CMAKE_COMPILER_IS_GNUCXX)
    add_definitions("-std=c++0x")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+catkin_package(
+    DEPENDS roscpp libpcan
+    CATKIN_DEPENDS roscpp libpcan
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_init()
-
-include_directories ("${PROJECT_SOURCE_DIR}/driver")
+###########
+## Build ##
+###########
+include_directories (include ${catkin_INCLUDE_DIRS})
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+set(LIBRARY_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/)
+set(INCLUDE_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/)
+  
 
-add_subdirectory (driver)
-add_subdirectory (tools)
 
-list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+###########
+## src ##
+###########
+add_library(${PROJECT_NAME}
+    src/canopen.cpp
+  )
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+  
+add_executable(homing tools/homing.cpp)
+target_link_libraries(homing pthread ipa_canopen_core ${catkin_LIBRARIES})
+
+add_executable(move_device tools/move_device.cpp)
+target_link_libraries(move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
+
+add_executable(get_error tools/get_error.cpp)
+target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
+
+#list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+)
+
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
