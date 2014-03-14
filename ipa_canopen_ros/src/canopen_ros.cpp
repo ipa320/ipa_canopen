@@ -17,9 +17,9 @@
  *   ROS package name: ipa_canopen_ros
  *
  * \author
- *   Author: Eduard Herkel, Thiago de Freitas, Tobias Sing
+ *   Author: Thiago de Freitas, Tobias Sing, Eduard Herkel
  * \author
- *   Supervised by: Eduard Herkel, Thiago de Freitas, Tobias Sing, email:tdf@ipa.fhg.de
+ *   Supervised by: Thiago de Freitas email:tdf@ipa.fhg.de
  *
  * \date Date of creation: December 2012
  *
@@ -218,7 +218,7 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         }
 
         joint_limits_->checkVelocityLimits(velocities);
-        joint_limits_->checkPositionLimits(velocities, positions);
+        joint_limits_->checkPositionLimits(positions, velocities);
 
         canopen::deviceGroups[chainName].setVel(velocities);
     }
