@@ -1,0 +1,37 @@
+<package>
+  <name>ipa_canopen_ros</name>
+  <version>0.2.0</version>
+  <description>This package provides functionalities to communicate a ROS Node to CANopen devices</description>
+  
+  <license>LGPL</license>
+
+  <author>Tobias Sing</author>
+  <author>Thiago de Freitas</author>
+  <maintainer email="tdf@ipa.fhg.de">Thiago de Freitas</maintainer>
+  <url type="website">http://ros.org/wiki/ipa_canopen_ros</url>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>brics_actuator</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>libpcan</build_depend>
+  <build_depend>cob_srvs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>ipa_canopen_core</build_depend>
+  <build_depend>yaml-cpp</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>cob_srvs</run_depend>
+  <run_depend>brics_actuator</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>control_msgs</run_depend>
+  <run_depend>ipa_canopen_core</run_depend>
+
+  <export>
+
+  </export>
+</package>

@@ -3,7 +3,7 @@
  * \file
  *
  * \note
- *   Copyright (c) 2013 \n
+ *   Copyright (c) 2014 \n
  *   Fraunhofer Institute for Manufacturing Engineering
  *   and Automation (IPA) \n\n
  *
@@ -21,10 +21,10 @@
  * \author
  *   Supervised by: Thiago de Freitas Oliveira Araujo, email:tdf@ipa.fhg.de
  *
- * \date Date of creation: July 2013
+ * \date Date of creation: February 2014
  *
  * \brief
- *   Get errors from the canopen device
+ *   Tests for a canopen device
  *
  *****************************************************************
  *
@@ -63,17 +63,14 @@
 #include "ipa_canopen_core/canopen.h"
 #include <sstream>
 
-int main(int argc, char *argv[])
+#include <gtest/gtest.h>
+
+
+TEST(IPAcanopen, communicationTest)
 {
 
-    if (argc != 4) {
-        std::cout << "Arguments:" << std::endl
-        << "(1) device file" << std::endl
-        << "(2) CAN deviceID" << std::endl
-           << "(3) Baud Rate" << std::endl
-        << "Example: ./get_error /dev/pcan32 12 500K" << std::endl;
-        return -1;
-    }
+    bool call_success = true;
+
 
     canopen::NMTmsg.ID = 0;
     canopen::NMTmsg.MSGTYPE = 0x00;
@@ -84,20 +81,21 @@ int main(int argc, char *argv[])
 
     canopen::syncMsg.LEN = 0x00;
 
-    std::string deviceFile = std::string(argv[1]);
-    canopen::baudRate = std::string(argv[3]);
+    std::string deviceFile = "/dev/pcan32";//std::string(argv[1]);
+    canopen::baudRate = "500K";
 
     if (!canopen::openConnection(deviceFile, canopen::baudRate)){
         std::cout << "Cannot open CAN device; aborting." << std::endl;
-
-        exit(EXIT_FAILURE);
+        call_success = false;
+        //exit(EXIT_FAILURE);
     }
     else{
         std::cout << "Connection to CAN bus established" << std::endl;
-        std::cout << "Baud Rate:" << canopen::baudRate << std::endl;
     }
+    
+    EXPECT_TRUE(call_success);
 
-    uint16_t CANid = std::stoi(std::string(argv[2]));
+    uint16_t CANid = 1;//std::stoi(std::string(argv[2]));
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -128,46 +126,53 @@ int main(int argc, char *argv[])
     std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, m);
     std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, m);
 
-        /****
-         *Printing the data
-         */
+    /****
+     *Printing the data
+     */
 
-        std::cout << "vendor_id=0x";
+    std::cout << "vendor_id=0x";
 
-        for (auto it : vendor_id)
-        {
-           std::cout <<  std::hex << it;
-        }
+    for (auto it : vendor_id)
+    {
+       std::cout <<  std::hex << it;
+    }
 
-        std::cout << std::endl;
+    std::cout << std::endl;
 
-        std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
-        std::cout << "device_name:";
+    std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
+    std::cout << "device_name:";
 
-        for (auto it : manufacturer_device_name)
-        {
-           std::cout << it;
-        }
+    for (auto it : manufacturer_device_name)
+    {
+       std::cout << it;
+    }
 
-        std::cout << std::endl;
+    std::cout << std::endl;
 
-        std::cout << "hardware_version:";
+    std::cout << "hardware_version:";
 
-        for (auto it : manufacturer_hw_version)
-        {
-           std::cout << it;
-        }
+    for (auto it : manufacturer_hw_version)
+    {
+       std::cout << it;
+    }
 
-        std::cout << std::endl;
+    std::cout << std::endl;
 
-        std::cout << "software_version:";
+    std::cout << "software_version:";
 
-        for (auto it : manufacturer_sw_version)
-        {
-           std::cout << it;
-        }
+    for (auto it : manufacturer_sw_version)
+    {
+       std::cout << it;
+    }
 
-        std::cout << std::endl;
-
+    std::cout << std::endl;
+}
+        
+int main(int argc, char *argv[])
+{
+    testing::InitGoogleTest(&argc, argv);
+  
+    return RUN_ALL_TESTS();
 
 }
+
