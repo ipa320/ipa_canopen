@@ -58,27 +58,27 @@
  ****************************************************************/
 
 #include <ros/ros.h>
-#include "JointLimits.h"
+#include "ipa_canopen_ros/JointLimits.h"
 
 
 bool JointLimits::checkVelocityLimits(std::vector<double> velocities)
 {
 
     for (int i = 0; i < JointLimits::getDOF(); i++)
-      {
-          if(abs(velocities[i]) > JointLimits::getMaxVelocities()[i])
+    {
+        if(abs(velocities[i]) > JointLimits::getMaxVelocities()[i])
         {
-              if(velocities[i] >= 0)
-            // set velocities command to max value
+            if(velocities[i] >= 0)
+                // set velocities command to max value
                 velocities[i] = JointLimits::getMaxVelocities()[i];
-              else
+            else
                 velocities[i] = -JointLimits::getMaxVelocities()[i];
 
             ROS_INFO("Velocity %f exceeds limit %f for axis %i. moving with max velocity %f instead", velocities[i], JointLimits::getMaxVelocities()[i], i, JointLimits::getMaxVelocities()[i]);
             return true;
         }
 
-      }
+    }
     return false;
 }
 
@@ -87,8 +87,8 @@ bool JointLimits::checkPositionLimits(std::vector<double> target_pos,std::vector
 {
 
     for (int i = 0; i < JointLimits::getDOF(); i++)
-      {
-    if ((target_pos[i] < JointLimits::getLowerLimits()[i]) && (velocities[i] < 0))
+    {
+        if ((target_pos[i] < JointLimits::getLowerLimits()[i]) && (velocities[i] < 0))
         {
             ROS_INFO("Skipping command: %f Target position exceeds lower limit (%f).", target_pos[i], JointLimits::getLowerLimits()[i]);
             // target position is set to actual position and velocity to Null. So only movement in the non limit direction is possible.
@@ -106,5 +106,5 @@ bool JointLimits::checkPositionLimits(std::vector<double> target_pos,std::vector
         }
     }
 
-        return false;
+    return false;
 }
