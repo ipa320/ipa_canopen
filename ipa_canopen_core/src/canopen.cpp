@@ -264,12 +264,12 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         }
         else
         {
-            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON_DISABLED);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_READY_TO_SWITCH_ON);
