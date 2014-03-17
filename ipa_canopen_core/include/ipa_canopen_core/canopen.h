@@ -908,6 +908,7 @@ namespace canopen{
     const uint16_t CONTROLWORD_START_HOMING = 16;
     const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
     const uint16_t CONTROLWORD_DISABLE_INTERPOLATED = 7;
+    const uint16_t CONTROLWORD_DISABLE_OPERATION = 7;
     const uint16_t CONTROL_WORD_DISABLE_VOLTAGE = 0x7D;
     const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00; //0x00;
     const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
