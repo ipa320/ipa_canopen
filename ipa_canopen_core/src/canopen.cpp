@@ -161,16 +161,15 @@ void pre_init()
     }
 }
 
-bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
+bool init(std::string deviceFile, const uint8_t mode_of_operation)
 {
-
     if(atFirstInit)
     {
         CAN_Close(h);
-        
+
         bool connection_success;
         connection_success = canopen::openConnection(deviceFile, canopen::baudRate);
-        
+
         if (!connection_success)
         {
             std::cout << "Cannot open CAN device; aborting." << std::endl;
@@ -179,15 +178,15 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         else
         {
                 canopen::initListenerThread(canopen::defaultListener);
-                
+
                 std::cout << "Resetting devices " << std::endl;
                 canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
-                
+
                 for(auto device : devices)
                 {
                     bool nmt_init = devices[device.second.getCANid()].getNMTInit();
                     std::cout << "Waiting for Node: " << (uint16_t)device.second.getCANid() << " to become available" << std::endl;
-                    
+
                     while(!nmt_init)
                     {
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -195,7 +194,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
                     }
                     std::cout << "Node: " << (uint16_t)device.second.getCANid() << " is now available" << std::endl;
                 }
-                
+
                 canopen::sendNMT(0x00, canopen::NMT_START_REMOTE_NODE);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -261,17 +260,10 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, mode_of_operation);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
@@ -315,7 +307,22 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         atFirstInit = false;
 
     return true;
+}
 
+bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
+{
+    bool initialized = init(deviceFile, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
+
+    for (auto device : devices)
+    {
+        sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        sendSDO((uint16_t)device.second.getCANid(), canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return initialized;
 }
 
 
