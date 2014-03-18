@@ -137,6 +137,7 @@ namespace canopen{
             double desiredVel_;		// unit = rad/sec
             std::chrono::milliseconds timeStamp_msec_;
             std::chrono::microseconds timeStamp_usec_;
+            int8_t operation_mode_;
 
 
             bool hardware_limit_positive_;
@@ -369,6 +370,10 @@ namespace canopen{
                 return timeStamp_usec_;
             }
 
+            int8_t getOperationMode(){
+                return operation_mode_;
+            }
+
             void setActualPos(double pos){
                 actualPos_ = pos;
             }
@@ -529,6 +534,10 @@ namespace canopen{
             void setTimeStamp_usec(std::chrono::microseconds timeStamp){
                 timeStamp_usec_ = timeStamp;
             }
+
+            void setOperationMode(int8_t operation_mode){
+                operation_mode_ = operation_mode;
+            }
     };
 
     extern std::map<uint8_t, Device> devices;
@@ -636,6 +645,7 @@ namespace canopen{
     }
 
     void statusword_incoming(uint8_t CANid, BYTE data[8]);
+    void mode_of_operation_incoming(uint8_t CANid, BYTE data[8]);
     void errorword_incoming(uint8_t CANid, BYTE data[1]);
 
     extern std::map<std::string, DeviceGroup> deviceGroups;	// DeviceGroup name -> DeviceGroup object
@@ -650,6 +660,7 @@ namespace canopen{
 
     void setNMTState(uint16_t CANid, std::string targetState);
     void setMotorState(uint16_t CANid, std::string targetState);
+    bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout = 3.0);
 
     /***************************************************************/
     //	define get errors functions
@@ -693,7 +704,6 @@ namespace canopen{
 
     extern bool use_limit_switch;
 
-    extern uint8_t operation_mode;
     extern std::string operation_mode_param;
 
     bool openConnection(std::string devName, std::string baudrate);
@@ -914,12 +924,12 @@ namespace canopen{
     const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
     const uint16_t CONTROLWORD_HALT = 0x100;
 
-    const uint8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
-    const uint8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
-    const uint8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
-    const uint8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
-    const uint8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
-    const uint8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
+    const int8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
+    const int8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
+    const int8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
+    const int8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
+    const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
+    const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
 
     const int8_t IP_TIME_INDEX_MILLISECONDS = 0xFD;
     const int8_t IP_TIME_INDEX_HUNDREDMICROSECONDS = 0xFC;
