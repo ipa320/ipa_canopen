@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ipa_canopen_core)
 
-find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
+find_package(catkin REQUIRED COMPONENTS roscpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
@@ -19,8 +19,8 @@ else(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 catkin_package(
-    DEPENDS roscpp libpcan
-    CATKIN_DEPENDS roscpp libpcan
+    DEPENDS roscpp 
+    CATKIN_DEPENDS roscpp 
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
 )
@@ -48,13 +48,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
   
 add_executable(homing tools/homing.cpp)
-target_link_libraries(homing pthread ipa_canopen_core ${catkin_LIBRARIES})
+target_link_libraries(homing pthread ipa_canopen_core -lpcan ${catkin_LIBRARIES})
 
 add_executable(move_device tools/move_device.cpp)
-target_link_libraries(move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
+target_link_libraries(move_device pthread ipa_canopen_core -lpcan ${catkin_LIBRARIES})
 
 add_executable(get_error tools/get_error.cpp)
-target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
+target_link_libraries(get_error pthread ipa_canopen_core -lpcan ${catkin_LIBRARIES})
 
 #list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
 
