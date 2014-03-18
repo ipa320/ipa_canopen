@@ -161,7 +161,7 @@ void pre_init()
     }
 }
 
-bool init(std::string deviceFile, const uint8_t mode_of_operation)
+bool init(std::string deviceFile, const int8_t mode_of_operation)
 {
     if(atFirstInit)
     {

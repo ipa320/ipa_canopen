@@ -708,7 +708,7 @@ namespace canopen{
 
     bool openConnection(std::string devName, std::string baudrate);
     bool init(std::string deviceFile, std::chrono::milliseconds syncInterval);
-    bool init(std::string deviceFile, const uint8_t mode_of_operation);
+    bool init(std::string deviceFile, const int8_t mode_of_operation);
     void pre_init();
     bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
