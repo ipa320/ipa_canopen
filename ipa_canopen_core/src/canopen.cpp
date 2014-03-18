@@ -73,7 +73,8 @@ std::string baudRate;
 std::map<uint8_t, Device> devices;
 std::map<std::string, DeviceGroup> deviceGroups;
 HANDLE h;
-std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers { { STATUSWORD, statusword_incoming } };
+std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers { { STATUSWORD, statusword_incoming },
+                                                                                            { MODES_OF_OPERATION_DISPLAY, mode_of_operation_incoming } };
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingErrorHandlers { { ERRORWORD, errorword_incoming } };
 std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
 std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
@@ -85,7 +86,6 @@ bool halt_negative;
 
 bool use_limit_switch=false;
 
-uint8_t operation_mode;
 std::string operation_mode_param;
 
 std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
@@ -257,14 +257,9 @@ bool init(std::string deviceFile, const uint8_t mode_of_operation)
 
     for (auto device : devices)
     {
-        canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_SWITCHED_ON);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        canopen::sendSDO(device.second.getCANid(), canopen::MODES_OF_OPERATION, mode_of_operation);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        canopen::setOperationMode(device.second.getCANid(), mode_of_operation);
 
         canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -471,6 +466,40 @@ void halt(std::string deviceFile, std::chrono::milliseconds syncInterval)
 void setNMTState(uint16_t CANid, std::string targetState)
 {
 
+}
+
+bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout)
+{
+    start = std::chrono::high_resolution_clock::now();
+
+    // check if motor is in a legitimate state to change operation mode
+    if (    devices[CANid].getMotorState() != MS_READY_TO_SWITCH_ON &&
+            devices[CANid].getMotorState() != MS_SWITCHED_ON_DISABLED &&
+            devices[CANid].getMotorState() != MS_SWITCHED_ON)
+    {
+        setMotorState(CANid, canopen::MS_SWITCHED_ON);
+    }
+
+    // change operation mode until correct mode is returned
+    while (devices[CANid].getOperationMode() != targetMode)
+    {
+        canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, targetMode);
+        canopen::uploadSDO(CANid, canopen::MODES_OF_OPERATION_DISPLAY);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::cout << "setting new operation mode" << std::endl;
+
+        // timeout check
+        end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end-start;
+
+        if(elapsed_seconds.count() > timeout)
+        {
+            std::cout << "setting operation mode failed" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void setMotorState(uint16_t CANid, std::string targetState)
@@ -1494,6 +1523,28 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
     devices[CANid].setSwitchON(switched_on);
 
     //std::cout << "Motor State of Device with CANid " << (uint16_t)CANid << " is: " << devices[CANid].getMotorState() << std::endl;
+}
+
+void mode_of_operation_incoming(uint8_t CANid, BYTE data[8])
+{
+    int8_t operation_mode = data[4];
+
+    switch (operation_mode)
+    {
+        case -2: std::cout << "Mode: Auto Setup" << std::endl; break;
+        case -1: std::cout << "Mode: Direction mode" << std::endl; break;
+        case 0: std::cout << "Mode: No mode selected" << std::endl; break;
+        case 1: std::cout << "Mode: Profile Position Mode" << std::endl; break;
+        case 2: std::cout << "Mode: Velocity Mode" << std::endl; break;
+        case 3: std::cout << "Mode: Profile Velocity Mode" << std::endl; break;
+        case 4: std::cout << "Mode: Profile Torque Mode" << std::endl; break;
+        case 6: std::cout << "Mode: Homing mode" << std::endl; break;
+        case 8: std::cout << "Mode: CSP" << std::endl; break;
+        case 9: std::cout << "Mode: CSV" << std::endl; break;
+        case 10: std::cout << "Mode: CST" << std::endl; break;
+        default: std::cout << "Mode: unknown" << std::endl; break;
+    }
+    devices[CANid].setOperationMode(operation_mode);
 }
 
 void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message)
