@@ -206,8 +206,6 @@ bool init(std::string deviceFile, const int8_t mode_of_operation)
 
         canopen::setObjects();
 
-        TPCANMsg mes;
-
         std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)device.second.getCANid() << std::endl;
 
         for(int pdo_object=1; pdo_object<=4; pdo_object++)
@@ -477,16 +475,16 @@ bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout)
             devices[CANid].getMotorState() != MS_SWITCHED_ON_DISABLED &&
             devices[CANid].getMotorState() != MS_SWITCHED_ON)
     {
+        std::cout << "found motor in state " << devices[CANid].getMotorState() << ", need to adjust state to SWITCHED_ON" << std::endl;
         setMotorState(CANid, canopen::MS_SWITCHED_ON);
     }
 
     // change operation mode until correct mode is returned
     while (devices[CANid].getOperationMode() != targetMode)
     {
-        canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, targetMode);
+        canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, (uint8_t)targetMode);
         canopen::uploadSDO(CANid, canopen::MODES_OF_OPERATION_DISPLAY);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        std::cout << "setting new operation mode" << std::endl;
 
         // timeout check
         end = std::chrono::high_resolution_clock::now();
@@ -1560,7 +1558,7 @@ void statusword_incoming(uint8_t CANid, BYTE data[8])
 void mode_of_operation_incoming(uint8_t CANid, BYTE data[8])
 {
     int8_t operation_mode = data[4];
-
+    /*
     switch (operation_mode)
     {
         case -2: std::cout << "Mode: Auto Setup" << std::endl; break;
@@ -1576,6 +1574,7 @@ void mode_of_operation_incoming(uint8_t CANid, BYTE data[8])
         case 10: std::cout << "Mode: CST" << std::endl; break;
         default: std::cout << "Mode: unknown" << std::endl; break;
     }
+    */
     devices[CANid].setOperationMode(operation_mode);
 }
 
