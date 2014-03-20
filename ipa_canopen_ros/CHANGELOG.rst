@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.1 (2014-03-20)
+------------------
 * This commit syncs the groovy_dev branch with the hydro_dev branch
 * Changed CMakeLists to just one
 * Modifications from cob3

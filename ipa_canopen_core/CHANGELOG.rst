@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.1 (2014-03-20)
+------------------
 * This commit syncs the groovy_dev branch with the hydro_dev branch
 * fix CMakeLists.txt
 * Modifying Cmake
