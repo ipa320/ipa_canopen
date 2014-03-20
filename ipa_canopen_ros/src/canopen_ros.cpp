@@ -547,8 +547,8 @@ int main(int argc, char **argv)
         diagnostic_msgs::DiagnosticArray diagnostics;
         diagnostic_msgs::DiagnosticStatus diagstatus;
         std::vector<diagnostic_msgs::DiagnosticStatus> diagstatus_msg;
-        diagnostic_msgs::KeyValue keyval;
 
+        diagnostic_msgs::KeyValue keyval;
         std::vector<diagnostic_msgs::KeyValue> keyvalues;
 
 
@@ -604,6 +604,11 @@ int main(int argc, char **argv)
             std::stringstream result3;
             std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
             keyval.value = result3.str().c_str();
+            keyvalues.push_back(keyval);
+
+            keyval.key = "Current mode of operation";
+            int8_t mode_display = dg.second.getCurrentModeofOperation();
+            keyval.value = canopen::modesDisplay[mode_display];
             keyvalues.push_back(keyval);
 
             bool error_ = dg.second.getFault();
