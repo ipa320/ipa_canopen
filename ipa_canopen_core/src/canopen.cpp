@@ -233,14 +233,14 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
             std::vector<int> tpdo1_sizes {0x10,0x20};
 
-            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes);
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
         }
         else
         {
             std::vector<std::string> tpdo1_registers {"604100", "606100"};
             std::vector<int> tpdo1_sizes {0x10,0x08};
 
-            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes);
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -248,7 +248,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         std::vector<std::string> tpdo4_registers {"606400", "606C00"};
         std::vector<int> tpdo4_sizes {0x20,0x20};
 
-        canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes);
+        canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         std::vector<std::string> rpdo1_registers {"604000"};
@@ -257,9 +257,9 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         std::vector<std::string> rpdo2_registers {"60C101"};
         std::vector<int> rpdo2_sizes {0x20};
 
-        canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes);
+        canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0xFF));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes);
+        canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0xFF));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         for(int pdo_object=0; pdo_object<=3; pdo_object++)
@@ -279,6 +279,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     for (auto device : devices)
     {
+        canopen::sendSync();
         if(device.second.getMotorState() == MS_OPERATION_ENABLED)
         {
             std::cout << "Node" << (uint16_t)device.second.getCANid() << "is already operational" << std::endl;
@@ -309,17 +310,13 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-            devices[device.second.getCANid()].setDesiredVel(0);
-            sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
             canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         }
 
-
+        devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        devices[device.second.getCANid()].setDesiredVel(0);
 
     }
 
@@ -1647,7 +1644,7 @@ void clearRPDOMapping(int object)
     }
 }
 
-void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes)
+void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes , u_int8_t sync_type)
 {
     for (auto device : devices)
     {
@@ -1678,7 +1675,7 @@ void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector
         /////////////////////////
         //////////////////// ASync
 
-        sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x02), u_int8_t(0xFF));
+        sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x02), u_int8_t(sync_type));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         //////////////////////
@@ -1790,7 +1787,7 @@ void clearTPDOMapping(int object)
     }
 }
 
-void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes)
+void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type)
 {
     for (auto device : devices)
     {
@@ -1825,7 +1822,7 @@ void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector
         /////////////////////////
         //////////////////// ASync
 
-        sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x02), u_int8_t(0xFF));
+        sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x02), u_int8_t(sync_type));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         //////////////////////

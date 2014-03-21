@@ -675,14 +675,14 @@ namespace canopen{
     /***************************************************************/
     //	define get errors functions
     /***************************************************************/
-    void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes);
+    void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableRPDO(int object);
     void clearRPDOMapping(int object);
     void enableRPDO(int object);
 
     void setObjects();
 
-    void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes);
+    void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableTPDO(int object);
     void clearTPDOMapping(int object);
     void enableTPDO(int object);

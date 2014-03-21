@@ -135,14 +135,14 @@ int main(int argc, char *argv[])
         std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
         std::vector<int> tpdo1_sizes {0x10,0x20};
 
-        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes);
+        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0x01));
     }
     else
     {
         std::vector<std::string> tpdo1_registers {"604100", "606100"};
         std::vector<int> tpdo1_sizes {0x10,0x08};
 
-        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes);
+        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0x01));
 
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> tpdo4_registers {"606400", "606C00"};
     std::vector<int> tpdo4_sizes {0x20,0x20};
 
-    canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes);
+    canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     std::vector<std::string> rpdo1_registers {"604000"};
@@ -159,9 +159,9 @@ int main(int argc, char *argv[])
     std::vector<std::string> rpdo2_registers {"60C101"};
     std::vector<int> rpdo2_sizes {0x20};
 
-    canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes);
+    canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes);
+    canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for(int pdo_object=0;pdo_object<=3;pdo_object++)
