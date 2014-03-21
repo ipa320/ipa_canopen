@@ -53,8 +53,8 @@ target_link_libraries(homing pthread ipa_canopen_core ${catkin_LIBRARIES})
 add_executable(move_device tools/move_device.cpp)
 target_link_libraries(move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
 
-add_executable(get_error tools/get_error.cpp)
-target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
+#add_executable(get_error tools/get_error.cpp)
+#target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
 
 #list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
 
