@@ -44,8 +44,8 @@ target_link_libraries(homing pthread pthread ipa_canopen_core pcan)
 add_executable(move_device tools/move_device.cpp)
 target_link_libraries(move_device pthread ipa_canopen_core pcan)
 
-add_executable(get_error tools/get_error.cpp)
-target_link_libraries(get_error pthread ipa_canopen_core pcan)
+#add_executable(get_error tools/get_error.cpp)
+#target_link_libraries(get_error pthread ipa_canopen_core pcan)
 
 add_executable(mapping tools/mapping.cpp)
 target_link_libraries(mapping pthread ipa_canopen_core pcan)
