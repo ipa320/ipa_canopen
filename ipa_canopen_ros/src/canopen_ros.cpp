@@ -606,11 +606,12 @@ int main(int argc, char **argv)
             keyval.value = result3.str().c_str();
             keyvalues.push_back(keyval);
 
+            /*
             keyval.key = "Current mode of operation";
             int8_t mode_display = dg.second.getCurrentModeofOperation();
             keyval.value = canopen::modesDisplay[mode_display];
             keyvalues.push_back(keyval);
-
+            */
             bool error_ = dg.second.getFault();
             bool initialized_ = dg.second.getInitialized();
 

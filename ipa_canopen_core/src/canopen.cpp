@@ -219,10 +219,10 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             canopen::clearTPDOMapping(pdo_object);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::disableRPDO(pdo_object+1);
+            canopen::disableRPDO(pdo_object);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::clearRPDOMapping(pdo_object+1);
+            canopen::clearRPDOMapping(pdo_object);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
@@ -309,12 +309,17 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+            devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+            devices[device.second.getCANid()].setDesiredVel(0);
+            sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+
         }
 
-        devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        devices[device.second.getCANid()].setDesiredVel(0);
+
 
     }
 
@@ -1680,7 +1685,7 @@ void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector
         ///
         ///
         /////////////////////// Mapping x objects
-        sendSDO(device.second.getCANid(), SDOkey(RPDO_map.index+object,0x00), ext_counter);
+        sendSDO(device.second.getCANid(), SDOkey(RPDO_map.index+object,0x00), u_int8_t(ext_counter));
 
     }
 }
@@ -1827,7 +1832,7 @@ void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector
         ///
         ///
         /////////////////////// Mapping x objects
-        sendSDO(device.second.getCANid(), SDOkey(TPDO_map.index+object,0x00), ext_counter);
+        sendSDO(device.second.getCANid(), SDOkey(TPDO_map.index+object,0x00), u_int8_t(ext_counter));
     }
 
 }
