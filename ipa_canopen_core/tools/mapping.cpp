@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Initialized the PDO mapping" << std::endl;
 
-    for(int pdo_object=1;pdo_object<=4;pdo_object++)
+    for(int pdo_object=0;pdo_object<=3;pdo_object++)
     {
         canopen::disableTPDO(pdo_object);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -130,21 +130,41 @@ int main(int argc, char *argv[])
     }
 
     if(canopen::use_limit_switch)
-        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
+    {
+
+        std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
+        std::vector<int> tpdo1_sizes {0x10,0x20};
+
+        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0x01));
+    }
     else
-        canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x0);
+    {
+        std::vector<std::string> tpdo1_registers {"604100", "606100"};
+        std::vector<int> tpdo1_sizes {0x10,0x08};
 
+        canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0x01));
+
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    canopen::makeTPDOMapping(4, "606400", 0x20, "606C00", 0x20);
+    std::vector<std::string> tpdo4_registers {"606400", "606C00"};
+    std::vector<int> tpdo4_sizes {0x20,0x20};
+
+    canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    canopen::makeRPDOMapping(1, "604000", 0x10, "60C101", 0x20);
+    std::vector<std::string> rpdo1_registers {"604000"};
+    std::vector<int> rpdo1_sizes {0x10};
+
+    std::vector<std::string> rpdo2_registers {"60C101"};
+    std::vector<int> rpdo2_sizes {0x20};
+
+    canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    canopen::makeRPDOMapping(2, "60C101", 0x20, "604000", 0x10);
+    canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0x01));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    for(int pdo_object=1;pdo_object<=4;pdo_object++)
+    for(int pdo_object=0;pdo_object<=3;pdo_object++)
     {
         canopen::enableTPDO(pdo_object);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

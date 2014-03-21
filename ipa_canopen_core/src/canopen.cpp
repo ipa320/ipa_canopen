@@ -211,7 +211,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
         std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)device.second.getCANid() << std::endl;
 
-        for(int pdo_object=1; pdo_object<=4; pdo_object++)
+        for(int pdo_object=0; pdo_object<=3; pdo_object++)
         {
             canopen::disableTPDO(pdo_object);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -226,22 +226,43 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
+
         if(canopen::use_limit_switch)
-            canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x20);
+        {
+
+            std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
+            std::vector<int> tpdo1_sizes {0x10,0x20};
+
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
+        }
         else
-            canopen::makeTPDOMapping(1,"604100", 0x10, "60FD00", 0x0);
+        {
+            std::vector<std::string> tpdo1_registers {"604100", "606100"};
+            std::vector<int> tpdo1_sizes {0x10,0x08};
 
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
+
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        canopen::makeTPDOMapping(4, "606400", 0x20, "606C00", 0x20);
+        std::vector<std::string> tpdo4_registers {"606400", "606C00"};
+        std::vector<int> tpdo4_sizes {0x20,0x20};
+
+        canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        canopen::makeRPDOMapping(1, "604000", 0x10, "60C101", 0x20);
+        std::vector<std::string> rpdo1_registers {"604000"};
+        std::vector<int> rpdo1_sizes {0x10};
+
+        std::vector<std::string> rpdo2_registers {"60C101"};
+        std::vector<int> rpdo2_sizes {0x20};
+
+        canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0xFF));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        canopen::makeRPDOMapping(2, "60C101", 0x20, "604000", 0x10);
+        canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0xFF));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        for(int pdo_object=1; pdo_object<=4; pdo_object++)
+        for(int pdo_object=0; pdo_object<=3; pdo_object++)
         {
             canopen::enableTPDO(pdo_object);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -258,6 +279,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
     for (auto device : devices)
     {
+        canopen::sendSync();
         if(device.second.getMotorState() == MS_OPERATION_ENABLED)
         {
             std::cout << "Node" << (uint16_t)device.second.getCANid() << "is already operational" << std::endl;
@@ -290,6 +312,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
             canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
         }
 
         devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
@@ -802,6 +825,8 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
     uint16_t mydata_low = m.Msg.DATA[0];
     uint16_t mydata_high = m.Msg.DATA[1];
 
+    int8_t mode_display = m.Msg.DATA[2];
+
     if(canopen::use_limit_switch)
     {
 
@@ -897,6 +922,8 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
     devices[CANid].setVoltageEnabled(volt_enable);
     devices[CANid].setReadySwitchON(ready_switch_on);
     devices[CANid].setSwitchON(switched_on);
+
+    devices[CANid].setCurrentModeofOperation(mode_display);
 
 
 
@@ -1542,30 +1569,29 @@ void disableRPDO(int object)
 {
     for (auto device : devices)
     {
-        if(object == 1)
+        if(object == 0)
         {
             int32_t data = (canopen::RPDO1_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
+        }
+        else if(object == 1)
+        {
+            int32_t data = (canopen::RPDO2_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
 
-            sendSDO(device.second.getCANid(), RPDO1_sub1, data);
         }
 
         else if(object == 2)
         {
-            int32_t data = (canopen::RPDO2_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), RPDO2_sub1, data);
-        }
-        else if(object == 3)
-        {
             int32_t data = (canopen::RPDO3_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), RPDO3_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
-        else if(object == 4)
+
+        else if(object == 3)
+
         {
             int32_t data = (canopen::RPDO4_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), RPDO4_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -1611,145 +1637,52 @@ void clearRPDOMapping(int object)
     for (auto device : devices)
     {
         int32_t data = (0x00 << 16) + (0x80 << 24);
-        if(object ==1)
-            sendSDO_unknown(device.second.getCANid(), RPDO1_map, data);
-        else if(object == 2)
-            sendSDO_unknown(device.second.getCANid(), RPDO2_map, data);
-        else if(object == 3)
-            sendSDO_unknown(device.second.getCANid(), RPDO3_map, data);
-        else if(object == 4)
-            sendSDO_unknown(device.second.getCANid(), RPDO4_map, data);
+
+        sendSDO_unknown(device.second.getCANid(), SDOkey(RPDO_map.index+object,0x00), data);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
-void makeRPDOMapping(int object,std::string index1, int index1_size, std::string index2, int index2_size)
+void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes , u_int8_t sync_type)
 {
     for (auto device : devices)
     {
+        int ext_counter=0;
+        for(int counter=0; counter < registers.size();counter++)
+        {
+            /////////////////////////
+            int index_data;
+
+            std::stringstream str_stream;
+            str_stream << registers[counter];
+            str_stream >> std::hex >> index_data;
+
+            str_stream.str( std::string() );
+            str_stream.clear();
+
+            /////////////////////////
+            /// \brief data
+            ///
+            int32_t data = (sizes[counter]) + (index_data << 8);
+
+            sendSDO(device.second.getCANid(), SDOkey(RPDO_map.index+object,counter+1), data);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            ext_counter++;
+        }
         /////////////////////////
-        int index1_data;
-        int index2_data;
+        //////////////////// ASync
 
-        std::stringstream str_stream;
-        str_stream << index1;
-        str_stream >> std::hex >> index1_data;
+        sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x02), u_int8_t(sync_type));
 
-        str_stream.str( std::string() );
-        str_stream.clear();
-
-        str_stream << index2;
-
-        str_stream >> std::hex >> index2_data;
-
-        if(object == 1)
-        {
-            int32_t data = (index1_size) + (index1_data << 8);
-
-            sendSDO(device.second.getCANid(), RPDO1_map_sub1, data);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), RPDO1_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
-            ///
-            ///
-            /////////////////////// Mapping 1 object
-            sendSDO(device.second.getCANid(), RPDO1_map, u_int8_t(0x01));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-        }
-
-        else if(object == 2)
-        {
-            int32_t data = (index1_size) + (index1_data << 8);
-
-            sendSDO(device.second.getCANid(), RPDO2_map_sub1, data);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), RPDO2_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
-            ///
-            ///
-            /////////////////////// Mapping 1 object
-            sendSDO(device.second.getCANid(), RPDO2_map, u_int8_t(0x01));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-        }
-
-        else if(object == 3)
-        {
-            int32_t data = (index1_size) + (index1_data << 8);
-
-            sendSDO(device.second.getCANid(), RPDO3_map_sub1, data);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), RPDO3_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
-            ///
-            ///
-            /////////////////////// Mapping 1 object
-            sendSDO(device.second.getCANid(), RPDO3_map, u_int8_t(0x01));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-        }
-
-        else if(object == 4)
-        {
-            int32_t data = (index1_size) + (index1_data << 8);
-
-            sendSDO(device.second.getCANid(), RPDO4_map_sub1, data);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), RPDO4_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
-            ///
-            ///
-            /////////////////////// Mapping 1 object
-            sendSDO(device.second.getCANid(), RPDO4_map, u_int8_t(0x01));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //////////////////////
+        ///
+        ///
+        /////////////////////// Mapping x objects
+        sendSDO(device.second.getCANid(), SDOkey(RPDO_map.index+object,0x00), u_int8_t(ext_counter));
 
     }
 }
@@ -1758,32 +1691,30 @@ void enableRPDO(int object)
 {
     for (auto device : devices)
     {
-        if(object ==1)
+        if(object ==0)
         {
             int32_t data = (canopen::RPDO1_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), RPDO1_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
-        else if(object == 2)
+        else if(object == 1)
         {
             int32_t data = (canopen::RPDO2_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), RPDO2_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
-        else if(object == 3)
+        else if(object == 2)
         {
             int32_t data = (canopen::RPDO3_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), RPDO3_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
-
-        else if(object == 4)
+        else if(object == 3)
         {
             int32_t data = (canopen::RPDO4_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), RPDO4_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(RPDO.index+object,0x01), data);
         }
-
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -1805,37 +1736,35 @@ void disableTPDO(int object)
 
         //////////////////// Disable tpdo4
 
-        if(object == 1)
+        if(object == 0)
         {
             int32_t data = (canopen::TPDO1_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), TPDO1_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
-        else if(object == 2)
+        else if(object == 1)
         {
             int32_t data = (canopen::TPDO2_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
 
-            sendSDO(device.second.getCANid(), TPDO2_sub1, data);
+        }
 
+        else if(object == 2)
+        {
+            int32_t data = (canopen::TPDO3_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
 
         else if(object == 3)
-        {
-            int32_t data = (canopen::TPDO3_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), TPDO3_sub1, data);
-        }
-
-        else if(object == 4)
 
         {
             int32_t data = (canopen::TPDO4_msg + device.second.getCANid())  + (0x00 << 16) + (0x80 << 24);
-
-            sendSDO(device.second.getCANid(), TPDO4_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
 
         else
             std::cout << "Incorrect object for mapping" << std::endl;
+
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -1852,214 +1781,55 @@ void clearTPDOMapping(int object)
         //////////////////// clear mapping
         ///
         //int32_t data = (0x00 << 16) + (0x00 << 24);
-        if(object ==1)
-            sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x00));
-        else if(object == 2)
-            sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x00));
-        else if(object == 3)
-            sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x00));
-        else if(object == 4)
-            sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x00));
+        sendSDO(device.second.getCANid(), SDOkey(TPDO_map.index+object,0x00), u_int8_t(0x00));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
-void makeTPDOMapping(int object, std::string index1, int index1_size, std::string index2, int index2_size)
+void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type)
 {
     for (auto device : devices)
     {
-        /////////////////////////
-        int index1_data;
-        int index2_data;
-
-        std::stringstream str_stream;
-        str_stream << index1;
-        str_stream >> std::hex >> index1_data;
-
-        str_stream.str( std::string() );
-        str_stream.clear();
-
-        str_stream << index2;
-
-        str_stream >> std::hex >> index2_data;
-
-
         //////////////////// sub ind1=63
         ///
-
-        if(object == 1)
+        ///
+        ///
+        int ext_counter=0;
+        for(int counter=0; counter < registers.size();counter++)
         {
-            int32_t data = (index1_size) + (index1_data << 8);
+            /////////////////////////
+            int index_data;
 
-            sendSDO(device.second.getCANid(), TPDO1_map_sub1, data);
+            std::stringstream str_stream;
+            str_stream << registers[counter];
+            str_stream >> std::hex >> index_data;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            str_stream.str( std::string() );
+            str_stream.clear();
 
             /////////////////////////
-
-            if(index2_size != 0x0)
-            {
-                //////////////////// sub ind2=69
-                data = (index2_size) + (index2_data << 8);
-
-                sendSDO(device.second.getCANid(), TPDO1_map_sub2, data);
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), TPDO1_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
+            /// \brief data
             ///
-            ///
-            /////////////////////// Mapping 2 objects
-            if(index2_size != 0x0)
-                sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x02));
-            else
-                sendSDO(device.second.getCANid(), TPDO1_map, u_int8_t(0x01));
+            int32_t data = (sizes[counter]) + (index_data << 8);
+
+            sendSDO(device.second.getCANid(), SDOkey(TPDO_map.index+object,counter+1), data);
 
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            /////////////////////////
+            ext_counter++;
         }
+        /////////////////////////
+        //////////////////// ASync
 
-        else if(object == 2)
-        {
-            int32_t data = (index1_size) + (index1_data << 8);
+        sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x02), u_int8_t(sync_type));
 
-            sendSDO(device.second.getCANid(), TPDO2_map_sub1, data);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-            if(index2_size != 0x0)
-            {
-                //////////////////// sub ind2=69
-                data = (index2_size) + (index2_data << 8);
-
-                sendSDO(device.second.getCANid(), TPDO2_map_sub2, data);
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-
-
-            //////////////////// ASync
-
-            sendSDO(device.second.getCANid(), TPDO2_sub2, u_int8_t(0xFF));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            //////////////////////
-            ///
-            ///
-            /////////////////////// Mapping 2 objects
-            if(index2_size != 0x0)
-                sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x02));
-            else
-                sendSDO(device.second.getCANid(), TPDO2_map, u_int8_t(0x01));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            /////////////////////////
-        }
-
-        else
-
-            if(object == 3)
-            {
-                int32_t data = (index1_size) + (index1_data << 8);
-
-                sendSDO(device.second.getCANid(), TPDO3_map_sub1, data);
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                /////////////////////////
-
-                if(index2_size != 0x0)
-                {
-                    //////////////////// sub ind2=69
-                    data = (index2_size) + (index2_data << 8);
-
-                    sendSDO(device.second.getCANid(), TPDO3_map_sub2, data);
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                /////////////////////////
-
-
-                //////////////////// ASync
-
-                sendSDO(device.second.getCANid(), TPDO3_sub2, u_int8_t(0xFF));
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                //////////////////////
-                ///
-                ///
-                /////////////////////// Mapping 2 objects
-                if(index2_size != 0x0)
-                    sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x02));
-                else
-                    sendSDO(device.second.getCANid(), TPDO3_map, u_int8_t(0x01));
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                /////////////////////////
-            }
-
-            else
-
-                if(object == 4)
-                {
-                    int32_t data = (index1_size) + (index1_data << 8);
-
-                    sendSDO(device.second.getCANid(), TPDO4_map_sub1, data);
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                    /////////////////////////
-
-                    if(index2_size != 0x0)
-                    {
-                        //////////////////// sub ind2=69
-                        data = (index2_size) + (index2_data << 8);
-
-                        sendSDO(device.second.getCANid(), TPDO4_map_sub2, data);
-                    }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                    /////////////////////////
-
-
-                    //////////////////// ASync
-
-                    sendSDO(device.second.getCANid(), TPDO4_sub2, u_int8_t(0x01));
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                    //////////////////////
-                    ///
-                    ///
-                    /////////////////////// Mapping 2 objects
-                    if(index2_size != 0x0)
-                        sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x02));
-                    else
-                        sendSDO(device.second.getCANid(), TPDO4_map, u_int8_t(0x01));
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                    /////////////////////////
-                }
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //////////////////////
+        ///
+        ///
+        /////////////////////// Mapping x objects
+        sendSDO(device.second.getCANid(), SDOkey(TPDO_map.index+object,0x00), u_int8_t(ext_counter));
     }
 
 }
@@ -2071,29 +1841,29 @@ void enableTPDO(int object)
         //////////////////// Enable tpdo4
         ///
         ///
-        if(object ==1)
+        if(object ==0)
         {
             int32_t data = (canopen::TPDO1_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), TPDO1_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
-        else if(object == 2)
+        else if(object == 1)
         {
             int32_t data = (canopen::TPDO2_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), TPDO2_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
-        else if(object == 3)
+        else if(object == 2)
         {
             int32_t data = (canopen::TPDO3_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), TPDO3_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
-        else if(object == 4)
+        else if(object == 3)
         {
             int32_t data = (canopen::TPDO4_msg + device.second.getCANid()) + (0x00 << 16) + (0x00 << 24);
 
-            sendSDO(device.second.getCANid(), TPDO4_sub1, data);
+            sendSDO(device.second.getCANid(), SDOkey(TPDO.index+object,0x01), data);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
