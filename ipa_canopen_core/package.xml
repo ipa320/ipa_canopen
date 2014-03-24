@@ -1,6 +1,6 @@
 <package>
   <name>ipa_canopen_core</name>
-  <version>0.2.0</version>
+  <version>0.5.1</version>
   <description>
 
      ROS-independent CANopen C++ library. 
