@@ -126,6 +126,8 @@ namespace canopen{
             std::vector<uint16_t> product_code_;
             uint16_t revision_number_;
 
+            uint8_t error_register_;
+
             bool initialized_;
             bool nmt_init_;
             bool driveReferenced_;
@@ -139,6 +141,7 @@ namespace canopen{
             std::chrono::microseconds timeStamp_usec_;
             int8_t operation_mode_;
 
+            int8_t modes_of_operation_display_;
 
             bool hardware_limit_positive_;
             bool hardware_limit_negative_;
@@ -340,6 +343,15 @@ namespace canopen{
                 return fault_;
             }
 
+            int8_t getCurrentModeofOperation()
+            {
+                return modes_of_operation_display_;
+            }
+
+            u_int8_t getErrorRegister(){
+                return error_register_;
+            }
+
             bool getIPMode(){
                 return ip_mode_active_;
             }
@@ -511,6 +523,15 @@ namespace canopen{
                 fault_ = fault;
             }
 
+            void setCurrentModeofOperation(int8_t mode_display)
+            {
+                modes_of_operation_display_ = mode_display;
+            }
+
+            void setErrorRegister(u_int8_t error_register){
+                error_register_ = error_register;
+            }
+
             void setIPMode(bool ip_mode){
                 ip_mode_active_ = ip_mode;
             }
@@ -665,14 +686,14 @@ namespace canopen{
     /***************************************************************/
     //	define get errors functions
     /***************************************************************/
-    void makeRPDOMapping(int object,std::string index1, int index1_size, std::string index2, int index2_size );
+    void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableRPDO(int object);
     void clearRPDOMapping(int object);
     void enableRPDO(int object);
 
     void setObjects();
 
-    void makeTPDOMapping(int object, std::string index1, int index1_size, std::string index2, int index2_size);
+    void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableTPDO(int object);
     void clearTPDOMapping(int object);
     void enableTPDO(int object);
@@ -849,67 +870,16 @@ namespace canopen{
     const int RSDO = 0x600;
 
     //TPDO PARAMETERS
-    const SDOkey TPDO1(0x1800, 0x0);
-    const SDOkey TPDO2(0x1801, 0x0);
-    const SDOkey TPDO3(0x1802, 0x0);
-    const SDOkey TPDO4(0x1803, 0x0);
+    const SDOkey TPDO(0x1800, 0x0);
 
-    const SDOkey TPDO1_sub1(0x1800, 0x1);
-    const SDOkey TPDO2_sub1(0x1801, 0x1);
-    const SDOkey TPDO3_sub1(0x1802, 0x1);
-    const SDOkey TPDO4_sub1(0x1803, 0x1);
-
-    const SDOkey TPDO1_sub2(0x1800, 0x2);
-    const SDOkey TPDO2_sub2(0x1801, 0x2);
-    const SDOkey TPDO3_sub2(0x1802, 0x2);
-    const SDOkey TPDO4_sub2(0x1803, 0x2);
     //RPDO PARAMETERS
-    const SDOkey RPDO1(0x1400, 0x0);
-    const SDOkey RPDO2(0x1401, 0x0);
-    const SDOkey RPDO3(0x1402, 0x0);
-    const SDOkey RPDO4(0x1403, 0x0);
-
-    const SDOkey RPDO1_sub1(0x1400, 0x1);
-    const SDOkey RPDO2_sub1(0x1401, 0x1);
-    const SDOkey RPDO3_sub1(0x1402, 0x1);
-    const SDOkey RPDO4_sub1(0x1403, 0x1);
-
-    const SDOkey RPDO1_sub2(0x1400, 0x2);
-    const SDOkey RPDO2_sub2(0x1401, 0x2);
-    const SDOkey RPDO3_sub2(0x1402, 0x2);
-    const SDOkey RPDO4_sub2(0x1403, 0x2);
+    const SDOkey RPDO(0x1400, 0x0);
 
     //TPDO MAPPING
-    const SDOkey TPDO1_map(0x1A00, 0x0);
-    const SDOkey TPDO2_map(0x1A01, 0x0);
-    const SDOkey TPDO3_map(0x1A02, 0x0);
-    const SDOkey TPDO4_map(0x1A03, 0x0);
-
-    const SDOkey TPDO1_map_sub1(0x1A00, 0x1);
-    const SDOkey TPDO2_map_sub1(0x1A01, 0x1);
-    const SDOkey TPDO3_map_sub1(0x1A02, 0x1);
-    const SDOkey TPDO4_map_sub1(0x1A03, 0x1);
-
-    const SDOkey TPDO1_map_sub2(0x1A00, 0x2);
-    const SDOkey TPDO2_map_sub2(0x1A01, 0x2);
-    const SDOkey TPDO3_map_sub2(0x1A02, 0x2);
-    const SDOkey TPDO4_map_sub2(0x1A03, 0x2);
+    const SDOkey TPDO_map(0x1A00, 0x0);
 
     //RPDO MAPPING
-    const SDOkey RPDO1_map(0x1600, 0x0);
-    const SDOkey RPDO2_map(0x1601, 0x0);
-    const SDOkey RPDO3_map(0x1602, 0x0);
-    const SDOkey RPDO4_map(0x1603, 0x0);
-
-    const SDOkey RPDO1_map_sub1(0x1600, 0x1);
-    const SDOkey RPDO2_map_sub1(0x1601, 0x1);
-    const SDOkey RPDO3_map_sub1(0x1602, 0x1);
-    const SDOkey RPDO4_map_sub1(0x1603, 0x1);
-
-    const SDOkey RPDO1_map_sub2(0x1600, 0x2);
-    const SDOkey RPDO2_map_sub2(0x1601, 0x2);
-    const SDOkey RPDO3_map_sub2(0x1602, 0x2);
-    const SDOkey RPDO4_map_sub2(0x1603, 0x2);
+    const SDOkey RPDO_map(0x1600, 0x0);
 
     const uint16_t CONTROLWORD_SHUTDOWN = 6;
     const uint16_t CONTROLWORD_QUICKSTOP = 2;
@@ -931,6 +901,11 @@ namespace canopen{
     const int8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
     const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
     const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
+
+    static const char * const modesDisplay[] =
+    {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
+                              "TORQUE_PROFILED_MODE", "RESERVED", "HOMING_MODE", "INTERPOLATED_POSITION_MODE",
+                              "CYCLIC_SYNCHRONOUS_POSITION"};
 
     const int8_t IP_TIME_INDEX_MILLISECONDS = 0xFD;
     const int8_t IP_TIME_INDEX_HUNDREDMICROSECONDS = 0xFC;
