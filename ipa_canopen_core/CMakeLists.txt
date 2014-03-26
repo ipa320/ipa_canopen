@@ -42,19 +42,19 @@ set(INCLUDE_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINAT
 ## src ##
 ###########
 add_library(${PROJECT_NAME}
-    src/canopen.cpp
+    src/ipa_canopen_core.cpp
   )
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
   
-add_executable(homing tools/homing.cpp)
-target_link_libraries(homing pthread ipa_canopen_core ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_homing tools/homing.cpp)
+target_link_libraries(${PROJECT_NAME}_homing pthread ipa_canopen_core ${catkin_LIBRARIES})
 
-add_executable(move_device tools/move_device.cpp)
-target_link_libraries(move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_move_device tools/move_device.cpp)
+target_link_libraries(${PROJECT_NAME}_move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
 
-add_executable(get_error tools/get_error.cpp)
-target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
+#add_executable(get_error tools/get_error.cpp)
+#target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
 
 #list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
 
@@ -64,5 +64,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
 )
 
-install(TARGETS ${PROJECT_NAME}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_homing ${PROJECT_NAME}_move_device 
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
