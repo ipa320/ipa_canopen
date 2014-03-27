@@ -142,6 +142,9 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
         atFirstInit = false;
 
         CAN_Close(h);
+
+        canopen::initDeviceManagerThread(canopen::deviceManager);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
         bool connection_success;
         connection_success = canopen::openConnection(deviceFile, canopen::baudRate);
@@ -234,7 +237,7 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
             canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0xFF));
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0xFF));
+            canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0x01));
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             for(int pdo_object=0; pdo_object<=3; pdo_object++)
@@ -291,8 +294,12 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             sendSDO((uint16_t)device.second.getCANid(), canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+
             canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+            canopen::devices[device.second.getCANid()].setDesiredVel(0);
 
             canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -301,22 +308,10 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
 
         }
 
-        devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        devices[device.second.getCANid()].setDesiredVel(0);
-
-    }
-
-    if (atFirstInit)
-    {
-        canopen::initDeviceManagerThread(canopen::deviceManager);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     for (auto device : devices)
     {
-        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
-        canopen::devices[device.second.getCANid()].setDesiredVel(0);
-
         getErrors(device.second.getCANid());
         readManErrReg(device.second.getCANid());
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -348,7 +343,7 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
     for (auto device : devices)
     {
 
-        if(device.second.getMotorState() == MS_OPERATION_ENABLED)
+        if(device.second.getIPMode())
         {
             std::cout << "Node" << device.second.getCANid() << "is already operational" << std::endl;
         }
@@ -1903,3 +1898,4 @@ void enableTPDO(int object)
 
 
 }
+
