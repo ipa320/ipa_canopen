@@ -126,7 +126,8 @@ namespace canopen{
             std::vector<uint16_t> product_code_;
             uint16_t revision_number_;
 
-            uint8_t error_register_;
+            std::string error_register_;
+            std::string manufacturer_error_register_;
 
             bool initialized_;
             bool nmt_init_;
@@ -139,7 +140,6 @@ namespace canopen{
             double desiredVel_;		// unit = rad/sec
             std::chrono::milliseconds timeStamp_msec_;
             std::chrono::microseconds timeStamp_usec_;
-            int8_t operation_mode_;
 
             int8_t modes_of_operation_display_;
 
@@ -165,6 +165,7 @@ namespace canopen{
             bool man_specific1_;
             bool man_specific2_;
 
+            double temperature_;
 
         public:
 
@@ -231,6 +232,10 @@ namespace canopen{
                 return manufacturer_device_name_;
             }
 
+           std::string getManufactureErrorRegister(){
+                return manufacturer_error_register_;
+            }
+
             std::vector<uint16_t> getVendorID(){
                 return vendor_id_;
             }
@@ -268,6 +273,10 @@ namespace canopen{
 
             bool getVoltageEnabled(){
                 return volt_enable_;
+            }
+
+            double getDriverTemperature(){
+                return temperature_;
             }
 
             bool getReadySwitchOn(){
@@ -343,12 +352,13 @@ namespace canopen{
                 return fault_;
             }
 
+
             int8_t getCurrentModeofOperation()
             {
                 return modes_of_operation_display_;
             }
 
-            u_int8_t getErrorRegister(){
+            std::string getErrorRegister(){
                 return error_register_;
             }
 
@@ -380,10 +390,6 @@ namespace canopen{
 
             inline std::chrono::microseconds getTimeStamp_usec(){
                 return timeStamp_usec_;
-            }
-
-            int8_t getOperationMode(){
-                return operation_mode_;
             }
 
             void setActualPos(double pos){
@@ -444,6 +450,10 @@ namespace canopen{
 
             void setVoltageEnabled(bool voltage_enabled){
                 volt_enable_ = voltage_enabled;
+            }
+
+            void setDriverTemperature(double temperature){
+                temperature_ = temperature;
             }
 
             void setReadySwitchON(bool r_switch_on){
@@ -528,8 +538,12 @@ namespace canopen{
                 modes_of_operation_display_ = mode_display;
             }
 
-            void setErrorRegister(u_int8_t error_register){
+            void setErrorRegister(std::string error_register){
                 error_register_ = error_register;
+            }
+
+            void setManufacturerErrorRegister(std::string manufacturer_error_register){
+                manufacturer_error_register_ = manufacturer_error_register;
             }
 
             void setIPMode(bool ip_mode){
@@ -554,10 +568,6 @@ namespace canopen{
 
             void setTimeStamp_usec(std::chrono::microseconds timeStamp){
                 timeStamp_usec_ = timeStamp;
-            }
-
-            void setOperationMode(int8_t operation_mode){
-                operation_mode_ = operation_mode;
             }
     };
 
@@ -665,9 +675,9 @@ namespace canopen{
         return static_cast<double>(static_cast<double>(alpha)/360000.0*2*M_PI);
     }
 
-    void statusword_incoming(uint8_t CANid, BYTE data[8]);
-    void mode_of_operation_incoming(uint8_t CANid, BYTE data[8]);
-    void errorword_incoming(uint8_t CANid, BYTE data[1]);
+    void sdo_incoming(uint8_t CANid, BYTE data[8]);
+    void errorword_incoming(uint8_t CANid, BYTE data[8]);
+    void manufacturer_incoming(uint8_t CANid, BYTE data[8]);
 
     extern std::map<std::string, DeviceGroup> deviceGroups;	// DeviceGroup name -> DeviceGroup object
     extern HANDLE h;
@@ -703,17 +713,20 @@ namespace canopen{
     void getErrors(uint16_t CANid);
     std::vector<char> obtainManSWVersion(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
     std::vector<char> obtainManHWVersion(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
-    std::vector<char> obtainManDevName(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
-    std::vector<uint16_t> obtainVendorID(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
+    std::vector<char> obtainManDevName(uint16_t CANid, int size_name);
+    std::vector<uint16_t> obtainVendorID(uint16_t CANid);
     uint16_t obtainRevNr(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
     std::vector<uint16_t> obtainProdCode(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
     void readErrorsRegister(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
-    void readManErrReg(uint16_t CANid, std::shared_ptr<TPCANRdMsg>  m);
+    void readManErrReg(uint16_t CANid);
 
 
     /***************************************************************/
     //	define init and recover variables and functions
     /***************************************************************/
+
+    extern bool sdo_protect;
+    extern BYTE protect_msg[];
 
     extern bool atFirstInit;
     extern bool recover_active;
@@ -823,6 +836,7 @@ namespace canopen{
 
     const SDOkey STATUSWORD(0x6041, 0x0);
     const SDOkey ERRORWORD(0x1001, 0x0);
+    const SDOkey DRIVERTEMPERATURE(0x22A2, 0x0);
     const SDOkey MANUFACTURER(0x1002, 0x0);
     const SDOkey MANUFACTURERDEVICENAME(0x1008, 0x0);
     const SDOkey MANUFACTURERHWVERSION(0x1009, 0x0);
