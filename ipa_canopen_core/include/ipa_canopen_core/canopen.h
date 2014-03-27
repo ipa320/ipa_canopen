@@ -691,6 +691,7 @@ namespace canopen{
 
     void setNMTState(uint16_t CANid, std::string targetState);
     void setMotorState(uint16_t CANid, std::string targetState);
+    bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout = 3.0);
 
     /***************************************************************/
     //	define get errors functions
@@ -737,11 +738,11 @@ namespace canopen{
 
     extern bool use_limit_switch;
 
-    extern uint8_t operation_mode;
     extern std::string operation_mode_param;
 
     bool openConnection(std::string devName, std::string baudrate);
     bool init(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    bool init(std::string deviceFile, const int8_t mode_of_operation);
     void pre_init();
     bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
@@ -902,17 +903,18 @@ namespace canopen{
     const uint16_t CONTROLWORD_START_HOMING = 16;
     const uint16_t CONTROLWORD_ENABLE_IP_MODE = 16;
     const uint16_t CONTROLWORD_DISABLE_INTERPOLATED = 7;
+    const uint16_t CONTROLWORD_DISABLE_OPERATION = 7;
     const uint16_t CONTROL_WORD_DISABLE_VOLTAGE = 0x7D;
     const uint16_t CONTROLWORD_FAULT_RESET_0 = 0x00; //0x00;
     const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
     const uint16_t CONTROLWORD_HALT = 0x100;
 
-    const uint8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
-    const uint8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
-    const uint8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
-    const uint8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
-    const uint8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
-    const uint8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
+    const int8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
+    const int8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
+    const int8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
+    const int8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
+    const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
+    const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
 
     static const char * const modesDisplay[] =
     {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
