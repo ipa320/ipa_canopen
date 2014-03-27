@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ipa_canopen_core)
 
-find_package(catkin REQUIRED COMPONENTS roscpp)
+find_package(catkin REQUIRED COMPONENTS roscpp libpcan)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
@@ -19,8 +19,8 @@ else(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 catkin_package(
-    DEPENDS roscpp 
-    CATKIN_DEPENDS roscpp 
+    DEPENDS roscpp libpcan
+    CATKIN_DEPENDS roscpp libpcan
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
 )
