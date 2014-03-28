@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.3 (2014-03-28)
+------------------
 * Merge branch 'hydro_dev' of github.com:ipa320/ipa_canopen into hydro_release_candidate
 * Catkin_lint modifications
   *Init bug fix

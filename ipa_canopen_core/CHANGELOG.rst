@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.3 (2014-03-28)
+------------------
 * Lint Fixes for ipa_canopen_core
 * Catkin_lint modifications
   *Init bug fix
