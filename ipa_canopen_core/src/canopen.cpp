@@ -60,6 +60,7 @@
 #include <ipa_canopen_core/canopen.h>
 #include <sstream>
 #include <cstring>
+#include <unordered_map>
 
 namespace canopen
 {
@@ -298,8 +299,11 @@ bool init(std::string deviceFile, std::chrono::milliseconds syncInterval)
             canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
+            
             canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
             canopen::devices[device.second.getCANid()].setDesiredVel(0);
+            //Necessary otherwise sometimes Schunk devices complain for Position Track Error
+            sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
 
             canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -1149,7 +1153,19 @@ void defaultListener()
             if (m.Msg.DATA[0] == 0x00)
             {          
                 std::cout << "Bootup received. Node-ID =  " << CANid << std::endl;
-                devices[CANid].setNMTInit(true);
+                std::map<uint8_t,Device>::const_iterator search = devices.find(CANid);
+                if(search != devices.end())
+                {
+                        std::cout << "Found " << (u_int16_t)search->first << "\n";
+                        std::cout << "Initializing..." << "\n";
+                        devices[CANid].setNMTInit(true);
+                }
+                else
+                {
+                       std::cout << "Not found" << std::endl;
+                       std::cout << "Ignoring" << std::endl;
+                }
+
             }
             else
             {

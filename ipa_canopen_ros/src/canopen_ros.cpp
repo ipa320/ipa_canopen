@@ -327,7 +327,10 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
 
         for (unsigned int i=0; i<jointNames.size(); i++)
+        {
             canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
+            std::cout << "i" << i << std::endl;
+        }
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
 
