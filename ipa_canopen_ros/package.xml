@@ -32,6 +32,9 @@
   <run_depend>control_msgs</run_depend>
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>ipa_canopen_core</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>libpcan</run_depend>
 
   <export>
 
