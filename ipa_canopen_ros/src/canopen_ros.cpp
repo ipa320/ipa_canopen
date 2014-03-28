@@ -94,15 +94,22 @@ std::vector<std::string> jointNames;
 
 bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
+    bool all_initialized = true;
+
     for (auto device : canopen::devices)
     {
-        if (device.second.getInitialized())
+        if (not device.second.getInitialized())
         {
-            res.success.data = true;
-            res.error_message.data = "already initialized";
-            ROS_INFO("already initialized");
-            return true;
+            all_initialized = false;
         }
+    }
+
+    if(all_initialized)
+    {
+        res.success.data = true;
+        res.error_message.data = "already initialized";
+        ROS_INFO("already initialized");
+        return true;
     }
 
     bool init_success = canopen::init(deviceFile, canopen::syncInterval);
@@ -320,7 +327,10 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             devices.push_back(static_cast<std::string>(devices_XMLRPC[i]));
 
         for (unsigned int i=0; i<jointNames.size(); i++)
+        {
             canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
+            std::cout << "i" << i << std::endl;
+        }
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
 
@@ -430,18 +440,6 @@ int main(int argc, char **argv)
     canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
     // ^ todo: this only works with a single CAN bus; add support for more buses!
     deviceFile = buses.begin()->first;
-    std::cout << "Opening device: " << deviceFile << std::endl;
-    // ^ todo: this only works with a single CAN bus; add support for more buses!
-    std::cout << "Baud Rate" << canopen::baudRate << std::endl;
-    if (!canopen::openConnection(deviceFile, canopen::baudRate )) // TODO: do not access hardware here. there should be no hardware access before calling the init service
-    {
-        ROS_ERROR("Cannot open CAN device, shutting down...");
-        n.shutdown();
-    }
-    else
-    {
-        std::cout << "CAN device opened" << std::endl;
-    }
 
     //canopen::pre_init();
 
@@ -547,8 +545,8 @@ int main(int argc, char **argv)
         diagnostic_msgs::DiagnosticArray diagnostics;
         diagnostic_msgs::DiagnosticStatus diagstatus;
         std::vector<diagnostic_msgs::DiagnosticStatus> diagstatus_msg;
-        diagnostic_msgs::KeyValue keyval;
 
+        diagnostic_msgs::KeyValue keyval;
         std::vector<diagnostic_msgs::KeyValue> keyvalues;
 
 
@@ -567,6 +565,12 @@ int main(int argc, char **argv)
             keyval.value = result.str().c_str();
             keyvalues.push_back(keyval);
 
+            keyval.key = "Device Name";
+            std::vector<char> dev_name = dg.second.getManufacturerDevName();
+            keyval.value = std::string(dev_name.begin(), dev_name.end());
+            keyvalues.push_back(keyval);
+
+            /*
             keyval.key = "Hardware Version";
             std::vector<char> manhw = dg.second.getManufacturerHWVersion();
             keyval.value = std::string(manhw.begin(), manhw.end());
@@ -577,10 +581,7 @@ int main(int argc, char **argv)
             keyval.value = std::string(mansw.begin(), mansw.end());
             keyvalues.push_back(keyval);
 
-            keyval.key = "Device Name";
-            std::vector<char> dev_name = dg.second.getManufacturerDevName();
-            keyval.value = std::string(dev_name.begin(), dev_name.end());
-            keyvalues.push_back(keyval);
+
 
             keyval.key = "Vendor ID";
             std::vector<uint16_t> vendor_id = dg.second.getVendorID();
@@ -605,9 +606,27 @@ int main(int argc, char **argv)
             std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
             keyval.value = result3.str().c_str();
             keyvalues.push_back(keyval);
+            */
 
             bool error_ = dg.second.getFault();
             bool initialized_ = dg.second.getInitialized();
+
+            if(initialized_)
+            {
+                keyval.key = "Current mode of operation";
+                int8_t mode_display = dg.second.getCurrentModeofOperation();
+                keyval.value = canopen::modesDisplay[mode_display];
+                keyvalues.push_back(keyval);
+
+                keyval.key = "Errors Register";
+                keyval.value = dg.second.getErrorRegister();
+                keyvalues.push_back(keyval);
+
+                keyval.key = "Current driver temperature";
+                double driver_temperature = dg.second.getDriverTemperature();
+                keyval.value = std::to_string(driver_temperature);
+                keyvalues.push_back(keyval);
+            }
 
             //ROS_INFO("Fault: %d", error_);
             //ROS_INFO("Referenced: %d", initialized_);

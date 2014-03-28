@@ -62,7 +62,7 @@
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 3) {
+    if (argc != 4) {
         std::cout << "Arguments:" << std::endl
                   << "(1) device file" << std::endl
                   << "(2) CAN deviceID" << std::endl
@@ -74,10 +74,22 @@ int main(int argc, char *argv[]) {
     uint16_t CANid = std::stoi(std::string(argv[2]));
     canopen::baudRate = std::string(argv[3]);
     // configure CANopen device objects and custom incoming and outgoing PDOs:
+    if (!canopen::openConnection(deviceFile,canopen::baudRate)){
+        std::cout << "Cannot open CAN device; aborting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    else{
+        std::cout << "Connection to CAN bus established" << std::endl;
+    }
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
-    canopen::init(deviceFile, std::chrono::milliseconds(10));
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    canopen::sendNMT(CANid, canopen::NMT_RESET_NODE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));;
+    canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_HOMING_MODE);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
