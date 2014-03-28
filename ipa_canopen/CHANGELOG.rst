@@ -2,6 +2,9 @@
 Changelog for package ipa_canopen
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.1 (2014-03-20)
 ------------------
 * Catkinized Version of the ipa_canopen package

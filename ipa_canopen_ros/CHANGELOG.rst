@@ -2,6 +2,67 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Urgent Fix to ros pre-release build
+* Missing a comment
+* Changes the checks from the CMakeLists equal to ipa_canopen_ros
+* Merge pull request `#36 <https://github.com/ipa320/ipa_canopen/issues/36>`_ from thiagodefreitas/hydro_dev
+  Added diagnostic_msgs
+* Added diagnostic_msgs
+* Changes executable name to be compliant with catkin specs
+* catkin_make_isolated is now working
+* Last day for syncs between groovy_dev and hydro_dev
+* Syncs the hydro_dev to the groovy_dev
+* Fixing author name
+* Fixes bug described by @kalectro
+* Changed pr2 msgs to control_msgs
+* Restricted some calls to the core part
+* Fixing the TPCanRdmsg
+* Removed some elmo trash
+* Some beautifying
+* Removed some unnecessary prints
+* Ros Node Working for all the 3 devices
+* Fixing the ros node
+* Fixing merge errors
+* Merge branch 'feature/simple_bride' of github.com:thiagodefreitas/ipa_canopen into almost_merged
+  Conflicts:
+  ipa_canopen_ros/CMakeLists.txt
+  ipa_canopen_ros/src/canopen_ros.cpp
+* integrate init, recover and moveVel. still not working yet
+* add checks for ROS parameters
+* add diagnostic_msgs to manifest and stack
+* demo for torso
+* Added PPMode service
+* Modifying structure for 3 joints
+* Position mode working at industrieStr
+* Added swithces
+* Removed sendPos
+* devices
+* Default positions for the request
+* Changing Profiled Position Mode to a ROS Service
+* Probably solves the errors from industrieStr
+* Modifying the offsets and conversion factors
+* Unit factor now comes from the yaml file
+* Working for different ranges of baud rates
+* Mapping is now independent of the canopen id
+* Merged from changes at industrieStr
+* Local changes
+* elmo_pos worked for the first time
+* Removing hard-coded baudrate from low-level Canopen
+* Std::couts out
+* Definitions for the sendVel
+* Separating sendPos to sendVel
+* Changed Handlers at ROS Level
+* No more fixed IDs for the Elmo Branch
+* Correcting elmo endschalten
+* Limits working properly, only the switch release needs some adjustment
+* Adjusting comments and license for the Elmo parts of the driver
+* Recover works for the first time
+* Changed elmo constraints
+* Elmo merging
+* Contributors: Thiago de Freitas, Thiago de Freitas Oliveira Araujo, ipa-fmw, thiagodefreitas
+
 0.5.1 (2014-03-20)
 ------------------
 * This commit syncs the groovy_dev branch with the hydro_dev branch
