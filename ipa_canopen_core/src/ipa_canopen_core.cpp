@@ -60,6 +60,8 @@
 #include <ipa_canopen_core/canopen.h>
 #include <sstream>
 #include <cstring>
+#include <unordered_map>
+
 
 namespace canopen
 {
@@ -262,6 +264,12 @@ bool init(std::string deviceFile, const int8_t mode_of_operation)
         canopen::setOperationMode(device.second.getCANid(), mode_of_operation);
         canopen::setMotorState((uint16_t)device.second.getCANid(), canopen::MS_OPERATION_ENABLED);
 
+        //Necessary otherwise sometimes Schunk devices complain for Position Track Error
+        canopen::devices[device.second.getCANid()].setDesiredPos((double)device.second.getActualPos());
+        canopen::devices[device.second.getCANid()].setDesiredVel(0);
+
+        sendPos((uint16_t)device.second.getCANid(), (double)device.second.getDesiredPos());
+        
         canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
@@ -1183,15 +1191,20 @@ void defaultListener()
         {
             uint16_t CANid = (uint16_t)(m.Msg.ID - 0x700);
             
-            if (m.Msg.DATA[0] == 0x00)
-            {          
-                std::cout << "Bootup received. Node-ID =  " << CANid << std::endl;
-                devices[CANid].setNMTInit(true);
+            std::cout << "Bootup received. Node-ID =  " << CANid << std::endl;
+            std::map<uint8_t,Device>::const_iterator search = devices.find(CANid);
+            if(search != devices.end())
+            {
+                    std::cout << "Found " << (u_int16_t)search->first << "\n";
+                    std::cout << "Initializing..." << "\n";
+                    devices[CANid].setNMTInit(true);
             }
             else
             {
-                std::cout << "NMT error control received:  " << (uint16_t)(m.Msg.ID - 0x700) << "  " << (uint16_t)m.Msg.DATA[0] << std::endl;
+                   std::cout << "Not found" << std::endl;
+                   std::cout << "Ignoring" << std::endl;
             }
+
         }
         else
         {

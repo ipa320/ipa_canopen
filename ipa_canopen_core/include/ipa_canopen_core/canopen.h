@@ -171,7 +171,7 @@ namespace canopen{
 
             Device() {};
 
-            Device(uint8_t CANid):
+            Device(uint16_t CANid):
                 CANid_(CANid),
                 desiredVel_(0),
                 actualVel_(0),
@@ -182,7 +182,7 @@ namespace canopen{
                 motorState_("START_UP"),
                 nmt_init_(false) {};
 
-            Device(uint8_t CANid, std::string name, std::string group, std::string bus):
+            Device(uint16_t CANid, std::string name, std::string group, std::string bus):
                 CANid_(CANid),
                 name_(name),
                 group_(group),
@@ -194,7 +194,7 @@ namespace canopen{
                 initialized_(false),
                 nmt_init_(false) {};
 
-            Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
+            Device(uint16_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
                 CANid_(CANid),
                 name_(name),
                 group_(group),

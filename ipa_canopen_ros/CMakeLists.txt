@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ipa_canopen_ros)
 
-find_package(catkin REQUIRED COMPONENTS roscpp brics_actuator ipa_canopen_core urdf)
+find_package(catkin REQUIRED COMPONENTS roscpp brics_actuator ipa_canopen_core urdf sensor_msgs control_msgs libpcan rospy diagnostic_msgs cob_srvs std_msgs)
 
 #######################################
 ## Declare ROS messages and services ##
@@ -30,8 +30,8 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 ###################################
 
 catkin_package(
-    DEPENDS ipa_canopen_core
-    CATKIN_DEPENDS roscpp brics_actuator ipa_canopen_core
+    DEPENDS #
+    CATKIN_DEPENDS roscpp brics_actuator ipa_canopen_core sensor_msgs control_msgs libpcan rospy diagnostic_msgs cob_srvs std_msgs
     INCLUDE_DIRS # TODO include
     LIBRARIES # TODO
 )
