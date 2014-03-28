@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.2 (2014-03-28)
+------------------
 * merged
 * revert pcan as external dependency
 * merged

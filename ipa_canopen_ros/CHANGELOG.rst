@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.2 (2014-03-28)
+------------------
 * Urgent Fix to ros pre-release build
 * Missing a comment
 * Changes the checks from the CMakeLists equal to ipa_canopen_ros
