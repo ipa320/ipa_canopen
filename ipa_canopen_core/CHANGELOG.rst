@@ -2,6 +2,14 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Lint Fixes for ipa_canopen_core
+* Catkin_lint modifications
+  *Init bug fix
+  *Schunk bug fix
+* Contributors: thiagodefreitas
+
 0.5.2 (2014-03-28)
 ------------------
 * merged
