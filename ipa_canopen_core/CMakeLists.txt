@@ -53,8 +53,8 @@ target_link_libraries(${PROJECT_NAME}_homing pthread ipa_canopen_core ${catkin_L
 add_executable(${PROJECT_NAME}_move_device tools/move_device.cpp)
 target_link_libraries(${PROJECT_NAME}_move_device pthread ipa_canopen_core ${catkin_LIBRARIES})
 
-#add_executable(get_error tools/get_error.cpp)
-#target_link_libraries(get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_get_error tools/get_error.cpp)
+target_link_libraries(${PROJECT_NAME}_get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
 
 #list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
 
@@ -64,7 +64,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
 )
 
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_homing ${PROJECT_NAME}_move_device 
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_homing ${PROJECT_NAME}_move_device ${PROJECT_NAME}_get_error
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
