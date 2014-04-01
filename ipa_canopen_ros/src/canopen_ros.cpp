@@ -329,7 +329,6 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (unsigned int i=0; i<jointNames.size(); i++)
         {
             canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
-            std::cout << "i" << i << std::endl;
         }
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);

@@ -386,7 +386,7 @@ bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             canopen::controlPDO(device.second.getCANid(), canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             canopen::uploadSDO(device.second.getCANid(), canopen::STATUSWORD);
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
