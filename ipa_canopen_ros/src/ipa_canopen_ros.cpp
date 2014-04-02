@@ -311,7 +311,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         {
             int this_direction = static_cast<int>(motorDirections_XMLRPC[i]);
 
-            if(this_direction != 1 || this_direction != -1 )
+            if(this_direction != 1 && this_direction != -1 )
             {
                 ROS_ERROR("The value %d is not valid for the motor direction.Please use 1 or -1. Shutting down node...", this_direction);
                 n.shutdown();
@@ -486,7 +486,7 @@ int main(int argc, char **argv)
     // todo: allow identical module IDs of modules when they are on different CAN buses
 
 
-    ros::init(argc, argv, "canopen_ros");
+    ros::init(argc, argv, "ipa_canopen_ros");
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
