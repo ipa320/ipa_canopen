@@ -53,4 +53,4 @@ target_link_libraries(mapping pthread ipa_canopen_core pcan)
 rosbuild_add_gtest(communication_test test/communication_test.cpp)
 target_link_libraries(communication_test pthread ipa_canopen_core pcan gtest)
 
-list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
+#list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
