@@ -100,74 +100,180 @@ int main(int argc, char *argv[])
     uint16_t CANid = std::stoi(std::string(argv[2]));
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    bool connection_success;
+    connection_success = canopen::openConnection(deviceFile, canopen::baudRate);
+
+    if (!connection_success)
+    {
+        std::cout << "Cannot open CAN device; aborting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+
+            canopen::initListenerThread(canopen::defaultListener);
+            canopen::pre_init();
+
+            while(canopen::sdo_protect)
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::cout << "Resetting devices " << std::endl;
+            canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+
+            for(auto device : canopen::devices)
+            {
+                bool nmt_init = canopen::devices[device.second.getCANid()].getNMTInit();
+                std::cout << "Waiting for Node: " << (uint16_t)device.second.getCANid() << " to become available" << std::endl;
+
+                while(!nmt_init)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    nmt_init = canopen::devices[device.second.getCANid()].getNMTInit();
+                }
+                std::cout << "Node: " << (uint16_t)device.second.getCANid() << " is now available" << std::endl;
+            }
+
+            canopen::sendNMT(0x00, canopen::NMT_START_REMOTE_NODE);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    for (auto device : canopen::devices)
+    {
+
+        std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)device.second.getCANid() << std::endl;
+
+        for(int pdo_object=0; pdo_object<=3; pdo_object++)
+        {
+            canopen::disableTPDO(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+            canopen::clearTPDOMapping(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+            canopen::disableRPDO(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+            canopen::clearRPDOMapping(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+
+
+        if(canopen::use_limit_switch)
+        {
+
+            std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
+            std::vector<int> tpdo1_sizes {0x10,0x20};
+
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
+        }
+        else
+        {
+            std::vector<std::string> tpdo1_registers {"604100", "606100"};
+            std::vector<int> tpdo1_sizes {0x10,0x08};
+
+            canopen::makeTPDOMapping(0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
+
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        std::vector<std::string> tpdo4_registers {"606400", "606C00"};
+        std::vector<int> tpdo4_sizes {0x20,0x20};
+
+        canopen::makeTPDOMapping(3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        std::vector<std::string> rpdo1_registers {"604000"};
+        std::vector<int> rpdo1_sizes {0x10};
+
+        std::vector<std::string> rpdo2_registers {"60C101"};
+        std::vector<int> rpdo2_sizes {0x20};
+
+        canopen::makeRPDOMapping(0, rpdo1_registers, rpdo1_sizes, u_int8_t(0xFF));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        canopen::makeRPDOMapping(1, rpdo2_registers, rpdo2_sizes, u_int8_t(0x01));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        for(int pdo_object=0; pdo_object<=3; pdo_object++)
+        {
+            canopen::enableTPDO(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+            canopen::enableRPDO(pdo_object);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    }
+
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     std::shared_ptr<TPCANRdMsg> m;
 
 
-    canopen::readErrorsRegister(CANid, m);
+    canopen::getErrors(CANid);
 
     /***************************************************************/
     //		Manufacturer specific errors register
     /***************************************************************/
-    canopen::readManErrReg(CANid, m);
+    canopen::readManErrReg(CANid);
 
-    /**************************
-     * Hardware and Software Information
-    *************************/
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, m);
-    uint16_t rev_number = canopen::obtainRevNr(CANid, m);
-    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, m);
-    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,m);
-    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, m);
-    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, m);
+//    /**************************
+//     * Hardware and Software Information
+//    *************************/
 
-        /****
-         *Printing the data
-         */
+//    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid);
+//    uint16_t rev_number = canopen::obtainRevNr(CANid);
+//    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid);
+//    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid);
+//    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid);
+//    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid);
 
-        std::cout << "vendor_id=0x";
+//        /****
+//         *Printing the data
+//         */
 
-        for (auto it : vendor_id)
-        {
-           std::cout <<  std::hex << it;
-        }
+//        std::cout << "vendor_id=0x";
 
-        std::cout << std::endl;
+//        for (auto it : vendor_id)
+//        {
+//           std::cout <<  std::hex << it;
+//        }
 
-        std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
-        std::cout << "device_name:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_device_name)
-        {
-           std::cout << it;
-        }
+//        std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
+//        std::cout << "device_name:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_device_name)
+//        {
+//           std::cout << it;
+//        }
 
-        std::cout << "hardware_version:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_hw_version)
-        {
-           std::cout << it;
-        }
+//        std::cout << "hardware_version:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_hw_version)
+//        {
+//           std::cout << it;
+//        }
 
-        std::cout << "software_version:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_sw_version)
-        {
-           std::cout << it;
-        }
+//        std::cout << "software_version:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_sw_version)
+//        {
+//           std::cout << it;
+//        }
+
+//        std::cout << std::endl;
 
 
 }
