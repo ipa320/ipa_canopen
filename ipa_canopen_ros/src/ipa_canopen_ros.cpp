@@ -135,7 +135,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         }
 
 
-    return true;
+        return true;
 
     }
 }
@@ -211,12 +211,15 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         std::vector<double> positions;
 
 
+        int counter = 0;
+
         for (auto it : msg.velocities)
         {
-            velocities.push_back( it.value);
+            velocities.push_back( it.value*motor_direction[counter]);
+            counter++;
         }
 
-        int counter = 0;
+        counter = 0;
 
         for (auto device : canopen::devices)
         {
@@ -294,6 +297,8 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (int i=0; i<jointNames_XMLRPC.size(); i++)
             jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
+        int DOF = jointNames.size();
+        std::cout << DOF;
         param = "/" + chainName + "/motor_direction";
         XmlRpc::XmlRpcValue motorDirections_XMLRPC;
         if (n.hasParam(param))
@@ -306,6 +311,12 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             n.shutdown();
         }
 
+        if( motorDirections_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the motor direction parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
+        }
         // TODO: check for content of motorDirections
         for (int i=0; i<motorDirections_XMLRPC.size(); i++)
         {
@@ -333,6 +344,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             n.shutdown();
         }
 
+        if( moduleIDs_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the ids parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
+        }
+
         // TODO: check for content of moduleIDs
         std::vector<uint8_t> moduleIDs;
         for (int i=0; i<moduleIDs_XMLRPC.size(); i++)
@@ -348,6 +366,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         {
             ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
             n.shutdown();
+        }
+
+        if( devices_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the devices parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
         }
 
         // TODO: check for content of devices_XMLRPC
@@ -447,7 +472,7 @@ void setJointConstraints(ros::NodeHandle n)
         /// Get lower limits out of urdf model
         LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
 
-         // Get upper limits out of urdf model
+        // Get upper limits out of urdf model
         UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
 
         /// Get offsets out of urdf model
