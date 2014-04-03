@@ -102,7 +102,9 @@ int main(int argc, char *argv[])
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    canopen::init(deviceFile, std::chrono::milliseconds(100));
+    std::string chainName = "test_chain";
+
+    canopen::init(deviceFile,chainName, std::chrono::milliseconds(100));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
