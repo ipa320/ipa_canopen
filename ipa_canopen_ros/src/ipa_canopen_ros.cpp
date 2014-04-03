@@ -78,6 +78,8 @@ typedef boost::function<bool(cob_srvs::Trigger::Request&, cob_srvs::Trigger::Res
 typedef boost::function<void(const brics_actuator::JointVelocities&)> JointVelocitiesType;
 typedef boost::function<bool(cob_srvs::SetOperationMode::Request&, cob_srvs::SetOperationMode::Response&)> SetOperationModeCallbackType;
 
+std::vector<int> motor_direction;
+
 struct BusParams
 {
     std::string baudrate;
@@ -133,7 +135,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
         }
 
 
-    return true;
+        return true;
 
     }
 }
@@ -209,17 +211,20 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
         std::vector<double> positions;
 
 
+        int counter = 0;
+
         for (auto it : msg.velocities)
         {
-            velocities.push_back( it.value);
+            velocities.push_back( it.value*motor_direction[counter]);
+            counter++;
         }
 
-        int counter = 0;
+        counter = 0;
 
         for (auto device : canopen::devices)
         {
 
-            double pos = (double)device.second.getDesiredPos();// + joint_limits_->getOffsets()[counter];
+            double pos = ((double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter])*motor_direction[counter];
             positions.push_back(pos);
             counter++;
         }
@@ -292,6 +297,41 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (int i=0; i<jointNames_XMLRPC.size(); i++)
             jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
+        int DOF = jointNames.size();
+        std::cout << DOF;
+        param = "/" + chainName + "/motor_direction";
+        XmlRpc::XmlRpcValue motorDirections_XMLRPC;
+        if (n.hasParam(param))
+        {
+            n.getParam(param, motorDirections_XMLRPC);
+        }
+        else
+        {
+            ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
+            n.shutdown();
+        }
+
+        if( motorDirections_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the motor direction parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
+        }
+        // TODO: check for content of motorDirections
+        for (int i=0; i<motorDirections_XMLRPC.size(); i++)
+        {
+            int this_direction = static_cast<int>(motorDirections_XMLRPC[i]);
+
+            if(this_direction != 1 && this_direction != -1 )
+            {
+                ROS_ERROR("The value %d is not valid for the motor direction.Please use 1 or -1. Shutting down node...", this_direction);
+                n.shutdown();
+                exit(EXIT_FAILURE);
+            }
+
+            motor_direction.push_back(this_direction);
+        }
+
         param = "/" + chainName + "/module_ids";
         XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
         if (n.hasParam(param))
@@ -304,7 +344,14 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             n.shutdown();
         }
 
-        // TODO: check for content of muduleIDs
+        if( moduleIDs_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the ids parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
+        }
+
+        // TODO: check for content of moduleIDs
         std::vector<uint8_t> moduleIDs;
         for (int i=0; i<moduleIDs_XMLRPC.size(); i++)
             moduleIDs.push_back(static_cast<int>(moduleIDs_XMLRPC[i]));
@@ -319,6 +366,13 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         {
             ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
             n.shutdown();
+        }
+
+        if( devices_XMLRPC.size() != DOF)
+        {
+            ROS_ERROR("The size of the devices parameter is different from the size of the degrees of freedom. Shutting down node...");
+            n.shutdown();
+            exit(EXIT_FAILURE);
         }
 
         // TODO: check for content of devices_XMLRPC
@@ -418,7 +472,7 @@ void setJointConstraints(ros::NodeHandle n)
         /// Get lower limits out of urdf model
         LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
 
-         // Get upper limits out of urdf model
+        // Get upper limits out of urdf model
         UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
 
         /// Get offsets out of urdf model
@@ -457,7 +511,7 @@ int main(int argc, char **argv)
     // todo: allow identical module IDs of modules when they are on different CAN buses
 
 
-    ros::init(argc, argv, "canopen_ros");
+    ros::init(argc, argv, "ipa_canopen_ros");
     ros::NodeHandle n(""); // ("~");
 
     readParamsFromParameterServer(n);
@@ -534,8 +588,8 @@ int main(int argc, char **argv)
         for (auto device : canopen::devices)
         {
 
-            double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
-            double des_pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
+            double pos = ((double)device.second.getActualPos() + joint_limits_->getOffsets()[counter])*motor_direction[counter];
+            double des_pos = ((double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter])*motor_direction[counter];
             positions.push_back(pos);
             desired_positions.push_back(des_pos);
             counter++;

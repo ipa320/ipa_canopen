@@ -167,14 +167,30 @@ bool init(std::string deviceFile, const int8_t mode_of_operation)
 
                 for(auto device : devices)
                 {
+                    std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
+
+                    std::chrono::duration<double> elapsed_seconds;
+
                     bool nmt_init = devices[device.second.getCANid()].getNMTInit();
                     std::cout << "Waiting for Node: " << (uint16_t)device.second.getCANid() << " to become available" << std::endl;
 
+                    time_start = std::chrono::high_resolution_clock::now();
+
                     while(!nmt_init)
                     {
+                        elapsed_seconds = time_end - time_start;
+
+                        if(elapsed_seconds.count() > 5.0)
+                        {
+                            std::cout << "Node: " << (uint16_t)device.second.getCANid() << " is not ready for operation. Please check for eventual problems." << std::endl;
+                            exit(EXIT_FAILURE);
+                        }
+
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                         nmt_init = devices[device.second.getCANid()].getNMTInit();
+                        time_end = std::chrono::high_resolution_clock::now();
                     }
+
                     std::cout << "Node: " << (uint16_t)device.second.getCANid() << " is now available" << std::endl;
                 }
 
@@ -767,13 +783,11 @@ void deviceManager()
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
 
-    std::chrono::duration<double> elapsed_time;
-
 
     while (true)
     {
-        end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end-start;
+        time_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds = time_end-time_start;
 
         auto tic = std::chrono::high_resolution_clock::now();
         if (!recover_active)
@@ -782,7 +796,7 @@ void deviceManager()
             {
                 if(elapsed_seconds.count() > 2)
                 {
-                    start = std::chrono::high_resolution_clock::now();
+                    time_start = std::chrono::high_resolution_clock::now();
                     canopen::uploadSDO(device.second.getCANid(), DRIVERTEMPERATURE);
                     getErrors(device.second.getCANid());
                     readManErrReg(device.second.getCANid());
@@ -1198,7 +1212,7 @@ void defaultListener()
             }
             else
             {
-                   std::cout << "Not found" << std::endl;
+                   std::cout << "Node:" << CANid << " could not be found on the required devices list." << std::endl;
                    std::cout << "Ignoring" << std::endl;
             }
 
