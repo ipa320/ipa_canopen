@@ -342,39 +342,42 @@ void readParamsFromParameterServer(ros::NodeHandle n)
             jointNames.push_back(static_cast<std::string>(jointNames_XMLRPC[i]));
 
         int DOF = jointNames.size();
-        std::cout << DOF;
+
         param = "/" + chainName + "/motor_direction";
         XmlRpc::XmlRpcValue motorDirections_XMLRPC;
         if (n.hasParam(param))
         {
             n.getParam(param, motorDirections_XMLRPC);
-        }
-        else
-        {
-            ROS_ERROR("Parameter %s not set, shutting down node...", param.c_str());
-            n.shutdown();
-        }
 
-        if( motorDirections_XMLRPC.size() != DOF)
-        {
-            ROS_ERROR("The size of the motor direction parameter is different from the size of the degrees of freedom. Shutting down node...");
-            n.shutdown();
-            exit(EXIT_FAILURE);
-        }
-        // TODO: check for content of motorDirections
-        for (int i=0; i<motorDirections_XMLRPC.size(); i++)
-        {
-            int this_direction = static_cast<int>(motorDirections_XMLRPC[i]);
-
-            if(this_direction != 1 && this_direction != -1 )
+            if( motorDirections_XMLRPC.size() != DOF)
             {
-                ROS_ERROR("The value %d is not valid for the motor direction.Please use 1 or -1. Shutting down node...", this_direction);
+                ROS_ERROR("The size of the motor direction parameter is different from the size of the degrees of freedom. Shutting down node...");
                 n.shutdown();
                 exit(EXIT_FAILURE);
             }
 
-            motor_direction.push_back(this_direction);
+            // TODO: check for content of motorDirections
+            for (int i=0; i<motorDirections_XMLRPC.size(); i++)
+            {
+                int this_direction = static_cast<int>(motorDirections_XMLRPC[i]);
+
+                if(this_direction != 1 && this_direction != -1 )
+                {
+                    ROS_ERROR("The value %d is not valid for the motor direction.Please use 1 or -1. Shutting down node...", this_direction);
+                    n.shutdown();
+                    exit(EXIT_FAILURE);
+                }
+
+                motor_direction.push_back(this_direction);
+            }
         }
+        else
+        {
+            ROS_INFO("Parameter %s not set, shutting down node...", param.c_str());
+            for (int i=0; i < DOF; i++)
+                motor_direction.push_back(1);
+        }
+
 
         param = "/" + chainName + "/module_ids";
         XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
