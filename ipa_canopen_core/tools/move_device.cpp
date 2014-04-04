@@ -91,7 +91,8 @@ int main(int argc, char *argv[]) {
     canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
     canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 
-    canopen::init(deviceFile, canopen::syncInterval);
+    std::string chainName = "test_chain";
+    canopen::init(deviceFile, chainName, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     canopen::sendSync();
