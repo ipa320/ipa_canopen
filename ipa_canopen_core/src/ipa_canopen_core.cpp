@@ -892,7 +892,7 @@ void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m)
     uint16_t mydata_low = m.Msg.DATA[0];
     uint16_t mydata_high = m.Msg.DATA[1];
 
-     std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << (uint16_t)m.Msg.DATA[1] << (uint16_t)m.Msg.DATA[2]<< (uint16_t)m.Msg.DATA[3]<< (uint16_t)m.Msg.DATA[4]<< (uint16_t)m.Msg.DATA[5]<< (uint16_t)m.Msg.DATA[6]<< (uint16_t)m.Msg.DATA[7]<< (uint16_t)m.Msg.DATA[8]<< std::endl;
+     std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << " "<< (uint16_t)m.Msg.DATA[1]<< " " << (uint16_t)m.Msg.DATA[2]<< " "<< (uint16_t)m.Msg.DATA[3]<< " "<< (uint16_t)m.Msg.DATA[4]<< " "<< (uint16_t)m.Msg.DATA[5]<< " "<< (uint16_t)m.Msg.DATA[6]<< " "<< (uint16_t)m.Msg.DATA[7]<< " "<< (uint16_t)m.Msg.DATA[8]<< std::endl;
 
 
 }
