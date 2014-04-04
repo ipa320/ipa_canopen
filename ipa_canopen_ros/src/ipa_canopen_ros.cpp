@@ -142,9 +142,9 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
 
-    for (auto device : canopen::devices)
+    for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
-        if (not device.second.getInitialized())
+        if (not canopen::devices[id].getInitialized())
         {
             res.success.data = false;
             res.error_message.data = "not initialized yet";
