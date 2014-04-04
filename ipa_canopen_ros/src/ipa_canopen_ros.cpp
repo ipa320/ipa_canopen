@@ -665,38 +665,41 @@ int main(int argc, char **argv)
 
         diagnostics.status.resize(1);
 
-        for (auto dg : (canopen::devices))
+        for (auto dg : (canopen::deviceGroups))
         {
-            std::string name = dg.second.getName();
+            for (auto id : dg.second.getCANids())
+            {
+
+            std::string name = canopen::devices[id].getName();
             //ROS_INFO("Name %s", name.c_str() );
 
             keyval.key = "Node ID";
-            uint16_t node_id = dg.second.getCANid();
+            uint16_t node_id = canopen::devices[id].getCANid();
             std::stringstream result;
             result << node_id;
             keyval.value = result.str().c_str();
             keyvalues.push_back(keyval);
 
             keyval.key = "Device Name";
-            std::vector<char> dev_name = dg.second.getManufacturerDevName();
+            std::vector<char> dev_name = canopen::devices[id].getManufacturerDevName();
             keyval.value = std::string(dev_name.begin(), dev_name.end());
             keyvalues.push_back(keyval);
 
             /*
             keyval.key = "Hardware Version";
-            std::vector<char> manhw = dg.second.getManufacturerHWVersion();
+            std::vector<char> manhw = canopen::devices[id].getManufacturerHWVersion();
             keyval.value = std::string(manhw.begin(), manhw.end());
             keyvalues.push_back(keyval);
 
             keyval.key = "Software Version";
-            std::vector<char> mansw = dg.second.getManufacturerSWVersion();
+            std::vector<char> mansw = canopen::devices[id].getManufacturerSWVersion();
             keyval.value = std::string(mansw.begin(), mansw.end());
             keyvalues.push_back(keyval);
 
 
 
             keyval.key = "Vendor ID";
-            std::vector<uint16_t> vendor_id = dg.second.getVendorID();
+            std::vector<uint16_t> vendor_id = canopen::devices[id].getVendorID();
             std::stringstream result1;
             for (auto it : vendor_id)
             {
@@ -706,36 +709,36 @@ int main(int argc, char **argv)
             keyvalues.push_back(keyval);
 
             keyval.key = "Revision Number";
-            uint16_t rev_number = dg.second.getRevNumber();
+            uint16_t rev_number = canopen::devices[id].getRevNumber();
             std::stringstream result2;
             result2 << rev_number;
             keyval.value = result2.str().c_str();
             keyvalues.push_back(keyval);
 
             keyval.key = "Product Code";
-            std::vector<uint16_t> prod_code = dg.second.getProdCode();
+            std::vector<uint16_t> prod_code = canopen::devices[id].getProdCode();
             std::stringstream result3;
             std::copy(prod_code.begin(), prod_code.end(), std::ostream_iterator<uint16_t>(result3, " "));
             keyval.value = result3.str().c_str();
             keyvalues.push_back(keyval);
             */
 
-            bool error_ = dg.second.getFault();
-            bool initialized_ = dg.second.getInitialized();
+            bool error_ = canopen::devices[id].getFault();
+            bool initialized_ = canopen::devices[id].getInitialized();
 
             if(initialized_)
             {
                 keyval.key = "Current mode of operation";
-                int8_t mode_display = dg.second.getCurrentModeofOperation();
+                int8_t mode_display = canopen::devices[id].getCurrentModeofOperation();
                 keyval.value = canopen::modesDisplay[mode_display];
                 keyvalues.push_back(keyval);
 
                 keyval.key = "Errors Register";
-                keyval.value = dg.second.getErrorRegister();
+                keyval.value = canopen::devices[id].getErrorRegister();
                 keyvalues.push_back(keyval);
 
                 keyval.key = "Current driver temperature";
-                double driver_temperature = dg.second.getDriverTemperature();
+                double driver_temperature = canopen::devices[id].getDriverTemperature();
                 keyval.value = std::to_string(driver_temperature);
                 keyvalues.push_back(keyval);
             }
@@ -747,7 +750,7 @@ int main(int argc, char **argv)
             if(error_)
             {
                 diagstatus.level = 2;
-                diagstatus.name = chainNames[0];
+                diagstatus.name = dg.first;
                 diagstatus.message = "Fault occured.";
                 diagstatus.values = keyvalues;
                 break;
@@ -757,20 +760,21 @@ int main(int argc, char **argv)
                 if (initialized_)
                 {
                     diagstatus.level = 0;
-                    diagstatus.name = chainNames[0];
-                    diagstatus.message = "canopen chain initialized and running";
+                    diagstatus.name = dg.first;
+                    diagstatus.message = "Device initialized and running";
                     diagstatus.values = keyvalues;
                 }
                 else
                 {
                     diagstatus.level = 1;
-                    diagstatus.name = chainNames[0];
-                    diagstatus.message = "canopen chain not initialized";
+                    diagstatus.name = dg.first;
+                    diagstatus.message = "Device not initialized";
                     diagstatus.values = keyvalues;
                     break;
                 }
             }
         }
+    }
         diagstatus_msg.push_back(diagstatus);
         // publish diagnostic message
         diagnostics.status = diagstatus_msg;
