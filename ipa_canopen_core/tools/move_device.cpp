@@ -92,10 +92,29 @@ int main(int argc, char *argv[]) {
     canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 
     std::string chainName = "test_chain";
+    std::vector <uint8_t> ids;
+    ids.push_back(CANid);
+    std::vector <std::string> j_names;
+    j_names.push_back("joint_1");
+    canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(ids, j_names);
+
     canopen::init(deviceFile, chainName, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     canopen::sendSync();
+
+    canopen::setMotorState((uint16_t)CANid, canopen::MS_OPERATION_ENABLED);
+
+    //Necessary otherwise sometimes Schunk devices complain for Position Track Error
+    canopen::devices[CANid].setDesiredPos((double)canopen::devices[CANid].getActualPos());
+    canopen::devices[CANid].setDesiredVel(0);
+
+    canopen::sendPos((uint16_t)CANid, (double)canopen::devices[CANid].getDesiredPos());
+
+    canopen::controlPDO((uint16_t)CANid, canopen::CONTROLWORD_ENABLE_MOVEMENT, 0x00);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    canopen::devices[CANid].setInitialized(true);
 
     if (accel != 0) {  // accel of 0 means "move at target vel immediately"
         std::chrono::milliseconds accelerationTime( static_cast<int>(round( 1000.0 * targetVel / accel)) );
