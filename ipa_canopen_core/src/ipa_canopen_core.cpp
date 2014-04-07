@@ -142,7 +142,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 {
     if(canopen::atFirstInit)
     {
-        std::cout <<" INIT";
+
         canopen::atFirstInit = false;
 
         bool connection_success;
@@ -157,7 +157,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 
             if (!connection_success)
             {
-                std::cout << "Cannot open CAN device; aborting." << std::endl;
+                std::cout << "Cannot open CAN device "<< deviceFile << "; aborting." << std::endl;
                 exit(EXIT_FAILURE);
             }
             canopen::initListenerThread(canopen::defaultListener);
@@ -504,14 +504,16 @@ void setNMTState(uint16_t CANid, std::string targetState)
 
 bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout)
 {
-    start = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
+
+    time_start = std::chrono::high_resolution_clock::now();
 
     // check if motor is in a legitimate state to change operation mode
     if (    devices[CANid].getMotorState() != MS_READY_TO_SWITCH_ON &&
             devices[CANid].getMotorState() != MS_SWITCHED_ON_DISABLED &&
             devices[CANid].getMotorState() != MS_SWITCHED_ON)
     {
-        std::cout << "found motor in state " << devices[CANid].getMotorState() << ", need to adjust state to SWITCHED_ON" << std::endl;
+        std::cout << "Found motor in state " << devices[CANid].getMotorState() << ", need to adjust state to SWITCHED_ON" << std::endl;
         setMotorState(CANid, canopen::MS_SWITCHED_ON);
     }
 
@@ -523,8 +525,8 @@ bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         // timeout check
-        end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end-start;
+        time_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds = time_end-time_start;
 
         if(elapsed_seconds.count() > timeout)
         {
@@ -892,7 +894,7 @@ void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m)
     uint16_t mydata_low = m.Msg.DATA[0];
     uint16_t mydata_high = m.Msg.DATA[1];
 
-     std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << " "<< (uint16_t)m.Msg.DATA[1]<< " " << (uint16_t)m.Msg.DATA[2]<< " "<< (uint16_t)m.Msg.DATA[3]<< " "<< (uint16_t)m.Msg.DATA[4]<< " "<< (uint16_t)m.Msg.DATA[5]<< " "<< (uint16_t)m.Msg.DATA[6]<< " "<< (uint16_t)m.Msg.DATA[7]<< " "<< (uint16_t)m.Msg.DATA[8]<< std::endl;
+    //std::cout << "EMCY" << (uint16_t)CANid << " is: " << (uint16_t)m.Msg.DATA[0] << " "<< (uint16_t)m.Msg.DATA[1]<< " " << (uint16_t)m.Msg.DATA[2]<< " "<< (uint16_t)m.Msg.DATA[3]<< " "<< (uint16_t)m.Msg.DATA[4]<< " "<< (uint16_t)m.Msg.DATA[5]<< " "<< (uint16_t)m.Msg.DATA[6]<< " "<< (uint16_t)m.Msg.DATA[7]<< " "<< (uint16_t)m.Msg.DATA[8]<< std::endl;
 
 
 }

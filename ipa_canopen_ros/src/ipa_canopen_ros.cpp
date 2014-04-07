@@ -99,6 +99,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 {
     bool all_initialized = true;
 
+    ROS_INFO("Trying to initialize the chain: %s", chainName.c_str());
+
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
         if (not canopen::devices[id].getInitialized())
@@ -110,8 +112,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     if(all_initialized)
     {
         res.success.data = true;
-        res.error_message.data = "already initialized";
-        ROS_INFO("already initialized");
+        res.error_message.data = "This chain is already initialized";
+        ROS_INFO("This chain is already initialized");
         return true;
     }
 
@@ -124,14 +126,14 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     {
         res.success.data = true;
         res.error_message.data = "Sucessfuly initialized";
-        ROS_INFO("The device was sucessfuly initialized");
+        ROS_INFO("This chain was sucessfuly initialized");
 
     }
     else
     {
         res.success.data = false;
         res.error_message.data = "Module could not be initialized";
-        ROS_WARN("Module could not be initialized. Check for possible errors and try to initialize it again.");
+        ROS_WARN("THis chain could not be initialized. Check for possible errors and try to initialize it again.");
     }
 
 
@@ -141,6 +143,8 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 
 bool CANopenRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res, std::string chainName)
 {
+
+    ROS_INFO("Trying to recover the chain: %s", chainName.c_str());
 
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
@@ -728,16 +732,22 @@ int main(int argc, char **argv)
 
             if(initialized_)
             {
-                keyval.key = "Current mode of operation";
+                std::stringstream operation_string;
+                operation_string << "Mode of operation for Node" << node_id;
+                keyval.key = operation_string.str().c_str();
                 int8_t mode_display = canopen::devices[id].getCurrentModeofOperation();
                 keyval.value = canopen::modesDisplay[mode_display];
                 keyvalues.push_back(keyval);
 
-                keyval.key = "Errors Register";
+                std::stringstream error_register_string;
+                error_register_string << "Error Register from Node" << node_id;
+                keyval.key = error_register_string.str().c_str();
                 keyval.value = canopen::devices[id].getErrorRegister();
                 keyvalues.push_back(keyval);
 
-                keyval.key = "Current driver temperature";
+                std::stringstream driver_temperature_string;
+                driver_temperature_string << "Current Driver Temperature for Node" << node_id;
+                keyval.key = driver_temperature_string.str().c_str();
                 double driver_temperature = canopen::devices[id].getDriverTemperature();
                 keyval.value = std::to_string(driver_temperature);
                 keyvalues.push_back(keyval);
@@ -750,7 +760,7 @@ int main(int argc, char **argv)
             if(error_)
             {
                 diagstatus.level = 2;
-                diagstatus.name = dg.first;
+                diagstatus.name = id;
                 diagstatus.message = "Fault occured.";
                 diagstatus.values = keyvalues;
                 break;
@@ -760,14 +770,14 @@ int main(int argc, char **argv)
                 if (initialized_)
                 {
                     diagstatus.level = 0;
-                    diagstatus.name = dg.first;
+                    diagstatus.name = id;
                     diagstatus.message = "Device initialized and running";
                     diagstatus.values = keyvalues;
                 }
                 else
                 {
                     diagstatus.level = 1;
-                    diagstatus.name = dg.first;
+                    diagstatus.name = id;
                     diagstatus.message = "Device not initialized";
                     diagstatus.values = keyvalues;
                     break;
