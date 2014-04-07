@@ -329,7 +329,6 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         for (unsigned int i=0; i<jointNames.size(); i++)
         {
             canopen::devices[ moduleIDs[i] ] = canopen::Device(moduleIDs[i], jointNames[i], chainName, devices[i]);
-            std::cout << "i" << i << std::endl;
         }
 
         canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(moduleIDs, jointNames);
@@ -385,29 +384,58 @@ void setJointConstraints(ros::NodeHandle n)
 
     /// Get max velocities out of urdf model
     std::vector<double> MaxVelocities(DOF);
-    for (int i = 0; i < DOF; i++)
-    {
-        MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
-    }
-
-    /// Get lower limits out of urdf model
     std::vector<double> LowerLimits(DOF);
-    for (int i = 0; i < DOF; i++)
-    {
-        LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
-    }
-
-    // Get upper limits out of urdf model
     std::vector<double> UpperLimits(DOF);
-    for (int i = 0; i < DOF; i++)
-    {
-        UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
-    }
-
-    /// Get offsets out of urdf model
     std::vector<double> Offsets(DOF);
+
     for (int i = 0; i < DOF; i++)
     {
+        if(!model.getJoint(jointNames[i].c_str())->limits)
+        {
+            ROS_ERROR("Parameter limits could not be found in the URDF contents.");
+            n.shutdown();
+            exit(1);
+        }
+        else if(!model.getJoint(jointNames[i].c_str())->limits->velocity)
+        {
+            ROS_ERROR("Limits has no velocity attribute");
+            n.shutdown();
+            exit(1);
+        }
+        if(!model.getJoint(jointNames[i].c_str())->limits->lower)
+        {
+            ROS_ERROR("Limits has no lower attribute");
+            n.shutdown();
+            exit(1);
+        }
+        else if(!model.getJoint(jointNames[i].c_str())->limits->upper)
+        {
+            ROS_ERROR("Limits has no upper attribute");
+            n.shutdown();
+            exit(1);
+        }
+        //Get maximum velocities out of urdf model
+        MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
+
+        /// Get lower limits out of urdf model
+        LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
+
+         // Get upper limits out of urdf model
+        UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
+
+        /// Get offsets out of urdf model
+        if(!model.getJoint(jointNames[i].c_str())->calibration)
+        {
+            ROS_ERROR("Parameter calibration could not be found in the URDF contents.");
+            n.shutdown();
+            exit(1);
+        }
+        else if(!model.getJoint(jointNames[i].c_str())->calibration->rising)
+        {
+            ROS_ERROR("Calibration has no rising attribute");
+            n.shutdown();
+            exit(1);
+        }
         Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
     }
 
