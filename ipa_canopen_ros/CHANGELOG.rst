@@ -2,6 +2,19 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Small clean
+* Some init chains
+* Changes on diagnostics
+* fixes `ipa320/cob4#58 <https://github.com/ipa320/cob4/issues/58>`_
+* First functional and hardware tested version of the multiple_chains node, fixes `ipa320/ipa_canopen#57 <https://github.com/ipa320/ipa_canopen/issues/57>`_
+* still fixes `ipa320/cob4#58 <https://github.com/ipa320/cob4/issues/58>`_
+* fixes `ipa320/cob4#58 <https://github.com/ipa320/cob4/issues/58>`_
+* fixes `ipa320/cob4#58 <https://github.com/ipa320/cob4/issues/58>`_
+* fixes `ipa320/ipa_canopen#45 <https://github.com/ipa320/ipa_canopen/issues/45>`_
+* Contributors: thiagodefreitas
+
 0.5.3 (2014-03-28)
 ------------------
 * Merge branch 'hydro_dev' of github.com:ipa320/ipa_canopen into hydro_release_candidate

@@ -2,6 +2,19 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixes the move_device and homing tools for the multiple chains version
+* Small clean
+* Seeing EMCY
+* Seeing EMCY
+* Some init chains
+* First functional and hardware tested version of the multiple_chains node, fixes `ipa320/ipa_canopen#57 <https://github.com/ipa320/ipa_canopen/issues/57>`_
+* Fixes `ipa320/ipa_canopen#48 <https://github.com/ipa320/ipa_canopen/issues/48>`_
+* Show devices on bus for get_error
+* Incredible boost to initialization speed
+* Contributors: thiagodefreitas
+
 0.5.3 (2014-03-28)
 ------------------
 * Lint Fixes for ipa_canopen_core
