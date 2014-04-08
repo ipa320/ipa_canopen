@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.4 (2014-04-08)
+------------------
 * Small clean
 * Some init chains
 * Changes on diagnostics

@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.4 (2014-04-08)
+------------------
 * Fixes the move_device and homing tools for the multiple chains version
 * Small clean
 * Seeing EMCY
