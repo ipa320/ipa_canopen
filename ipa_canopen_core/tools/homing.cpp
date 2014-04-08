@@ -83,17 +83,26 @@ int main(int argc, char *argv[]) {
     }
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    canopen::sendNMT(CANid, canopen::NMT_RESET_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));;
-    canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    canopen::syncInterval = std::chrono::milliseconds(static_cast<int>(10.0));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
+    canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
+    canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
 
-    canopen::sendSDO(CANid, canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_HOMING_MODE);
+    std::string chainName = "test_chain";
+    std::vector <uint8_t> ids;
+    ids.push_back(CANid);
+    std::vector <std::string> j_names;
+    j_names.push_back("joint_1");
+    canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(ids, j_names);
+
+    canopen::init(deviceFile, chainName, canopen::syncInterval);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    canopen::sendSDO(CANid, canopen::CONTROLWORD, (uint16_t) (canopen::CONTROLWORD_ENABLE_OPERATION | canopen::CONTROLWORD_START_HOMING));
+
+    canopen::setOperationMode(CANid, canopen::MODES_OF_OPERATION_HOMING_MODE);
+
+    canopen::controlPDO((uint16_t)CANid, canopen::CONTROLWORD_ENABLE_OPERATION | canopen::CONTROLWORD_START_HOMING, 0x00);
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::cout << "Homing complete" << std::endl;
 }

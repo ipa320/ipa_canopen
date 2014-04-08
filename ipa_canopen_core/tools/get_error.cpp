@@ -100,74 +100,78 @@ int main(int argc, char *argv[])
     uint16_t CANid = std::stoi(std::string(argv[2]));
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::string chainName = "test_chain";
+
+    canopen::init(deviceFile,chainName, std::chrono::milliseconds(100));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     std::shared_ptr<TPCANRdMsg> m;
 
 
-    canopen::readErrorsRegister(CANid, m);
+    canopen::getErrors(CANid);
 
     /***************************************************************/
     //		Manufacturer specific errors register
     /***************************************************************/
-    canopen::readManErrReg(CANid, m);
+    canopen::readManErrReg(CANid);
 
-    /**************************
-     * Hardware and Software Information
-    *************************/
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid, m);
-    uint16_t rev_number = canopen::obtainRevNr(CANid, m);
-    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid, m);
-    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid,m);
-    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid, m);
-    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid, m);
+//    /**************************
+//     * Hardware and Software Information
+//    *************************/
 
-        /****
-         *Printing the data
-         */
+//    std::vector<uint16_t> vendor_id = canopen::obtainVendorID(CANid);
+//    uint16_t rev_number = canopen::obtainRevNr(CANid);
+//    std::vector<uint16_t> product_code = canopen::obtainProdCode(CANid);
+//    std::vector<char> manufacturer_device_name = canopen::obtainManDevName(CANid);
+//    std::vector<char> manufacturer_hw_version =  canopen::obtainManHWVersion(CANid);
+//    std::vector<char> manufacturer_sw_version =  canopen::obtainManSWVersion(CANid);
 
-        std::cout << "vendor_id=0x";
+//        /****
+//         *Printing the data
+//         */
 
-        for (auto it : vendor_id)
-        {
-           std::cout <<  std::hex << it;
-        }
+//        std::cout << "vendor_id=0x";
 
-        std::cout << std::endl;
+//        for (auto it : vendor_id)
+//        {
+//           std::cout <<  std::hex << it;
+//        }
 
-        std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
-        std::cout << "device_name:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_device_name)
-        {
-           std::cout << it;
-        }
+//        std::cout << "revision_number: "<< std::hex << int(rev_number) << std::dec << std::endl;
+//        std::cout << "device_name:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_device_name)
+//        {
+//           std::cout << it;
+//        }
 
-        std::cout << "hardware_version:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_hw_version)
-        {
-           std::cout << it;
-        }
+//        std::cout << "hardware_version:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_hw_version)
+//        {
+//           std::cout << it;
+//        }
 
-        std::cout << "software_version:";
+//        std::cout << std::endl;
 
-        for (auto it : manufacturer_sw_version)
-        {
-           std::cout << it;
-        }
+//        std::cout << "software_version:";
 
-        std::cout << std::endl;
+//        for (auto it : manufacturer_sw_version)
+//        {
+//           std::cout << it;
+//        }
+
+//        std::cout << std::endl;
 
 
 }
