@@ -452,6 +452,7 @@ void setJointConstraints(ros::NodeHandle n)
             ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
             n.shutdown();
         }
+        ROS_INFO("Robot model loaded succesfully");
         //ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
         /// Get urdf model out of robot_description
@@ -473,6 +474,12 @@ void setJointConstraints(ros::NodeHandle n)
         std::vector<std::string> jointNames = canopen::deviceGroups[chainName].getNames();
         for (int i = 0; i < DOF; i++)
         {
+            if(!model.getJoint(jointNames[i].c_str()))
+            {
+                ROS_ERROR("Joint %s is not available",jointNames[i].c_str());
+                n.shutdown();
+                exit(1);
+            }
             if(!model.getJoint(jointNames[i].c_str())->limits)
             {
                 ROS_ERROR("Parameter limits could not be found in the URDF contents.");
@@ -521,6 +528,7 @@ void setJointConstraints(ros::NodeHandle n)
             }
             Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
         }
+        ROS_INFO("Successfully got offsets and limits");
 
         /// Set parameters
 
