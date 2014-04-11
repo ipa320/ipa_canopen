@@ -1,4 +1,20 @@
-cmake_minimum_required(VERSION 2.4.6)
+cmake_minimum_required(VERSION 2.6)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
+   if (GCC_VERSION VERSION_GREATER 4.7 OR GCC_VERSION VERSION_EQUAL 4.7)
+        message(STATUS "C++11 activated.")
+        add_definitions("-std=gnu++11")
+   elseif(GCC_VERSION VERSION_GREATER 4.3 OR GCC_VERSION VERSION_EQUAL 4.3)
+        message(WARNING "C++0x activated. If you get any errors update to a compiler which fully supports C++11")
+        add_definitions("-std=gnu++0x")
+   else ()
+        message(FATAL_ERROR "C++11 needed. Therefore a gcc compiler with a version higher than 4.3 is needed.")
+   endif()
+else(CMAKE_COMPILER_IS_GNUCXX)
+   add_definitions("-std=c++0x")
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 # Set the build type.  Options are:
@@ -41,5 +57,5 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/src)
 rosbuild_add_executable(canopen_ros ros/src/canopen_ros_ros.cpp) 
 
 # protected region user Cmake macros on begin #
-list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs")
+#list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs")
 # protected region user Cmake macros end #
