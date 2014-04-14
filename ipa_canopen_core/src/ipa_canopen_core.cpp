@@ -205,7 +205,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
                 if(elapsed_seconds.count() > 25.0)
                 {
                     std::cout << "Node: " << (uint16_t)id << " is not ready for operation. Please check for eventual problems." << std::endl;
-                    exit(EXIT_FAILURE);
+                    return false;
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));

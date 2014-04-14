@@ -133,7 +133,7 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     {
         res.success.data = false;
         res.error_message.data = "Module could not be initialized";
-        ROS_WARN("THis chain could not be initialized. Check for possible errors and try to initialize it again.");
+        ROS_WARN("This chain could not be initialized. Check for possible errors and try to initialize it again.");
     }
 
 
