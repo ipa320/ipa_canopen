@@ -766,7 +766,7 @@ int main(int argc, char **argv)
             //ROS_INFO("Referenced: %d", initialized_);
 
             std::stringstream diag_string;
-            diag_string << node_id;
+            diag_string << name;
             diagstatus.name = diag_string.str().c_str();
                 
             // set data to diagnostics
