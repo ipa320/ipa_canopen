@@ -322,7 +322,9 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
-        canopen::setOperationMode(id, mode_of_operation);
+        bool set_operation_mode = canopen::setOperationMode(id, mode_of_operation);
+        if(!set_operation_mode)
+            return false;
         canopen::setMotorState((uint16_t)id, canopen::MS_OPERATION_ENABLED);
 
         //Necessary otherwise sometimes Schunk devices complain for Position Track Error
