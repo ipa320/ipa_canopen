@@ -714,6 +714,7 @@ namespace canopen{
     extern HANDLE h;
     extern std::vector<std::string> openDeviceFiles;
     extern bool atFirstInit;
+    extern int initTrials;
     extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;

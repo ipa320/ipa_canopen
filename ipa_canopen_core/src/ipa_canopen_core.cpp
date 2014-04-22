@@ -81,6 +81,7 @@ HANDLE h;
 std::vector<std::thread> managerThreads;
 std::vector<std::string> openDeviceFiles;
 bool atFirstInit=true;
+int initTrials=0;
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers { { STATUSWORD, sdo_incoming }, { DRIVERTEMPERATURE, sdo_incoming }, { MODES_OF_OPERATION_DISPLAY, sdo_incoming } };
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingErrorHandlers { { ERRORWORD, errorword_incoming }, { MANUFACTURER, errorword_incoming } };
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingManufacturerDetails { {MANUFACTURERHWVERSION, manufacturer_incoming}, {MANUFACTURERDEVICENAME, manufacturer_incoming}, {MANUFACTURERSOFTWAREVERSION, manufacturer_incoming} };
@@ -140,6 +141,16 @@ void pre_init(std::string chainName)
 /////////////
 bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation)
 {
+    initTrials++;
+
+    if(initTrials == 4)
+    {
+        std::cout << "There are still problems with the devices. Trying a complete reset " << std::endl;
+        canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+
+        initTrials=0;
+    }
+
     if(canopen::atFirstInit)
     {
 
@@ -164,8 +175,8 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
             canopen::openDeviceFiles.push_back(deviceFile);
         }
 
-        std::cout << "Resetting devices " << std::endl;
-        canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+        std::cout << "Resetting communication with the devices " << std::endl;
+        canopen::sendNMT(0x00, canopen::NMT_RESET_COMMUNICATION);
 
     }
 
