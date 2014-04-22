@@ -693,8 +693,9 @@ int main(int argc, char **argv)
             keyvalues.push_back(keyval);
 
             keyval.key = "Device Name";
-            std::vector<char> dev_name = canopen::devices[id].getManufacturerDevName();
-            keyval.value = std::string(dev_name.begin(), dev_name.end());
+            keyval.value = dg.first.c_str();
+            //std::vector<char> dev_name = canopen::devices[id].getManufacturerDevName();
+            //keyval.value = std::string(dev_name.begin(), dev_name.end());
             keyvalues.push_back(keyval);
 
             /*
@@ -764,11 +765,16 @@ int main(int argc, char **argv)
             //ROS_INFO("Fault: %d", error_);
             //ROS_INFO("Referenced: %d", initialized_);
 
+            std::stringstream diag_string;
+            diag_string << node_id;
+            diagstatus.name = diag_string.str().c_str();
+                
             // set data to diagnostics
             if(error_)
             {
                 diagstatus.level = 2;
-                diagstatus.name = id;
+                
+                diagstatus.name = diag_string.str().c_str();
                 diagstatus.message = "Fault occured.";
                 diagstatus.values = keyvalues;
                 break;
@@ -778,14 +784,12 @@ int main(int argc, char **argv)
                 if (initialized_)
                 {
                     diagstatus.level = 0;
-                    diagstatus.name = id;
                     diagstatus.message = "Device initialized and running";
                     diagstatus.values = keyvalues;
                 }
                 else
                 {
                     diagstatus.level = 1;
-                    diagstatus.name = id;
                     diagstatus.message = "Device not initialized";
                     diagstatus.values = keyvalues;
                     break;

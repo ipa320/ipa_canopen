@@ -192,6 +192,8 @@ namespace canopen{
                 desiredPos_(0),
                 actualPos_(0),
                 initialized_(false),
+                NMTState_("START_UP"),
+                motorState_("START_UP"),
                 nmt_init_(false) {};
 
             Device(uint16_t CANid, std::string name, std::string group):
@@ -202,6 +204,8 @@ namespace canopen{
                 actualVel_(0),
                 desiredPos_(0),
                 actualPos_(0),
+                NMTState_("START_UP"),
+                motorState_("START_UP"),
                 initialized_(false),
                 nmt_init_(false) {};
 
@@ -217,6 +221,8 @@ namespace canopen{
                 actualVel_(0),
                 desiredPos_(0),
                 actualPos_(0),
+                NMTState_("START_UP"),
+                motorState_("START_UP"),
                 initialized_(false),
                 nmt_init_(false) {};
 

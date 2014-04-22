@@ -173,6 +173,10 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
     if(canopen::deviceGroups[chainName].getFirstInit())
     {
 
+        std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
+        time_start = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds;
+        
         canopen::initDeviceManagerThread(chainName,canopen::deviceManager);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -183,20 +187,29 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
         canopen::pre_init(chainName);
 
         while(sdo_protect)
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            
+         elapsed_seconds = time_end - time_start;
 
+            if(elapsed_seconds.count() > 5.0)
+                {
+                    std::cout << "not ready for operation. Probably due to communication problems with the Master." << std::endl;
+                    return false;
+                }
+                time_end = std::chrono::high_resolution_clock::now();
+        }
 
+        time_start = std::chrono::high_resolution_clock::now();
+
+        
+        
         for(auto id : canopen::deviceGroups[chainName].getCANids())
         {
-
-            std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
-
-            std::chrono::duration<double> elapsed_seconds;
 
             bool nmt_init = devices[id].getNMTInit();
             std::cout << "Waiting for Node: " << (uint16_t)id << " to become available" << std::endl;
 
-            time_start = std::chrono::high_resolution_clock::now();
 
             while(!nmt_init)
             {
