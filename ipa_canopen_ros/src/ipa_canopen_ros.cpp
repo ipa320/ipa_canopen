@@ -766,15 +766,13 @@ int main(int argc, char **argv)
             //ROS_INFO("Referenced: %d", initialized_);
 
             std::stringstream diag_string;
-            diag_string << name;
+            diag_string << dg.first;
             diagstatus.name = diag_string.str().c_str();
                 
             // set data to diagnostics
             if(error_)
             {
                 diagstatus.level = 2;
-                
-                diagstatus.name = diag_string.str().c_str();
                 diagstatus.message = "Fault occured.";
                 diagstatus.values = keyvalues;
                 break;
