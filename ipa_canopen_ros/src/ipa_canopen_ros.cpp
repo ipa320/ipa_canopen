@@ -693,7 +693,7 @@ int main(int argc, char **argv)
             keyvalues.push_back(keyval);
 
             keyval.key = "Device Name";
-            keyval.value = dg.first.c_str();
+            keyval.value = name.c_str();
             //std::vector<char> dev_name = canopen::devices[id].getManufacturerDevName();
             //keyval.value = std::string(dev_name.begin(), dev_name.end());
             keyvalues.push_back(keyval);
