@@ -1,0 +1,23 @@
+<package>
+  <name>ipa_canopen</name>
+  <version>0.5.1</version>
+  <description>This stack includes packages that provide access to CANopen hardware through ROS messages, services and actions.</description>
+ 
+
+  <license>LGPL</license>
+
+  <url type="website">http://ros.org/wiki/ipa_canopen</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <maintainer email="tdf@ipa.fhg.de">Thiago de Freitas</maintainer>
+  <author email="tdf@ipa.fhg.de">Thiago de Freitas</author>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>ipa_canopen_core</run_depend>
+  <run_depend>ipa_canopen_ros</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

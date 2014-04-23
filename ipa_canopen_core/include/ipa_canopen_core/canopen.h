@@ -171,7 +171,7 @@ namespace canopen{
 
             Device() {};
 
-            Device(uint8_t CANid):
+            Device(uint16_t CANid):
                 CANid_(CANid),
                 desiredVel_(0),
                 actualVel_(0),
@@ -182,7 +182,7 @@ namespace canopen{
                 motorState_("START_UP"),
                 nmt_init_(false) {};
 
-            Device(uint8_t CANid, std::string name, std::string group, std::string bus):
+            Device(uint16_t CANid, std::string name, std::string group, std::string bus):
                 CANid_(CANid),
                 name_(name),
                 group_(group),
@@ -194,7 +194,19 @@ namespace canopen{
                 initialized_(false),
                 nmt_init_(false) {};
 
-            Device(uint8_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
+            Device(uint16_t CANid, std::string name, std::string group):
+                CANid_(CANid),
+                name_(name),
+                group_(group),
+                desiredVel_(0),
+                actualVel_(0),
+                desiredPos_(0),
+                actualPos_(0),
+                initialized_(false),
+                nmt_init_(false) {};
+
+
+            Device(uint16_t CANid, std::string name, std::string group, std::string bus, double conversion_factor, double offsets):
                 CANid_(CANid),
                 name_(name),
                 group_(group),
@@ -580,6 +592,7 @@ namespace canopen{
             std::vector<uint8_t> CANids_;
             std::vector<std::string> names_;
             bool initialized_;
+            bool atFirstInit_;
 
         public:
 
@@ -591,7 +604,8 @@ namespace canopen{
             DeviceGroup(std::vector<uint8_t> CANids, std::vector<std::string> names):
                 CANids_(CANids),
                 names_(names),
-                initialized_(false) {};
+                initialized_(false),
+                atFirstInit_(true) {};
 
 
             std::vector<uint8_t> getCANids(){
@@ -608,6 +622,16 @@ namespace canopen{
 
             bool getInitialized(){
                 return initialized_;
+            }
+
+            bool getFirstInit()
+            {
+                return atFirstInit_;
+            }
+
+            void setFirstInit(bool initialized)
+            {
+                initialized_ = initialized;
             }
 
 
@@ -680,7 +704,10 @@ namespace canopen{
     void manufacturer_incoming(uint8_t CANid, BYTE data[8]);
 
     extern std::map<std::string, DeviceGroup> deviceGroups;	// DeviceGroup name -> DeviceGroup object
+    extern std::vector<std::thread> managerThreads;
     extern HANDLE h;
+    extern std::vector<std::string> openDeviceFiles;
+    extern bool atFirstInit;
     extern std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
@@ -691,23 +718,38 @@ namespace canopen{
 
     void setNMTState(uint16_t CANid, std::string targetState);
     void setMotorState(uint16_t CANid, std::string targetState);
+    bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout = 3.0);
 
     /***************************************************************/
     //	define get errors functions
     /***************************************************************/
+<<<<<<< HEAD
     void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableRPDO(int object);
     void clearRPDOMapping(int object);
     void enableRPDO(int object);
+=======
+    void makeRPDOMapping(std::string chainName,int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
+    void disableRPDO(std::string chainName, int object);
+    void clearRPDOMapping(std::string chainName, int object);
+    void enableRPDO(std::string chainName, int object);
+>>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
-    void setObjects();
+    void setObjects(std::string chainName);
 
+<<<<<<< HEAD
     void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableTPDO(int object);
     void clearTPDOMapping(int object);
     void enableTPDO(int object);
+=======
+    void makeTPDOMapping(std::string chainName, int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
+    void disableTPDO(std::string chainName,int object);
+    void clearTPDOMapping(std::string chainName,int object);
+    void enableTPDO(std::string chainName,int object);
+>>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
-    void pdoChanged();
+    void pdoChanged(std::string chainName);
 
     void getErrors(uint16_t CANid);
     std::vector<char> obtainManSWVersion(uint16_t CANid, std::shared_ptr<TPCANRdMsg> m);
@@ -737,14 +779,16 @@ namespace canopen{
 
     extern bool use_limit_switch;
 
-    extern uint8_t operation_mode;
     extern std::string operation_mode_param;
 
     bool openConnection(std::string devName, std::string baudrate);
-    bool init(std::string deviceFile, std::chrono::milliseconds syncInterval);
-    void pre_init();
-    bool recover(std::string deviceFile, std::chrono::milliseconds syncInterval);
-    void halt(std::string deviceFile, std::chrono::milliseconds syncInterval);
+    //Another init option
+    bool init(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
+    bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation);
+
+    void pre_init(std::string chainName);
+    bool recover(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
+    void halt(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid, double positionValue, double velocityValue) > sendPosPPMode;
@@ -908,12 +952,17 @@ namespace canopen{
     const uint16_t CONTROLWORD_FAULT_RESET_1 = 0x80;
     const uint16_t CONTROLWORD_HALT = 0x100;
 
-    const uint8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
-    const uint8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
-    const uint8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
-    const uint8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
-    const uint8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
-    const uint8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
+    const int8_t MODES_OF_OPERATION_HOMING_MODE = 0x6;
+    const int8_t MODES_OF_OPERATION_PROFILE_POSITION_MODE = 0x1;
+    const int8_t MODES_OF_OPERATION_VELOCITY_MODE = 0x2;
+    const int8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
+    const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
+    const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
+
+    static const char * const modesDisplay[] =
+    {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
+                              "TORQUE_PROFILED_MODE", "RESERVED", "HOMING_MODE", "INTERPOLATED_POSITION_MODE",
+                              "CYCLIC_SYNCHRONOUS_POSITION"};
 
     static const char * const modesDisplay[] =
     {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
@@ -940,8 +989,8 @@ namespace canopen{
     //		define PDO protocol functions
     /***************************************************************/
 
-    void initDeviceManagerThread(std::function<void ()> const& deviceManager);
-    void deviceManager();
+    void initDeviceManagerThread(std::string chainName, std::function<void (std::string)> const& deviceManager);
+    void deviceManager(std::string chainName);
 
 
     void defaultPDOOutgoing(uint16_t CANid, double positionValue);
