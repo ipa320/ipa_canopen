@@ -99,17 +99,11 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
 {
     bool all_initialized = true;
 
-<<<<<<< HEAD:ipa_canopen_ros/src/canopen_ros.cpp
-    for (auto device : canopen::devices)
-    {
-        if (not device.second.getInitialized())
-=======
     ROS_INFO("Trying to initialize the chain: %s", chainName.c_str());
 
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
         if (not canopen::devices[id].getInitialized())
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260:ipa_canopen_ros/src/ipa_canopen_ros.cpp
         {
             all_initialized = false;
         }
@@ -118,21 +112,12 @@ bool CANopenInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &r
     if(all_initialized)
     {
         res.success.data = true;
-<<<<<<< HEAD:ipa_canopen_ros/src/canopen_ros.cpp
-        res.error_message.data = "already initialized";
-        ROS_INFO("already initialized");
-        return true;
-    }
-
-    bool init_success = canopen::init(deviceFile, canopen::syncInterval);
-=======
         res.error_message.data = "This chain is already initialized";
         ROS_INFO("This chain is already initialized");
         return true;
     }
 
     bool init_success = canopen::init(deviceFile, chainName, canopen::syncInterval);
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260:ipa_canopen_ros/src/ipa_canopen_ros.cpp
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
@@ -571,17 +556,10 @@ int main(int argc, char **argv)
 
     readParamsFromParameterServer(n);
 
-<<<<<<< HEAD:ipa_canopen_ros/src/canopen_ros.cpp
-    std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
-    canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
-    // ^ todo: this only works with a single CAN bus; add support for more buses!
-    deviceFile = buses.begin()->first;
-=======
 //    std::cout << "Sync Interval" << buses.begin()->second.syncInterval << std::endl;
 //    canopen::syncInterval = std::chrono::milliseconds( buses.begin()->second.syncInterval );
 //    // ^ todo: this only works with a single CAN bus; add support for more buses!
 //    deviceFile = buses.begin()->first;
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260:ipa_canopen_ros/src/ipa_canopen_ros.cpp
 
     //canopen::pre_init();
 
@@ -715,11 +693,7 @@ int main(int argc, char **argv)
             keyvalues.push_back(keyval);
 
             keyval.key = "Device Name";
-<<<<<<< HEAD:ipa_canopen_ros/src/canopen_ros.cpp
-            std::vector<char> dev_name = dg.second.getManufacturerDevName();
-=======
             std::vector<char> dev_name = canopen::devices[id].getManufacturerDevName();
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260:ipa_canopen_ros/src/ipa_canopen_ros.cpp
             keyval.value = std::string(dev_name.begin(), dev_name.end());
             keyvalues.push_back(keyval);
 
@@ -783,23 +757,6 @@ int main(int argc, char **argv)
                 driver_temperature_string << "Current Driver Temperature for Node" << node_id;
                 keyval.key = driver_temperature_string.str().c_str();
                 double driver_temperature = canopen::devices[id].getDriverTemperature();
-                keyval.value = std::to_string(driver_temperature);
-                keyvalues.push_back(keyval);
-            }
-
-            if(initialized_)
-            {
-                keyval.key = "Current mode of operation";
-                int8_t mode_display = dg.second.getCurrentModeofOperation();
-                keyval.value = canopen::modesDisplay[mode_display];
-                keyvalues.push_back(keyval);
-
-                keyval.key = "Errors Register";
-                keyval.value = dg.second.getErrorRegister();
-                keyvalues.push_back(keyval);
-
-                keyval.key = "Current driver temperature";
-                double driver_temperature = dg.second.getDriverTemperature();
                 keyval.value = std::to_string(driver_temperature);
                 keyvalues.push_back(keyval);
             }

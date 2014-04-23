@@ -723,31 +723,17 @@ namespace canopen{
     /***************************************************************/
     //	define get errors functions
     /***************************************************************/
-<<<<<<< HEAD
-    void makeRPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
-    void disableRPDO(int object);
-    void clearRPDOMapping(int object);
-    void enableRPDO(int object);
-=======
     void makeRPDOMapping(std::string chainName,int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableRPDO(std::string chainName, int object);
     void clearRPDOMapping(std::string chainName, int object);
     void enableRPDO(std::string chainName, int object);
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
     void setObjects(std::string chainName);
 
-<<<<<<< HEAD
-    void makeTPDOMapping(int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
-    void disableTPDO(int object);
-    void clearTPDOMapping(int object);
-    void enableTPDO(int object);
-=======
     void makeTPDOMapping(std::string chainName, int object, std::vector<std::string> registers, std::vector<int> sizes, u_int8_t sync_type);
     void disableTPDO(std::string chainName,int object);
     void clearTPDOMapping(std::string chainName,int object);
     void enableTPDO(std::string chainName,int object);
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
     void pdoChanged(std::string chainName);
 
@@ -958,11 +944,6 @@ namespace canopen{
     const int8_t MODES_OF_OPERATION_PROFILE_VELOCITY_MODE = 0x3;
     const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
     const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
-
-    static const char * const modesDisplay[] =
-    {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
-                              "TORQUE_PROFILED_MODE", "RESERVED", "HOMING_MODE", "INTERPOLATED_POSITION_MODE",
-                              "CYCLIC_SYNCHRONOUS_POSITION"};
 
     static const char * const modesDisplay[] =
     {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",

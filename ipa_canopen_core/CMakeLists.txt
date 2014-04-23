@@ -56,23 +56,13 @@ target_link_libraries(${PROJECT_NAME}_move_device pthread ipa_canopen_core ${cat
 add_executable(${PROJECT_NAME}_get_error tools/get_error.cpp)
 target_link_libraries(${PROJECT_NAME}_get_error pthread ipa_canopen_core ${catkin_LIBRARIES})
 
-<<<<<<< HEAD
-#add_executable(get_error tools/get_error.cpp)
-#target_link_libraries(get_error pthread ipa_canopen_core pcan)
-=======
 #list( APPEND CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -g -ftest-coverage -fprofile-arcs" )
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
 
-<<<<<<< HEAD
-#rosbuild_add_gtest(communication_test test/communication_test.cpp)
-#target_link_libraries(communication_test pthread ipa_canopen_core pcan gtest)
-=======
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
 )
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_homing ${PROJECT_NAME}_move_device ${PROJECT_NAME}_get_error
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

@@ -83,21 +83,11 @@ int main(int argc, char *argv[]) {
     }
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
-<<<<<<< HEAD
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    canopen::sendNMT(CANid, canopen::NMT_RESET_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));;
-    canopen::sendNMT(CANid, canopen::NMT_START_REMOTE_NODE);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-=======
     canopen::syncInterval = std::chrono::milliseconds(static_cast<int>(10.0));
 
     canopen::incomingPDOHandlers[ 0x180 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_status( CANid, m ); };
     canopen::incomingPDOHandlers[ 0x480 + CANid ] = [CANid](const TPCANRdMsg m) { canopen::defaultPDO_incoming_pos( CANid, m ); };
     canopen::sendPos = canopen::defaultPDOOutgoing_interpolated;
->>>>>>> 01abf15ccab3fc799de8801f51563463f7dab260
 
     std::string chainName = "test_chain";
     std::vector <uint8_t> ids;
