@@ -245,75 +245,72 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
-    for (auto id : canopen::deviceGroups[chainName].getCANids())
-    {
-
+        for (auto id : canopen::deviceGroups[chainName].getCANids())
+        {
+            for(int pdo_object=0; pdo_object<=3; pdo_object++)
+            {
+                canopen::disableTPDO(chainName,pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                
+                canopen::clearTPDOMapping(chainName, pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                
+                canopen::disableRPDO(chainName,pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                
+                canopen::clearRPDOMapping(chainName, pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            }
+            
+            
+            if(canopen::use_limit_switch)
+            {
+                
+                std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
+                std::vector<int> tpdo1_sizes {0x10,0x20};
+                
+                canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
+            }
+            else
+            {
+                std::vector<std::string> tpdo1_registers {"604100", "606100"};
+                std::vector<int> tpdo1_sizes {0x10,0x08};
+                
+                canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
+                
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            
+            std::vector<std::string> tpdo4_registers {"606400", "606C00"};
+            std::vector<int> tpdo4_sizes {0x20,0x20};
+            
+            canopen::makeTPDOMapping(chainName,3, tpdo4_registers, tpdo4_sizes, SYNC_TYPE_CYCLIC);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            
+            std::vector<std::string> rpdo1_registers {"604000"};
+            std::vector<int> rpdo1_sizes {0x10};
+            
+            std::vector<std::string> rpdo2_registers {"60C101"};
+            std::vector<int> rpdo2_sizes {0x20};
+            
+            canopen::makeRPDOMapping(chainName,0, rpdo1_registers, rpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            canopen::makeRPDOMapping(chainName,1, rpdo2_registers, rpdo2_sizes, SYNC_TYPE_CYCLIC);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            
+            for(int pdo_object=0; pdo_object<=3; pdo_object++)
+            {
+                canopen::enableTPDO(chainName, pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                
+                canopen::enableRPDO(chainName, pdo_object);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            }
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            
+        }
         std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)id << std::endl;
-
-        for(int pdo_object=0; pdo_object<=3; pdo_object++)
-        {
-            canopen::disableTPDO(chainName,pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-            canopen::clearTPDOMapping(chainName, pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-            canopen::disableRPDO(chainName,pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-            canopen::clearRPDOMapping(chainName, pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        }
-
-
-        if(canopen::use_limit_switch)
-        {
-
-            std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
-            std::vector<int> tpdo1_sizes {0x10,0x20};
-
-            canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
-        }
-        else
-        {
-            std::vector<std::string> tpdo1_registers {"604100", "606100"};
-            std::vector<int> tpdo1_sizes {0x10,0x08};
-
-            canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, u_int8_t(0xFF));
-
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-        std::vector<std::string> tpdo4_registers {"606400", "606C00"};
-        std::vector<int> tpdo4_sizes {0x20,0x20};
-
-        canopen::makeTPDOMapping(chainName,3, tpdo4_registers, tpdo4_sizes, u_int8_t(0x01));
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-        std::vector<std::string> rpdo1_registers {"604000"};
-        std::vector<int> rpdo1_sizes {0x10};
-
-        std::vector<std::string> rpdo2_registers {"60C101"};
-        std::vector<int> rpdo2_sizes {0x20};
-
-        canopen::makeRPDOMapping(chainName,0, rpdo1_registers, rpdo1_sizes, u_int8_t(0xFF));
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        canopen::makeRPDOMapping(chainName,1, rpdo2_registers, rpdo2_sizes, u_int8_t(0x01));
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-        for(int pdo_object=0; pdo_object<=3; pdo_object++)
-        {
-            canopen::enableTPDO(chainName, pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-            canopen::enableRPDO(chainName, pdo_object);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-    }
-
    }
     recover_active = false;
 

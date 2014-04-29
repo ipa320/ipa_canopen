@@ -961,6 +961,10 @@ namespace canopen{
     const int8_t IP_TIME_INDEX_HUNDREDMICROSECONDS = 0xFC;
     const uint8_t SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT = 0;
 
+    const u_int8_t SYNC_TYPE_ACYCLIC = 0x00;
+    const u_int8_t SYNC_TYPE_CYCLIC = 0x01;
+    const u_int8_t SYNC_TYPE_ASYNCHRONOUS = 0xFF;
+
     void uploadSDO(uint8_t CANid, SDOkey sdo);
     void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2);
     void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message);
