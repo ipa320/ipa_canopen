@@ -779,6 +779,10 @@ namespace canopen{
     bool init(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
     bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation);
 
+    void pdo_map(std::string chain_name, int pdo_id,
+             std::vector<std::string> tpdo_registers, std::vector<int> tpdo_sizes, u_int8_t tsync_type,
+             std::vector<std::string> rpdo_registers, std::vector<int> rpdo_sizes, u_int8_t rsync_type);
+
     void pre_init(std::string chainName);
     bool recover(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
     void halt(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);

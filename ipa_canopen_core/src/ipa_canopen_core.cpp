@@ -137,6 +137,40 @@ void pre_init(std::string chainName)
         canopen::uploadSDO(id, MANUFACTURERDEVICENAME);
     }
 }
+
+void pdo_map(std::string chain_name, int pdo_id,
+         std::vector<std::string> tpdo_registers, std::vector<int> tpdo_sizes, u_int8_t tsync_type,
+         std::vector<std::string> rpdo_registers, std::vector<int> rpdo_sizes, u_int8_t rsync_type)
+{
+    // clear all mappings for given pdo id
+    canopen::disableTPDO(chain_name, pdo_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    canopen::clearTPDOMapping(chain_name, pdo_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    canopen::disableRPDO(chain_name, pdo_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    canopen::clearRPDOMapping(chain_name, pdo_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    if(!tpdo_registers.empty())
+    {
+        canopen::makeTPDOMapping(chain_name, pdo_id-1, tpdo_registers, tpdo_sizes, tsync_type);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        canopen::enableTPDO(chain_name, pdo_id-1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+    if(!rpdo_registers.empty())
+    {
+        canopen::makeRPDOMapping(chain_name,pdo_id-1, rpdo_registers, rpdo_sizes, rsync_type);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        canopen::enableRPDO(chain_name, pdo_id-1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+}
+
 //////////////////////////////////////
 /////////////
 bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation)
@@ -244,74 +278,79 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-
+        // Configure PDO channels
         for (auto id : canopen::deviceGroups[chainName].getCANids())
         {
-            for(int pdo_object=0; pdo_object<=3; pdo_object++)
+            for (int pdo_channel = 1; pdo_channel <= 4; ++pdo_channel)
             {
-                canopen::disableTPDO(chainName,pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                
-                canopen::clearTPDOMapping(chainName, pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                
-                canopen::disableRPDO(chainName,pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                
-                canopen::clearRPDOMapping(chainName, pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                std::vector<std::string> tpdo_registers, rpdo_registers;
+                std::vector<int> tpdo_sizes, rpdo_sizes;
+                u_int8_t tsync_type, rsync_type;
+
+                switch(pdo_channel)
+                {
+                    case 1:
+                        // Status word
+                        tpdo_registers.push_back("604100");
+                        tpdo_sizes.push_back(0x10);
+
+                        // Mode of operation display
+                        tpdo_registers.push_back("606100");
+                        tpdo_sizes.push_back(0x08);
+
+                        if(canopen::use_limit_switch)
+                        {
+                            // Digital Inputs
+                            tpdo_registers.push_back("60FD00");
+                            tpdo_sizes.push_back(0x20);
+                        }
+
+                        // Control word
+                        rpdo_registers.push_back("604000");
+                        rpdo_sizes.push_back(0x10);
+
+                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
+                        rsync_type = SYNC_TYPE_ASYNCHRONOUS;
+                        break;
+                    case 2:
+                        // Position Actual Value
+                        tpdo_registers.push_back("606400");
+                        tpdo_sizes.push_back(0x20);
+
+                        // Velocity Actual Value
+                        tpdo_registers.push_back("606C00");
+                        tpdo_sizes.push_back(0x20);
+
+                        // Position Target Value
+                        rpdo_registers.push_back("60C101");
+                        rpdo_sizes.push_back(0x20);
+
+                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
+                        rsync_type = SYNC_TYPE_CYCLIC;
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        // Position Actual Value
+                        tpdo_registers.push_back("606400");
+                        tpdo_sizes.push_back(0x20);
+
+                        // Velocity Actual Value
+                        tpdo_registers.push_back("606C00");
+                        tpdo_sizes.push_back(0x20);
+
+                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
+                        rsync_type = SYNC_TYPE_CYCLIC;
+                        break;
+                    default:
+                        std::cout << "ERROR: There are only 4 PDO channels" << std::endl;
+                        break;
+                }
+                pdo_map(chainName, pdo_channel, tpdo_registers, tpdo_sizes, tsync_type, rpdo_registers, rpdo_sizes, rsync_type);
             }
-            
-            
-            if(canopen::use_limit_switch)
-            {
-                
-                std::vector<std::string> tpdo1_registers {"604100", "60FD00"};
-                std::vector<int> tpdo1_sizes {0x10,0x20};
-                
-                canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
-            }
-            else
-            {
-                std::vector<std::string> tpdo1_registers {"604100", "606100"};
-                std::vector<int> tpdo1_sizes {0x10,0x08};
-                
-                canopen::makeTPDOMapping(chainName,0,tpdo1_registers, tpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
-                
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            
-            std::vector<std::string> tpdo4_registers {"606400", "606C00"};
-            std::vector<int> tpdo4_sizes {0x20,0x20};
-            
-            canopen::makeTPDOMapping(chainName,3, tpdo4_registers, tpdo4_sizes, SYNC_TYPE_CYCLIC);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            
-            std::vector<std::string> rpdo1_registers {"604000"};
-            std::vector<int> rpdo1_sizes {0x10};
-            
-            std::vector<std::string> rpdo2_registers {"60C101"};
-            std::vector<int> rpdo2_sizes {0x20};
-            
-            canopen::makeRPDOMapping(chainName,0, rpdo1_registers, rpdo1_sizes, SYNC_TYPE_ASYNCHRONOUS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            canopen::makeRPDOMapping(chainName,1, rpdo2_registers, rpdo2_sizes, SYNC_TYPE_CYCLIC);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            
-            for(int pdo_object=0; pdo_object<=3; pdo_object++)
-            {
-                canopen::enableTPDO(chainName, pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                
-                canopen::enableRPDO(chainName, pdo_object);
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            }
-            
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            
+            std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)id << std::endl;
         }
-        std::cout << "Initialized the PDO mapping for Node:" << (uint16_t)id << std::endl;
-   }
+    }
     recover_active = false;
 
     canopen::setObjects(chainName);
