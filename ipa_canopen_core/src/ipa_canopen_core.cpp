@@ -914,7 +914,7 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = 0x300 + CANid;
+    msg.ID = PDO2_RX + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 4;
     int32_t mdegPos = rad2mdeg(positionValue);
@@ -930,7 +930,7 @@ void defaultPDOOutgoing(uint16_t CANid, double positionValue)
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = 0x200 + CANid;
+    msg.ID = PDO1_RX + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
     msg.DATA[0] = myControlword & 0xFF;
@@ -1237,13 +1237,13 @@ void defaultListener()
             perror("LINUX_CAN_Read() error");
 
         // incoming SYNC
-        else if (m.Msg.ID == 0x080)
+        else if (m.Msg.ID == COB_SYNC)
         {
             // std::cout << std::hex << "SYNC received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
         }
 
         // incoming EMCY
-        else if (m.Msg.ID >= 0x081 && m.Msg.ID <= 0x0FF)
+        else if (m.Msg.ID >= COB_EMERGENCY && m.Msg.ID < COB_TIME_STAMP)
         {
         //   std::cout << std::hex << "EMCY received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
           if (incomingEMCYHandlers.find(m.Msg.ID) != incomingEMCYHandlers.end())
@@ -1251,13 +1251,13 @@ void defaultListener()
         }
 
         // incoming TIME
-        else if (m.Msg.ID == 0x100)
+        else if (m.Msg.ID == COB_TIME_STAMP)
         {
             // std::cout << std::hex << "TIME received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
         }
 
         // incoming PD0
-        else if (m.Msg.ID >= 0x180 && m.Msg.ID <= 0x4FF)
+        else if (m.Msg.ID >= COB_PDO1_TX && m.Msg.ID < COB_PDO4_RX)
         {
             //std::cout << std::hex << "PDO received:  " << (m.Msg.ID - 0x180) << "  " << m.Msg.DATA[0] << " " << m.Msg.DATA[1] << " " << m.Msg.DATA[2] << " " << m.Msg.DATA[3] << " " << m.Msg.DATA[4] << " " << m.Msg.DATA[5] << " " << m.Msg.DATA[6] << " " <<  m.Msg.DATA[7] << " " << std::endl;
             //std::cout << std::hex << "PDO received:  " << (uint16_t)(m.Msg.ID - 0x180) << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " <<  (uint16_t)m.Msg.DATA[7] << " " << std::endl;
@@ -1266,7 +1266,7 @@ void defaultListener()
         }
 
         // incoming SD0
-        else if (m.Msg.ID >= 0x580 && m.Msg.ID <= 0x5FF)
+        else if (m.Msg.ID >= COB_SDO_TX && m.Msg.ID < COB_NODEGUARD)
         {
             //std::cout << std::hex << "SDO received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << " " << (uint16_t)m.Msg.DATA[2] << " " << (uint16_t)m.Msg.DATA[3] << " " << (uint16_t)m.Msg.DATA[4] << " " << (uint16_t)m.Msg.DATA[5] << " " << (uint16_t)m.Msg.DATA[6] << " " << (uint16_t)m.Msg.DATA[7] << std::endl;
             SDOkey sdoKey(m);
@@ -1278,19 +1278,19 @@ void defaultListener()
             else
             {
                 if (incomingErrorHandlers.find(sdoKey) != incomingErrorHandlers.end())
-                    incomingErrorHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
+                    incomingErrorHandlers[sdoKey](m.Msg.ID - COB_SDO_TX, m.Msg.DATA);
                 else if (incomingDataHandlers.find(sdoKey) != incomingDataHandlers.end())
-                    incomingDataHandlers[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
+                    incomingDataHandlers[sdoKey](m.Msg.ID - COB_SDO_TX, m.Msg.DATA);
                 else if (incomingManufacturerDetails.find(sdoKey) != incomingManufacturerDetails.end())
-                    incomingManufacturerDetails[sdoKey](m.Msg.ID - 0x580, m.Msg.DATA);
+                    incomingManufacturerDetails[sdoKey](m.Msg.ID - COB_SDO_TX, m.Msg.DATA);
             }
         }
 
         // incoming NMT error control
-        else if (m.Msg.ID >= 0x700 && m.Msg.ID <= 0x7FF)
+        else if (m.Msg.ID >= COB_NODEGUARD && m.Msg.ID < COB_MAX)
         {
             //std::cout << std::hex << "NMT received:  " << (uint16_t)m.Msg.ID << "  " << (uint16_t)m.Msg.DATA[0] << " " << (uint16_t)m.Msg.DATA[1] << std::endl;
-            uint16_t CANid = (uint16_t)(m.Msg.ID - 0x700);
+            uint16_t CANid = (uint16_t)(m.Msg.ID - COB_NODEGUARD);
             
             std::cout << "Bootup received. Node-ID =  " << CANid << std::endl;
             std::map<uint8_t,Device>::const_iterator search = devices.find(CANid);

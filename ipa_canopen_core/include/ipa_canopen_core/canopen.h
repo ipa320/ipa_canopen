@@ -956,6 +956,22 @@ namespace canopen{
     const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
     const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
 
+    const u_int16_t COB_SYNC = 0x80;
+    const u_int16_t COB_EMERGENCY = 0x81;
+    const u_int16_t COB_TIME_STAMP = 0x100;
+    const u_int16_t COB_PDO1_RX = 0x200;
+    const u_int16_t COB_PDO2_RX = 0x300;
+    const u_int16_t COB_PDO3_RX = 0x400;
+    const u_int16_t COB_PDO4_RX = 0x500;
+    const u_int16_t COB_PDO1_TX = 0x180;
+    const u_int16_t COB_PDO2_TX = 0x280;
+    const u_int16_t COB_PDO3_TX = 0x380;
+    const u_int16_t COB_PDO4_TX = 0x480;
+    const u_int16_t COB_SDO_TX = 0x580;
+    const u_int16_t COB_SDO_RX = 0x600;
+    const u_int16_t COB_NODEGUARD = 0x700;
+    const u_int16_t COB_MAX = 0x800;
+
     static const char * const modesDisplay[] =
     {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
                               "TORQUE_PROFILED_MODE", "RESERVED", "HOMING_MODE", "INTERPOLATED_POSITION_MODE",
