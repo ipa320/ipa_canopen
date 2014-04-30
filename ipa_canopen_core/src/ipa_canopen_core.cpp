@@ -336,7 +336,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
                                 break;
                         }
 
-                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;                        
+                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
                         break;
                     case 3:
                         break;
@@ -912,7 +912,6 @@ std::function< void (uint16_t CANid, double positionValue, double velocityValue)
 
 void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
-    static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x300 + CANid;
