@@ -322,11 +322,21 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
                         tpdo_sizes.push_back(0x20);
 
                         // Position Target Value
-                        rpdo_registers.push_back("60C101");
-                        rpdo_sizes.push_back(0x20);
+                        switch(mode_of_operation)
+                        {
+                            case MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE:
+                                rpdo_registers.push_back("60C101");
+                                rpdo_sizes.push_back(0x20);
+                                rsync_type = SYNC_TYPE_CYCLIC;
+                                break;
+                            case MODES_OF_OPERATION_PROFILE_POSITION_MODE:
+                                rpdo_registers.push_back("607A00");
+                                rpdo_sizes.push_back(0x20);
+                                rsync_type = SYNC_TYPE_ASYNCHRONOUS;
+                                break;
+                        }
 
-                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
-                        rsync_type = SYNC_TYPE_CYCLIC;
+                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;                        
                         break;
                     case 3:
                         break;
