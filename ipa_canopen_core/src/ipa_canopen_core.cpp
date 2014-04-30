@@ -331,16 +331,6 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
                     case 3:
                         break;
                     case 4:
-                        // Position Actual Value
-                        tpdo_registers.push_back("606400");
-                        tpdo_sizes.push_back(0x20);
-
-                        // Velocity Actual Value
-                        tpdo_registers.push_back("606C00");
-                        tpdo_sizes.push_back(0x20);
-
-                        tsync_type = SYNC_TYPE_ASYNCHRONOUS;
-                        rsync_type = SYNC_TYPE_CYCLIC;
                         break;
                     default:
                         std::cout << "ERROR: There are only 4 PDO channels" << std::endl;
