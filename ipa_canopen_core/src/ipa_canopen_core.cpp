@@ -914,7 +914,7 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = PDO2_RX + CANid;
+    msg.ID = COB_PDO2_RX + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 4;
     int32_t mdegPos = rad2mdeg(positionValue);
@@ -930,7 +930,7 @@ void defaultPDOOutgoing(uint16_t CANid, double positionValue)
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = PDO1_RX + CANid;
+    msg.ID = COB_PDO1_RX + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
     msg.DATA[0] = myControlword & 0xFF;
