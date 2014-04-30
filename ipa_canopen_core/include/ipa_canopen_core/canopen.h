@@ -1004,8 +1004,6 @@ namespace canopen{
     void initDeviceManagerThread(std::string chainName, std::function<void (std::string)> const& deviceManager);
     void deviceManager(std::string chainName);
 
-
-    void defaultPDOOutgoing(uint16_t CANid, double positionValue);
     void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue);
     void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m);

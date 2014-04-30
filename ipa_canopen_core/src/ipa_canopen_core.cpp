@@ -925,29 +925,6 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
     CAN_Write(h, &msg);
 }
 
-void defaultPDOOutgoing(uint16_t CANid, double positionValue)
-{
-    static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
-    TPCANMsg msg;
-    std::memset(&msg, 0, sizeof(msg));
-    msg.ID = COB_PDO1_RX + CANid;
-    msg.MSGTYPE = 0x00;
-    msg.LEN = 8;
-    msg.DATA[0] = myControlword & 0xFF;
-    msg.DATA[1] = (myControlword >> 8) & 0xFF;
-    msg.DATA[2] = 0x00;
-    msg.DATA[3] = 0x00;
-    int32_t mdegPos = rad2mdeg(positionValue);
-    msg.DATA[4] = mdegPos & 0xFF;
-    msg.DATA[5] = (mdegPos >> 8) & 0xFF;
-    msg.DATA[6] = (mdegPos >> 16) & 0xFF;
-    msg.DATA[7] = (mdegPos >> 24) & 0xFF;
-    CAN_Write(h, &msg);
-}
-
-
-
-
 void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m)
 {
 
