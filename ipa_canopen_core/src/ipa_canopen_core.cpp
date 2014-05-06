@@ -143,16 +143,16 @@ void pdo_map(std::string chain_name, int pdo_id,
          std::vector<std::string> rpdo_registers, std::vector<int> rpdo_sizes, u_int8_t rsync_type)
 {
     // clear all mappings for given pdo id
-    canopen::disableTPDO(chain_name, pdo_id);
+    canopen::disableTPDO(chain_name, pdo_id-1);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-    canopen::clearTPDOMapping(chain_name, pdo_id);
+    canopen::clearTPDOMapping(chain_name, pdo_id-1);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-    canopen::disableRPDO(chain_name, pdo_id);
+    canopen::disableRPDO(chain_name, pdo_id-1);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-    canopen::clearRPDOMapping(chain_name, pdo_id);
+    canopen::clearRPDOMapping(chain_name, pdo_id-1);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     if(!tpdo_registers.empty())
