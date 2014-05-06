@@ -1873,48 +1873,30 @@ void enableRPDO(std::string chainName, int object)
 
 void disableTPDO(std::string chainName,int object)
 {
-
+    int32_t data;
     for(auto id : canopen::deviceGroups[chainName].getCANids())
     {
-
-        //////////////////// Disable tpdo4
-
-        if(object == 0)
+        switch(object)
         {
-            int32_t data = (canopen::TPDO1_msg + id)  + (0x00 << 16) + (0x80 << 24);
-            sendSDO(id, SDOkey(TPDO.index+object,0x01), data);
+            case 0:
+                data = (canopen::TPDO1_msg + id)  + (0x00 << 16) + (0x80 << 24);
+                break;
+            case 1:
+                data = (canopen::TPDO2_msg + id)  + (0x00 << 16) + (0x80 << 24);
+                break;
+            case 2:
+                data = (canopen::TPDO3_msg + id)  + (0x00 << 16) + (0x80 << 24);
+                break;
+            case 3:
+                data = (canopen::TPDO4_msg + id)  + (0x00 << 16) + (0x80 << 24);
+                break;
+            default:
+                std::cout << "Incorrect object for mapping" << std::endl;
+                return;
         }
-        else if(object == 1)
-        {
-            int32_t data = (canopen::TPDO2_msg + id)  + (0x00 << 16) + (0x80 << 24);
-            sendSDO(id, SDOkey(TPDO.index+object,0x01), data);
-
-        }
-
-        else if(object == 2)
-        {
-            int32_t data = (canopen::TPDO3_msg + id)  + (0x00 << 16) + (0x80 << 24);
-            sendSDO(id, SDOkey(TPDO.index+object,0x01), data);
-        }
-
-        else if(object == 3)
-
-        {
-            int32_t data = (canopen::TPDO4_msg + id)  + (0x00 << 16) + (0x80 << 24);
-            sendSDO(id, SDOkey(TPDO.index+object,0x01), data);
-        }
-
-        else
-            std::cout << "Incorrect object for mapping" << std::endl;
-
-
-
+        sendSDO(id, SDOkey(TPDO.index+object,0x01), data);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        /////////////////////////
     }
-
-
 }
 
 void clearTPDOMapping(std::string chainName, int object)
