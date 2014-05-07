@@ -262,7 +262,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 
                 if(elapsed_seconds.count() > 25.0)
                 {
-                    std::cout << "Node: " << (uint16_t)id << " is not ready for operation. Please check for eventual problems." << std::endl;
+                    std::cout << "Node: " << (uint16_t)id << " is not ready for operation. Please check for potential problems." << std::endl;
                     return false;
                 }
 
@@ -511,7 +511,7 @@ void halt(std::string deviceFile, std::string chainName, std::chrono::millisecon
     NMTmsg.MSGTYPE = 0x00;
     NMTmsg.LEN = 2;
 
-    syncMsg.ID = 0x80;
+    syncMsg.ID = COB_SYNC;
     syncMsg.MSGTYPE = 0x00;
 
     syncMsg.LEN = 0x00;
@@ -708,7 +708,7 @@ void requestDataBlock1(uint8_t CANid)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
     msg.DATA[0] = 0x60;
@@ -726,7 +726,7 @@ void requestDataBlock2(uint8_t CANid)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
     msg.DATA[0] = 0x70;
@@ -744,7 +744,7 @@ void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x200;
+    msg.ID = CANid + COB_PDO1_RX;
     msg.MSGTYPE = 0x00;
     msg.LEN = 2;
     msg.DATA[0] = control1;
@@ -756,7 +756,7 @@ void uploadSDO(uint8_t CANid, SDOkey sdo)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.MSGTYPE = 0x00;
     msg.LEN = 8;
     msg.DATA[0] = 0x40;
@@ -774,7 +774,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint32_t value)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
     msg.DATA[1] = sdo.index & 0xFF;
@@ -791,7 +791,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.LEN = 8;
     msg.DATA[0] = 0x23;
     msg.DATA[1] = sdo.index & 0xFF;
@@ -808,7 +808,7 @@ void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.LEN = 8;
     msg.DATA[0] = 0x22;
     msg.DATA[1] = sdo.index & 0xFF;
@@ -825,7 +825,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.LEN = 8;
     msg.DATA[0] = 0x2F;
     msg.DATA[1] = sdo.index & 0xFF;
@@ -844,7 +844,7 @@ void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value)
 {
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
-    msg.ID = CANid + 0x600;
+    msg.ID = CANid + COB_SDO_RX;
     msg.LEN = 8;
     msg.DATA[0] = 0x2B;
     msg.DATA[1] = sdo.index & 0xFF;
@@ -1678,7 +1678,7 @@ void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message)
 {
     message->Msg.ID = 0x00;
 
-    while (message->Msg.ID != (0x580+CANid))
+    while (message->Msg.ID != (COB_SDO_TX+CANid))
     {
         LINUX_CAN_Read(canopen::h, message.get());
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
