@@ -819,6 +819,7 @@ void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value)
     msg.DATA[6] = (value >> 16) & 0xFF;
     msg.DATA[7] = (value >> 24) & 0xFF;
     CAN_Write(h, &msg);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value)
@@ -1748,30 +1749,27 @@ void setObjects(std::string chainName)
 {
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
-        int32_t data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x6081,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Profile Velocity
+        sendSDO_unknown(id, SDOkey(0x6081,0x00), 5000);
 
-        data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x607f,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Max Velocity
+        sendSDO_unknown(id, SDOkey(0x607f,0x00), 5000);
 
-        data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x6083,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Profile Acceleration
+        sendSDO_unknown(id, SDOkey(0x6083,0x00), 5000);
 
-        data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x60c5,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Profile Deceleration
+        sendSDO_unknown(id, SDOkey(0x6084,0x00), 5000);
 
-        data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x60c6,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Max Acceleration
+        sendSDO_unknown(id, SDOkey(0x60c5,0x00), 5000);
 
-        data = 0x1388 + (0x00 << 16) + (0x00 << 24);
-        sendSDO_unknown(id, SDOkey(0x6082,0x00), data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Set Max Deceleration
+        sendSDO_unknown(id, SDOkey(0x60c6,0x00), 5000);
 
+        // Set End Velocity
+        // Are you sure about that?
+        sendSDO_unknown(id, SDOkey(0x6082,0x00), 5000);
     }
 }
 
