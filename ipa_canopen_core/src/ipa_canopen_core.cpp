@@ -81,6 +81,7 @@ HANDLE h;
 std::vector<std::thread> managerThreads;
 std::vector<std::string> openDeviceFiles;
 bool atFirstInit=true;
+int initTrials=0;
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingDataHandlers { { STATUSWORD, sdo_incoming }, { DRIVERTEMPERATURE, sdo_incoming }, { MODES_OF_OPERATION_DISPLAY, sdo_incoming } };
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingErrorHandlers { { ERRORWORD, errorword_incoming }, { MANUFACTURER, errorword_incoming } };
 std::map<SDOkey, std::function<void (uint8_t CANid, BYTE data[8])> > incomingManufacturerDetails { {MANUFACTURERHWVERSION, manufacturer_incoming}, {MANUFACTURERDEVICENAME, manufacturer_incoming}, {MANUFACTURERSOFTWAREVERSION, manufacturer_incoming} };
@@ -140,6 +141,16 @@ void pre_init(std::string chainName)
 /////////////
 bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation)
 {
+    initTrials++;
+
+    if(initTrials == 4)
+    {
+        std::cout << "There are still problems with the devices. Trying a complete reset " << std::endl;
+        canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+
+        initTrials=0;
+    }
+
     if(canopen::atFirstInit)
     {
 
@@ -164,8 +175,8 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
             canopen::openDeviceFiles.push_back(deviceFile);
         }
 
-        std::cout << "Resetting devices " << std::endl;
-        canopen::sendNMT(0x00, canopen::NMT_RESET_NODE);
+        std::cout << "Resetting communication with the devices " << std::endl;
+        canopen::sendNMT(0x00, canopen::NMT_RESET_COMMUNICATION);
 
     }
 
@@ -173,6 +184,10 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
     if(canopen::deviceGroups[chainName].getFirstInit())
     {
 
+        std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
+        time_start = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds;
+        
         canopen::initDeviceManagerThread(chainName,canopen::deviceManager);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -183,20 +198,29 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
         canopen::pre_init(chainName);
 
         while(sdo_protect)
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            
+         elapsed_seconds = time_end - time_start;
 
+            if(elapsed_seconds.count() > 5.0)
+                {
+                    std::cout << "not ready for operation. Probably due to communication problems with the Master." << std::endl;
+                    return false;
+                }
+                time_end = std::chrono::high_resolution_clock::now();
+        }
 
+        time_start = std::chrono::high_resolution_clock::now();
+
+        
+        
         for(auto id : canopen::deviceGroups[chainName].getCANids())
         {
-
-            std::chrono::time_point<std::chrono::high_resolution_clock> time_start, time_end;
-
-            std::chrono::duration<double> elapsed_seconds;
 
             bool nmt_init = devices[id].getNMTInit();
             std::cout << "Waiting for Node: " << (uint16_t)id << " to become available" << std::endl;
 
-            time_start = std::chrono::high_resolution_clock::now();
 
             while(!nmt_init)
             {
@@ -205,7 +229,7 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
                 if(elapsed_seconds.count() > 25.0)
                 {
                     std::cout << "Node: " << (uint16_t)id << " is not ready for operation. Please check for eventual problems." << std::endl;
-                    exit(EXIT_FAILURE);
+                    return false;
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -298,7 +322,9 @@ bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_op
 
     for (auto id : canopen::deviceGroups[chainName].getCANids())
     {
-        canopen::setOperationMode(id, mode_of_operation);
+        bool set_operation_mode = canopen::setOperationMode(id, mode_of_operation);
+        if(!set_operation_mode)
+            return false;
         canopen::setMotorState((uint16_t)id, canopen::MS_OPERATION_ENABLED);
 
         //Necessary otherwise sometimes Schunk devices complain for Position Track Error

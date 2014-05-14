@@ -98,28 +98,33 @@ int main(int argc, char *argv[])
     }
 
     uint16_t CANid = std::stoi(std::string(argv[2]));
+    canopen::syncInterval = std::chrono::milliseconds((100));
+
 
     canopen::devices[ CANid ] = canopen::Device(CANid);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     std::string chainName = "test_chain";
+    std::vector <uint8_t> ids;
+    ids.push_back(CANid);
+    std::vector <std::string> j_names;
+    j_names.push_back("joint_1");
+    canopen::deviceGroups[ chainName ] = canopen::DeviceGroup(ids, j_names);
 
-    canopen::init(deviceFile,chainName, std::chrono::milliseconds(100));
+    canopen::init(deviceFile,chainName, canopen::syncInterval);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
     std::shared_ptr<TPCANRdMsg> m;
 
-
-    canopen::getErrors(CANid);
-
     /***************************************************************/
     //		Manufacturer specific errors register
     /***************************************************************/
-    canopen::readManErrReg(CANid);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::vector<char> dev_name = canopen::devices[CANid].getManufacturerDevName();
+
+    std::cout << dev_name[0] << std::endl;
 
 //    /**************************
 //     * Hardware and Software Information

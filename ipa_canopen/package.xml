@@ -1,6 +1,6 @@
 <package>
   <name>ipa_canopen</name>
-  <version>0.5.1</version>
+  <version>0.5.4</version>
   <description>This stack includes packages that provide access to CANopen hardware through ROS messages, services and actions.</description>
  
 
@@ -10,6 +10,7 @@
   <!-- <url type="bugtracker"></url> -->
 
   <maintainer email="tdf@ipa.fhg.de">Thiago de Freitas</maintainer>
+  <maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
   <author email="tdf@ipa.fhg.de">Thiago de Freitas</author>
 
 
