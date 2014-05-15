@@ -689,6 +689,12 @@ namespace canopen{
             subindex(s) {};
     };
 
+    struct SDOanswer{
+        uint16_t index;
+        uint8_t subindex;
+        int32_t value;
+    };
+
     /***************************************************************/
     //		define global variables and functions
     /***************************************************************/
@@ -719,12 +725,13 @@ namespace canopen{
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
 
+    SDOanswer requested_sdo;
     /***************************************************************/
     //			define state machine functions
     /***************************************************************/
 
     void setNMTState(uint16_t CANid, std::string targetState);
-    void setMotorState(uint16_t CANid, std::string targetState);
+    bool setMotorState(uint16_t CANid, std::string targetState, double timeout = 3.0);
     bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout = 3.0);
 
     /***************************************************************/
@@ -986,7 +993,7 @@ namespace canopen{
     const u_int8_t SYNC_TYPE_ASYNCHRONOUS = 0xFF;
 
     void uploadSDO(uint8_t CANid, SDOkey sdo);
-    void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2);
+    void controlPDO(uint8_t CANid, u_int16_t control_word);
     void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message);
     void requestDataBlock1(uint8_t CANid);
     void requestDataBlock2(uint8_t CANid);
@@ -996,6 +1003,10 @@ namespace canopen{
     void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value);
+    template< class IntType >
+    bool sendSDO_checked(uint8_t CANid, SDOkey sdo, IntType value, int32_t trials = 5, double timeout = 1.0);
+    void test_sdo_types();
+
 
     /***************************************************************/
     //		define PDO protocol functions
