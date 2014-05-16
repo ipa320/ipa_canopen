@@ -61,12 +61,11 @@
 #include <sstream>
 #include <cstring>
 #include <unordered_map>
-#include<algorithm>
+#include <algorithm>
 
 
 namespace canopen
 {
-
     /***************************************************************/
     //			define global variables and functions
     /***************************************************************/
@@ -88,10 +87,6 @@ namespace canopen
     std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
     bool recover_active;
-    bool halt_active;
-
-    bool halt_positive;
-    bool halt_negative;
 
     bool use_limit_switch=false;
 
@@ -219,8 +214,7 @@ namespace canopen
 
             while(sdo_protect)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+                time_end = std::chrono::high_resolution_clock::now();
                 elapsed_seconds = time_end - time_start;
 
                 if(elapsed_seconds.count() > 5.0)
@@ -228,7 +222,7 @@ namespace canopen
                     std::cout << "not ready for operation. Probably due to communication problems with the Master." << std::endl;
                     return false;
                 }
-                time_end = std::chrono::high_resolution_clock::now();
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
 
             time_start = std::chrono::high_resolution_clock::now();
@@ -239,6 +233,7 @@ namespace canopen
 
                 while(!nmt_init)
                 {
+                    time_end = std::chrono::high_resolution_clock::now();
                     elapsed_seconds = time_end - time_start;
 
                     if(elapsed_seconds.count() > 25.0)
@@ -247,9 +242,8 @@ namespace canopen
                         return false;
                     }
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     nmt_init = devices[id].getNMTInit();
-                    time_end = std::chrono::high_resolution_clock::now();
                 }
 
                 std::cout << "Node: " << (uint16_t)id << " is now available" << std::endl;
@@ -332,48 +326,19 @@ namespace canopen
 
         for (auto id : canopen::deviceGroups[chainName].getCANids())
         {
-            // Closed Loop Control
-            sendSDO_checked(id, SDOkey(0x3202,0x00), 0x0043);
-            // Set Alignment
-            sendSDO_checked(id, SDOkey(0x2050,0x00), 0xA993);
-            // Set Parameters
-            sendSDO_checked(id, SDOkey(0x3210,0x01), 0x0800);
-            sendSDO_checked(id, SDOkey(0x3210,0x02), 0x0000);
-            sendSDO_checked(id, SDOkey(0x3210,0x03), 0x2EE0);
-            sendSDO_checked(id, SDOkey(0x3210,0x04), 0x001E);
-            sendSDO_checked(id, SDOkey(0x3210,0x05), 0x2000);
-            sendSDO_checked(id, SDOkey(0x3210,0x06), 0x0100);
-            sendSDO_checked(id, SDOkey(0x3210,0x07), 0x2000);
-            sendSDO_checked(id, SDOkey(0x3210,0x08), 0x0100);
-
-            // Set Pole Pairs
-            sendSDO_checked(id, SDOkey(0x2030,0x00), 0x0003);
-            // Set Encoder Resolution
-            sendSDO_checked(id, SDOkey(0x2052,0x00), -4096);
-            sendSDO_checked(id, SDOkey(0x608F,0x01), 4096);
-            // Encoder Health
-            sendSDO_checked(id, SDOkey(0x2055,0x02), 0x8A8E);
-            sendSDO_checked(id, SDOkey(0x2055,0x03), 0xCA92);
-            // Deactivate Encoder supervision
-            sendSDO_checked(id, SDOkey(0x2054,0x00), 0xFFFFFFFF);
-
-            bool set_operation_mode = canopen::setOperationMode(id, mode_of_operation);
-            if(!set_operation_mode)
-                return false;
-        }
-
-        for (auto id : canopen::deviceGroups[chainName].getCANids())
-        {
-            setMotorState(id, MS_READY_TO_SWITCH_ON);
-
             getErrors(id);
             readManErrReg(id);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            if(devices[id].getIPMode())
+            if(canopen::setOperationMode(id, mode_of_operation) == false)
+            {
+                std::cout << "Could not set operation mode :(" << std::endl;
+            }
+
+            if(setMotorState(id, MS_READY_TO_SWITCH_ON))
             {
                 std::cout << "Concluded driver side init succesfully for Node" << (uint16_t)id << std::endl;
                 canopen::devices[id].setInitialized(true);
+                initTrials = 0;
             }
             else
             {
@@ -381,29 +346,11 @@ namespace canopen
                 canopen::devices[id].setInitialized(false);
                 return false;
             }
-
         }
-
         return true;
     }
 
-    bool init(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval)
-    {
-        bool initialized = init(deviceFile, chainName, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-
-        for (auto id : canopen::deviceGroups[chainName].getCANids())
-        {
-            sendSDO_checked((uint16_t)id, canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            sendSDO_checked((uint16_t)id, canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            sendSDO_checked((uint16_t)id, canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-        return initialized;
-    }
-
-    bool recover(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval)
+    bool recover(std::string chainName, const int8_t mode_of_operation)
     {
         recover_active = true;
 
@@ -420,41 +367,14 @@ namespace canopen
                 canopen::controlPDO(id,canopen::CONTROLWORD_HALT);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                canopen::controlPDO(id,canopen::CONTROLWORD_DISABLE_INTERPOLATED);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                canopen::controlPDO(id,canopen::CONTROL_WORD_DISABLE_VOLTAGE);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
                 canopen::controlPDO(id,canopen::CONTROLWORD_QUICKSTOP);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                canopen::sendSDO_checked(id, canopen::MODES_OF_OPERATION, canopen::MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+                canopen::sendSDO_checked(id, canopen::MODES_OF_OPERATION, mode_of_operation);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                 canopen::setMotorState(id, canopen::MS_SWITCHED_ON_DISABLED);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                canopen::setMotorState(id, canopen::MS_READY_TO_SWITCH_ON);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                canopen::setMotorState(id, canopen::MS_SWITCHED_ON);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
                 canopen::setMotorState(id, canopen::MS_OPERATION_ENABLED);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                sendSDO_checked((uint16_t)id, canopen::IP_TIME_UNITS, (uint8_t) syncInterval.count() );
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                sendSDO_checked((uint16_t)id, canopen::IP_TIME_INDEX, (uint8_t)canopen::IP_TIME_INDEX_MILLISECONDS);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                sendSDO_checked((uint16_t)id, canopen::SYNC_TIMEOUT_FACTOR, (uint8_t)canopen::SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                canopen::controlPDO(id, canopen::CONTROLWORD_ENABLE_MOVEMENT);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
                 canopen::uploadSDO(id, canopen::STATUSWORD);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -463,11 +383,6 @@ namespace canopen
 
                 getErrors(id);
             }
-
-
-            devices[id].setDesiredPos((double)devices[id].getActualPos());
-            devices[id].setDesiredVel(0);
-
         }
         recover_active = false;
 
@@ -476,7 +391,7 @@ namespace canopen
 
             if(devices[id].getIPMode())
             {
-                std::cout << "Concluded driver side recover succesfully" << std::endl;
+                std::cout << "Concluded driver side recover successfully" << std::endl;
             }
             else
             {
@@ -487,58 +402,6 @@ namespace canopen
 
         return true;
 
-    }
-
-    void halt(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval)
-    {
-        CAN_Close(h);
-
-        NMTmsg.ID = 0;
-        NMTmsg.MSGTYPE = 0x00;
-        NMTmsg.LEN = 2;
-
-        syncMsg.ID = COB_SYNC;
-        syncMsg.MSGTYPE = 0x00;
-
-        syncMsg.LEN = 0x00;
-
-        if (!canopen::openConnection(deviceFile, canopen::baudRate))
-        {
-            std::cout << "Cannot open CAN device; aborting." << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        else
-        {
-            // std::cout << "Connection to CAN bus established (recover)" << std::endl;
-        }
-
-
-        for (auto id : canopen::deviceGroups[chainName].getCANids())
-        {
-            //std::cout << "Module with CAN-id " << (uint16_t)id << " connected (recover)" << std::endl;
-        }
-
-        for (auto id : canopen::deviceGroups[chainName].getCANids())
-        {
-
-
-            canopen::sendSDO_checked(id, canopen::CONTROLWORD, canopen:: CONTROLWORD_HALT);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            canopen::sendSDO_checked(id, canopen::CONTROLWORD, canopen:: CONTROLWORD_DISABLE_INTERPOLATED);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            canopen::sendSDO_checked(id, canopen::CONTROLWORD, canopen:: CONTROL_WORD_DISABLE_VOLTAGE);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            canopen::sendSDO_checked(id, canopen::CONTROLWORD, canopen::CONTROLWORD_QUICKSTOP);
-            canopen::uploadSDO(id, canopen::STATUSWORD);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        }
     }
 
     /***************************************************************/
@@ -1795,9 +1658,35 @@ void setObjects(std::string chainName)
         // Set Max Deceleration
         sendSDO_checked(id, SDOkey(0x60c6,0x00), 5000);
 
-        // Set End Velocity
-        // Are you sure about that?
-        //sendSDO_unknown(id, SDOkey(0x6082,0x00), 5000);
+        // Closed Loop Control
+        sendSDO_checked(id, SDOkey(0x3202,0x00), 0x0043);
+
+        // Set Alignment
+        sendSDO_checked(id, SDOkey(0x2050,0x00), 0xA993);
+
+        // Set PID Parameters
+        sendSDO_checked(id, SDOkey(0x3210,0x01), 0x0800);
+        sendSDO_checked(id, SDOkey(0x3210,0x02), 0x0000);
+        sendSDO_checked(id, SDOkey(0x3210,0x03), 0x2EE0);
+        sendSDO_checked(id, SDOkey(0x3210,0x04), 0x001E);
+        sendSDO_checked(id, SDOkey(0x3210,0x05), 0x2000);
+        sendSDO_checked(id, SDOkey(0x3210,0x06), 0x0100);
+        sendSDO_checked(id, SDOkey(0x3210,0x07), 0x2000);
+        sendSDO_checked(id, SDOkey(0x3210,0x08), 0x0100);
+
+        // Set Pole Pairs
+        sendSDO_checked(id, SDOkey(0x2030,0x00), 0x0003);
+
+        // Set Encoder Resolution
+        sendSDO_checked(id, SDOkey(0x2052,0x00), -4096);
+        sendSDO_checked(id, SDOkey(0x608F,0x01), 4096);
+
+        // Encoder Health
+        sendSDO_checked(id, SDOkey(0x2055,0x02), 0x8A8E);
+        sendSDO_checked(id, SDOkey(0x2055,0x03), 0xCA92);
+
+        // Deactivate Encoder supervision
+        sendSDO_checked(id, SDOkey(0x2054,0x00), 0xFFFFFFFF);
     }
 }
 

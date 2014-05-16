@@ -772,10 +772,6 @@ namespace canopen{
     extern bool atFirstInit;
     extern bool recover_active;
     extern bool no_position;
-    extern bool halt_active;
-
-    extern bool halt_positive;
-    extern bool halt_negative;
 
     extern bool use_limit_switch;
 
@@ -791,8 +787,7 @@ namespace canopen{
              std::vector<std::string> rpdo_registers, std::vector<int> rpdo_sizes, u_int8_t rsync_type);
 
     void pre_init(std::string chainName);
-    bool recover(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
-    void halt(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
+    bool recover(std::string chainName, const int8_t mode_of_operation);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid, double positionValue, double velocityValue) > sendPosPPMode;
