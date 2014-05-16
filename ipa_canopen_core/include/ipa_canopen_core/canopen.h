@@ -689,6 +689,12 @@ namespace canopen{
             subindex(s) {};
     };
 
+    struct SDOanswer{
+        uint16_t index;
+        uint8_t subindex;
+        int32_t value;
+    };
+
     /***************************************************************/
     //		define global variables and functions
     /***************************************************************/
@@ -719,12 +725,13 @@ namespace canopen{
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingPDOHandlers;
     extern std::map<uint16_t, std::function<void (const TPCANRdMsg m)> > incomingEMCYHandlers;
 
+    SDOanswer requested_sdo;
     /***************************************************************/
     //			define state machine functions
     /***************************************************************/
 
     void setNMTState(uint16_t CANid, std::string targetState);
-    void setMotorState(uint16_t CANid, std::string targetState);
+    bool setMotorState(uint16_t CANid, std::string targetState, double timeout = 3.0);
     bool setOperationMode(uint16_t CANid, const int8_t targetMode, double timeout = 3.0);
 
     /***************************************************************/
@@ -765,10 +772,6 @@ namespace canopen{
     extern bool atFirstInit;
     extern bool recover_active;
     extern bool no_position;
-    extern bool halt_active;
-
-    extern bool halt_positive;
-    extern bool halt_negative;
 
     extern bool use_limit_switch;
 
@@ -779,9 +782,12 @@ namespace canopen{
     bool init(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
     bool init(std::string deviceFile, std::string chainName, const int8_t mode_of_operation);
 
+    void pdo_map(std::string chain_name, int pdo_id,
+             std::vector<std::string> tpdo_registers, std::vector<int> tpdo_sizes, u_int8_t tsync_type,
+             std::vector<std::string> rpdo_registers, std::vector<int> rpdo_sizes, u_int8_t rsync_type);
+
     void pre_init(std::string chainName);
-    bool recover(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
-    void halt(std::string deviceFile, std::string chainName, std::chrono::milliseconds syncInterval);
+    bool recover(std::string chainName, const int8_t mode_of_operation);
 
     extern std::function< void (uint16_t CANid, double positionValue) > sendPos;
     extern std::function< void (uint16_t CANid, double positionValue, double velocityValue) > sendPosPPMode;
@@ -952,6 +958,22 @@ namespace canopen{
     const int8_t MODES_OF_OPERATION_TORQUE_PROFILE_MODE = 0x4;
     const int8_t MODES_OF_OPERATION_INTERPOLATED_POSITION_MODE = 0x7;
 
+    const u_int16_t COB_SYNC = 0x80;
+    const u_int16_t COB_EMERGENCY = 0x81;
+    const u_int16_t COB_TIME_STAMP = 0x100;
+    const u_int16_t COB_PDO1_RX = 0x200;
+    const u_int16_t COB_PDO2_RX = 0x300;
+    const u_int16_t COB_PDO3_RX = 0x400;
+    const u_int16_t COB_PDO4_RX = 0x500;
+    const u_int16_t COB_PDO1_TX = 0x180;
+    const u_int16_t COB_PDO2_TX = 0x280;
+    const u_int16_t COB_PDO3_TX = 0x380;
+    const u_int16_t COB_PDO4_TX = 0x480;
+    const u_int16_t COB_SDO_TX = 0x580;
+    const u_int16_t COB_SDO_RX = 0x600;
+    const u_int16_t COB_NODEGUARD = 0x700;
+    const u_int16_t COB_MAX = 0x800;
+
     static const char * const modesDisplay[] =
     {"NO_MODE", "PROFILE_POSITION_MODE", "VELOCITY", "PROFILE_VELOCITY_MODE",
                               "TORQUE_PROFILED_MODE", "RESERVED", "HOMING_MODE", "INTERPOLATED_POSITION_MODE",
@@ -961,8 +983,12 @@ namespace canopen{
     const int8_t IP_TIME_INDEX_HUNDREDMICROSECONDS = 0xFC;
     const uint8_t SYNC_TIMEOUT_FACTOR_DISABLE_TIMEOUT = 0;
 
+    const u_int8_t SYNC_TYPE_ACYCLIC = 0x00;
+    const u_int8_t SYNC_TYPE_CYCLIC = 0x01;
+    const u_int8_t SYNC_TYPE_ASYNCHRONOUS = 0xFF;
+
     void uploadSDO(uint8_t CANid, SDOkey sdo);
-    void controlPDO(uint8_t CANid, u_int16_t control1, u_int16_t control2);
+    void controlPDO(uint8_t CANid, u_int16_t control_word);
     void processSingleSDO(uint8_t CANid, std::shared_ptr<TPCANRdMsg> message);
     void requestDataBlock1(uint8_t CANid);
     void requestDataBlock2(uint8_t CANid);
@@ -972,6 +998,10 @@ namespace canopen{
     void sendSDO_unknown(uint8_t CANid, SDOkey sdo, int32_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint16_t value);
     void sendSDO(uint8_t CANid, SDOkey sdo, uint8_t value);
+    template< class IntType >
+    bool sendSDO_checked(uint8_t CANid, SDOkey sdo, IntType value, int32_t trials = 5, double timeout = 1.0);
+    void test_sdo_types();
+
 
     /***************************************************************/
     //		define PDO protocol functions
@@ -980,10 +1010,7 @@ namespace canopen{
     void initDeviceManagerThread(std::string chainName, std::function<void (std::string)> const& deviceManager);
     void deviceManager(std::string chainName);
 
-
-    void defaultPDOOutgoing(uint16_t CANid, double positionValue);
     void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue);
-    void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m);
     void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m);
     void defaultEMCY_incoming(uint16_t CANid, const TPCANRdMsg m);
