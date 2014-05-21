@@ -2,6 +2,24 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* change warning message
+* merge conflict
+* hydro
+* Diagnostics with name
+* Diagnostics with name
+* Diagnostics with name
+* Adjusts the diagnostics
+* Merge pull request `#58 <https://github.com/ipa320/ipa_canopen/issues/58>`_ from thiagodefreitas/hydro_dev
+  Changes the behaviour when a node can not be found
+* Changes the behaviour when a node can not be found
+* Adds some diagnostics
+* Fixes init bug
+* Fixes problems for the inialization of Schunk devices
+* First version of generalized mapping functions
+* Contributors: Thiago de Freitas Oliveira Araujo, ipa-cob4-1, ipa-nhg, ros, thiagodefreitas
+
 0.5.4 (2014-04-08)
 ------------------
 * Small clean
