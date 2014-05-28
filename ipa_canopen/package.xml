@@ -1,6 +1,6 @@
 <package>
   <name>ipa_canopen</name>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
   <description>This stack includes packages that provide access to CANopen hardware through ROS messages, services and actions.</description>
  
 
