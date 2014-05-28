@@ -2,6 +2,9 @@
 Changelog for package ipa_canopen
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.5 (2014-05-21)
 ------------------
 * Merge pull request `#62 <https://github.com/ipa320/ipa_canopen/issues/62>`_ from ipa320/hydro_release_candidate

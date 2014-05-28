@@ -2,6 +2,9 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.5 (2014-05-21)
 ------------------
 * merge conflict
