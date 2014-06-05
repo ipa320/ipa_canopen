@@ -377,7 +377,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         }
         else
         {
-            ROS_INFO("Parameter %s not set, shutting down node...", param.c_str());
+            ROS_WARN("Parameter %s not set, using default [1]...", param.c_str());
             for (int i=0; i < DOF; i++)
                 motor_direction.push_back(1);
         }
