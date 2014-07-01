@@ -329,7 +329,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
     {
         std::vector<std::string> jointNames;
 
-        param = "/" + chainName + "/joint_names";
+        param = chainName + "/joint_names";
         XmlRpc::XmlRpcValue jointNames_XMLRPC;
         if (n.hasParam(param))
         {
@@ -347,7 +347,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
 
         int DOF = jointNames.size();
 
-        param = "/" + chainName + "/motor_direction";
+        param = chainName + "/motor_direction";
         XmlRpc::XmlRpcValue motorDirections_XMLRPC;
         if (n.hasParam(param))
         {
@@ -383,7 +383,7 @@ void readParamsFromParameterServer(ros::NodeHandle n)
         }
 
 
-        param = "/" + chainName + "/module_ids";
+        param = chainName + "/module_ids";
         XmlRpc::XmlRpcValue moduleIDs_XMLRPC;
         if (n.hasParam(param))
         {
