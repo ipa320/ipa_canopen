@@ -2,6 +2,31 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.6 (2014-05-28)
+------------------
+
+0.5.5 (2014-05-21)
+------------------
+* merge conflict
+* hydro
+* Check if the operation mode was correctly set
+* Changing to reset communication instead of reset node
+* Adjusts the diagnostics
+* Changes the behaviour when a node can not be found
+* Merge pull request `#32 <https://github.com/ipa320/ipa_canopen/issues/32>`_ from thiagodefreitas/groovy_dev
+  Fixes init bug
+* Fixes init bug
+* Merge pull request `#30 <https://github.com/ipa320/ipa_canopen/issues/30>`_ from thiagodefreitas/groovy_dev
+  Generalized mapping functions
+* Provides the sync type option for the mapping generalization
+* Fixes problems for the inialization of Schunk devices
+* First version of generalized mapping functions
+* disable testing
+* Merge pull request `#27 <https://github.com/ipa320/ipa_canopen/issues/27>`_ from kalectro/groovy_dev
+  allow motor state to be changed in both directions
+* allow motor state to be changed in both directions
+* Contributors: Florian Weisshardt, Florian Weißhardt, Kai Franke, ipa-fmw, ipa-nhg, thiagodefreitas
+
 0.5.4 (2014-04-08)
 ------------------
 * Fixes the move_device and homing tools for the multiple chains version
