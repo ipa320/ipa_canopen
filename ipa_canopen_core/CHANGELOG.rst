@@ -2,6 +2,12 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* 0.5.7
+* update changelog
+* Contributors: Florian Weisshardt
+
 0.5.7 (2014-08-26)
 ------------------
 
