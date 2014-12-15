@@ -2,6 +2,12 @@
 Changelog for package ipa_canopen
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-09-18)
+------------------
+* 0.5.7
+* update changelog
+* Contributors: Florian Weisshardt
+
 0.5.7 (2014-08-26)
 ------------------
 

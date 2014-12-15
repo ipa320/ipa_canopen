@@ -2,6 +2,13 @@
 Changelog for package ipa_canopen_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-09-18)
+------------------
+* 0.5.7
+* update changelog
+* parses new layout for X_driver.yaml canopen components
+* Contributors: Florian Weisshardt, ipa-fxm
+
 0.5.7 (2014-08-26)
 ------------------
 * parses new layout for X_driver.yaml canopen components
