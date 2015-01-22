@@ -21,6 +21,7 @@
 
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/include/ipa_canopen_core" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lipa_canopen_core"/>
+    <deprecated>The ipa_canopen package is deprecated and superseded by ros_canopen</deprecated>
   </export>
 
 </package>
