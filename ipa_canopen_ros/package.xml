@@ -37,6 +37,6 @@
   <run_depend>libpcan</run_depend>
 
   <export>
-
+    <deprecated>The ipa_canopen package is deprecated and superseded by ros_canopen</deprecated>
   </export>
 </package>
