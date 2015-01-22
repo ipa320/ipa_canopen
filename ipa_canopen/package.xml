@@ -20,5 +20,6 @@
 
   <export>
     <metapackage/>
+    <deprecated>The ipa_canopen package is deprecated and superseded by ros_canopen</deprecated>
   </export>
 </package>
