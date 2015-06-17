@@ -2,8 +2,8 @@
 Changelog for package ipa_canopen_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.2 (2015-06-17)
+------------------
 * Merge branch 'indigo_dev' into indigo_release_candidate
 * Merge pull request `#73 <https://github.com/ipa320/ipa_canopen/issues/73>`_ from ipa320/indigo_dev
   deprecated tag
